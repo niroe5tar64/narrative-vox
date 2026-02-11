@@ -15,6 +15,23 @@ test("splitIntoSentences splits by Japanese and ASCII sentence endings", () => {
   assert.deepEqual(actual, ["導入です。", "次に進む？", "Yes!", "改行", "最後。"]);
 });
 
+test("splitIntoSentences splits long sentence by punctuation and conjunction boundaries", () => {
+  const actual = splitIntoSentences(
+    "前置きとして背景を共有し、そして実装方針を決めて、最後に手順を確認します。",
+    { maxCharsPerSentence: 14 }
+  );
+  assert.deepEqual(actual, [
+    "前置きとして背景を共有し、",
+    "そして実装方針を決めて、",
+    "最後に手順を確認します。"
+  ]);
+});
+
+test("splitIntoSentences falls back to max-char split when no boundary exists", () => {
+  const actual = splitIntoSentences("abcdefghijklmnop", { maxCharsPerSentence: 6 });
+  assert.deepEqual(actual, ["abcdefghij", "klmnop"]);
+});
+
 test("replaceRubyWithReading replaces ruby notation with reading", () => {
   const actual = replaceRubyWithReading("今日は{漢字|かんじ}と{ReScript|リスクリプト}を学ぶ。");
   assert.equal(actual, "今日はかんじとリスクリプトを学ぶ。");

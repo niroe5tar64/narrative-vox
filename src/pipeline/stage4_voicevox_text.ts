@@ -11,6 +11,10 @@ const DURATION_SUFFIX_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
+const SENTENCE_ENDING_RE = /([。！？!?])/g;
+const CLAUSE_PUNCTUATION_RE = /[、，；;：:]/g;
+const CONJUNCTION_BOUNDARY_RE =
+  /(そして|しかし|ただし|ただ|また|なお|そのため|なので|ところが|一方で|つまり|まず|次に|最後に|ちなみに)/g;
 const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
 const HIRAGANA_ONLY_RE = /^[ぁ-ゖー]+$/;
 const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
@@ -18,6 +22,8 @@ const UPPERCASE_ASCII_RE = /^[A-Z]{2,8}$/;
 const NUMBER_ONLY_RE = /^[0-9]+$/;
 const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
 const FALLBACK_TOKEN_RE = /[A-Za-z][A-Za-z0-9_.+-]{1,}|[ァ-ヴー]{3,}|[一-龠々]{2,}/g;
+const DEFAULT_MAX_CHARS_PER_SENTENCE = 48;
+const MIN_SPLITTABLE_CHARS = 8;
 
 type CandidateSource = "ruby" | "token" | "morph";
 type ReadingSource = "" | "ruby" | "morph" | "inferred";
@@ -126,12 +132,89 @@ function toUtteranceId(index: number): string {
   return `U${String(index + 1).padStart(3, "0")}`;
 }
 
-export function splitIntoSentences(text: string): string[] {
+function collectPreferredSplitPoints(text: string): number[] {
+  const points = new Set<number>();
+
+  for (const match of text.matchAll(CLAUSE_PUNCTUATION_RE)) {
+    const afterPunctuation = (match.index ?? -1) + 1;
+    if (afterPunctuation > 0 && afterPunctuation < text.length) {
+      points.add(afterPunctuation);
+    }
+  }
+
+  for (const match of text.matchAll(CONJUNCTION_BOUNDARY_RE)) {
+    const beforeConjunction = match.index ?? -1;
+    if (beforeConjunction > 0 && beforeConjunction < text.length) {
+      points.add(beforeConjunction);
+    }
+  }
+
+  return [...points]
+    .filter(
+      (point) => point >= MIN_SPLITTABLE_CHARS && text.length - point >= MIN_SPLITTABLE_CHARS
+    )
+    .sort((a, b) => a - b);
+}
+
+function chooseSplitPoint(text: string, maxCharsPerSentence: number): number {
+  const preferredPoints = collectPreferredSplitPoints(text);
+  const pointsWithinLimit = preferredPoints.filter((point) => point <= maxCharsPerSentence);
+  if (pointsWithinLimit.length > 0) {
+    return pointsWithinLimit[pointsWithinLimit.length - 1];
+  }
+
+  const nearestAfterLimit = preferredPoints.find(
+    (point) => point > maxCharsPerSentence && point <= maxCharsPerSentence + 6
+  );
+  if (nearestAfterLimit) {
+    return nearestAfterLimit;
+  }
+
+  return maxCharsPerSentence;
+}
+
+function splitLongSentence(text: string, maxCharsPerSentence: number): string[] {
+  const chunks: string[] = [];
+  let remaining = text.trim();
+
+  while (remaining.length > maxCharsPerSentence) {
+    const splitPoint = chooseSplitPoint(remaining, maxCharsPerSentence);
+    if (splitPoint <= 0 || splitPoint >= remaining.length) {
+      break;
+    }
+
+    const head = remaining.slice(0, splitPoint).trim();
+    const tail = remaining.slice(splitPoint).trim();
+    if (!head || !tail) {
+      break;
+    }
+
+    chunks.push(head);
+    remaining = tail;
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+  return chunks;
+}
+
+export function splitIntoSentences(
+  text: string,
+  options: { maxCharsPerSentence?: number } = {}
+): string[] {
+  const requestedMax = options.maxCharsPerSentence;
+  const maxCharsPerSentence =
+    typeof requestedMax === "number" && Number.isFinite(requestedMax)
+      ? Math.max(10, Math.trunc(requestedMax))
+      : DEFAULT_MAX_CHARS_PER_SENTENCE;
+
   return text
-    .replace(/([。！？!?])/g, "$1\n")
+    .replace(SENTENCE_ENDING_RE, "$1\n")
     .split(/\n+/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    .flatMap((line) => splitLongSentence(line, maxCharsPerSentence));
 }
 
 function normalizeScriptLine(rawLine: string): string {
