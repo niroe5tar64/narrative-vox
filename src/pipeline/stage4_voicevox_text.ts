@@ -15,6 +15,11 @@ const SENTENCE_ENDING_RE = /([。！？!?])/g;
 const CLAUSE_PUNCTUATION_RE = /[、，；;：:]/g;
 const CONJUNCTION_BOUNDARY_RE =
   /(そして|しかし|ただし|ただ|また|なお|そのため|なので|ところが|一方で|つまり|まず|次に|最後に|ちなみに)/g;
+const CONJUNCTION_PLAIN_RE =
+  /(そして|しかし|ただし|ただ|また|なお|そのため|なので|ところが|一方で|つまり|まず|次に|最後に|ちなみに)/;
+const STRONG_END_PUNCTUATION_RE = /[！？!?]$/;
+const FULL_STOP_END_RE = /。$/;
+const CLAUSE_END_RE = /[、，；;：:]$/;
 const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
 const HIRAGANA_ONLY_RE = /^[ぁ-ゖー]+$/;
 const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
@@ -24,6 +29,8 @@ const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
 const FALLBACK_TOKEN_RE = /[A-Za-z][A-Za-z0-9_.+-]{1,}|[ァ-ヴー]{3,}|[一-龠々]{2,}/g;
 const DEFAULT_MAX_CHARS_PER_SENTENCE = 48;
 const MIN_SPLITTABLE_CHARS = 8;
+const MIN_PAUSE_MS = 120;
+const MAX_PAUSE_MS = 520;
 
 type CandidateSource = "ruby" | "token" | "morph";
 type ReadingSource = "" | "ruby" | "morph" | "inferred";
@@ -215,6 +222,40 @@ export function splitIntoSentences(
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .flatMap((line) => splitLongSentence(line, maxCharsPerSentence));
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function decidePauseLengthMs(
+  sentence: string,
+  options: { isTerminalInSourceLine?: boolean } = {}
+): number {
+  const trimmed = sentence.trim();
+  if (!trimmed) {
+    return MIN_PAUSE_MS;
+  }
+
+  const length = trimmed.length;
+  const isTerminalInSourceLine = options.isTerminalInSourceLine !== false;
+
+  let base = 190;
+  if (STRONG_END_PUNCTUATION_RE.test(trimmed)) {
+    base = 360;
+  } else if (FULL_STOP_END_RE.test(trimmed)) {
+    base = 320;
+  } else if (CLAUSE_END_RE.test(trimmed)) {
+    base = 240;
+  }
+
+  const lengthBonus = clampNumber(Math.floor((length - 18) / 10) * 20, 0, 120);
+  const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed) ? 40 : 0;
+  const continuationPenalty = isTerminalInSourceLine ? 0 : 50;
+
+  const rawPause = base + lengthBonus - conjunctionPenalty - continuationPenalty;
+  const normalized = Math.round(rawPause / 10) * 10;
+  return clampNumber(normalized, MIN_PAUSE_MS, MAX_PAUSE_MS);
 }
 
 function normalizeScriptLine(rawLine: string): string {
@@ -658,9 +699,11 @@ export async function runStage4({
     const withoutRuby = replaceRubyWithReading(normalized);
     const sentences = splitIntoSentences(withoutRuby);
 
-    for (const sentence of sentences) {
+    for (const [sentenceIndex, sentence] of sentences.entries()) {
       collectTermCandidatesWithMorphology(sentence, termCandidates, morphTokenizer);
-      const pauseLengthMs = /[。！？!?]$/.test(sentence) ? 300 : 150;
+      const pauseLengthMs = decidePauseLengthMs(sentence, {
+        isTerminalInSourceLine: sentenceIndex === sentences.length - 1
+      });
       utterances.push({
         utterance_id: toUtteranceId(utterances.length),
         section_id: currentSectionId,

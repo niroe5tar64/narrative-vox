@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   collectRubyCandidates,
   collectTermCandidates,
+  decidePauseLengthMs,
   inferReadingFromSurface,
   replaceRubyWithReading,
   splitIntoSentences,
@@ -30,6 +31,20 @@ test("splitIntoSentences splits long sentence by punctuation and conjunction bou
 test("splitIntoSentences falls back to max-char split when no boundary exists", () => {
   const actual = splitIntoSentences("abcdefghijklmnop", { maxCharsPerSentence: 6 });
   assert.deepEqual(actual, ["abcdefghij", "klmnop"]);
+});
+
+test("decidePauseLengthMs uses punctuation strength and continuation context", () => {
+  assert.equal(decidePauseLengthMs("終わり。"), 320);
+  assert.equal(decidePauseLengthMs("ok!"), 360);
+  assert.equal(decidePauseLengthMs("そして進める、", { isTerminalInSourceLine: false }), 150);
+  assert.equal(decidePauseLengthMs("abcdef", { isTerminalInSourceLine: false }), 140);
+});
+
+test("decidePauseLengthMs increases pause for longer utterances", () => {
+  const shortSentence = `aaaaaaaaaa。`;
+  const longSentence = `${"a".repeat(55)}。`;
+  assert.equal(decidePauseLengthMs(shortSentence), 320);
+  assert.equal(decidePauseLengthMs(longSentence), 380);
 });
 
 test("replaceRubyWithReading replaces ruby notation with reading", () => {
