@@ -1,11 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "../shared/json.ts";
+import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
 
 const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
-const SECTION_RE = /^\s*([1-8])\.\s+(.+)$/;
-const TOTAL_TIME_RE = /^\s*合計想定時間\s*:/;
 
 export interface ValidateRunOptions {
   runDir: string;

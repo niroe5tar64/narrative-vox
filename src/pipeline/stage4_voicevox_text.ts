@@ -4,9 +4,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { IpadicFeatures, Tokenizer } from "kuromoji";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
+import { RUN_ID_RE, resolveRunId, inferProjectIdFromRunDir } from "../shared/run_id.ts";
+import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
+import type {
+  CandidatePriority,
+  CandidateSource,
+  DictionaryCandidate,
+  ReadingSource,
+  SpeakabilityMetrics,
+  Stage4Data,
+  Stage4Utterance
+} from "../shared/types.ts";
 
-const SECTION_RE = /^\s*([1-8])\.\s+(.+)$/;
-const TOTAL_TIME_RE = /^\s*合計想定時間\s*:/;
 const DURATION_SUFFIX_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
@@ -20,7 +29,6 @@ const CONJUNCTION_PLAIN_RE =
 const STRONG_END_PUNCTUATION_RE = /[！？!?]$/;
 const FULL_STOP_END_RE = /。$/;
 const CLAUSE_END_RE = /[、，；;：:]$/;
-const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
 const HIRAGANA_ONLY_RE = /^[ぁ-ゖー]+$/;
 const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
 const UPPERCASE_ASCII_RE = /^[A-Z]{2,8}$/;
@@ -32,63 +40,13 @@ const MIN_SPLITTABLE_CHARS = 8;
 const MIN_PAUSE_MS = 120;
 const MAX_PAUSE_MS = 520;
 
-type CandidateSource = "ruby" | "token" | "morph";
-type ReadingSource = "" | "ruby" | "morph" | "inferred";
-type CandidatePriority = "HIGH" | "MEDIUM" | "LOW";
-
 type MorphTokenizer = Tokenizer<IpadicFeatures>;
-
 interface TermCandidateState {
   reading: string;
   occurrences: number;
   source: CandidateSource;
   readingSource: ReadingSource;
 }
-
-interface DictionaryCandidate {
-  surface: string;
-  reading_or_empty: string;
-  priority: CandidatePriority;
-  occurrences: number;
-  source: CandidateSource;
-  note: string;
-}
-
-interface Stage4Utterance {
-  utterance_id: string;
-  section_id: number;
-  section_title: string;
-  text: string;
-  pause_length_ms: number;
-}
-
-interface SpeakabilityMetrics {
-  score: number;
-  average_chars_per_utterance: number;
-  long_utterance_ratio: number;
-  terminal_punctuation_ratio: number;
-}
-
-interface Stage4Data {
-  schema_version: "1.0";
-  meta: {
-    project_id: string;
-    run_id: string;
-    episode_id: string;
-    source_script_path: string;
-    generated_at: string;
-  };
-  utterances: Stage4Utterance[];
-  dictionary_candidates: DictionaryCandidate[];
-  quality_checks: {
-    utterance_count: number;
-    max_chars_per_utterance: number;
-    has_ruby_notation: boolean;
-    speakability: SpeakabilityMetrics;
-    warnings: string[];
-  };
-}
-
 interface RunStage4Options {
   scriptPath: string;
   runDir?: string;
@@ -653,7 +611,7 @@ function inferProjectAndRun(
   explicitRunId?: string
 ): { projectId: string; runId: string } {
   const runId = resolveRunId(runDir, explicitRunId);
-  const projectId = explicitProjectId || path.basename(path.dirname(runDir));
+  const projectId = explicitProjectId || inferProjectIdFromRunDir(runDir);
   return { projectId, runId };
 }
 
@@ -663,50 +621,6 @@ function inferRunDirFromScriptPath(scriptPath: string): string | undefined {
     return undefined;
   }
   return path.dirname(stageDir);
-}
-
-function findRunIdInPath(runDir: string): string | undefined {
-  const segments = path.resolve(runDir).split(path.sep).filter(Boolean);
-  for (let index = segments.length - 1; index >= 0; index -= 1) {
-    const candidate = segments[index];
-    if (RUN_ID_RE.test(candidate)) {
-      return candidate;
-    }
-  }
-  return undefined;
-}
-
-function toRunIdTimestampPart(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
-function makeRunIdNow(now: Date = new Date()): string {
-  const year = String(now.getFullYear());
-  const month = toRunIdTimestampPart(now.getMonth() + 1);
-  const day = toRunIdTimestampPart(now.getDate());
-  const hour = toRunIdTimestampPart(now.getHours());
-  const minute = toRunIdTimestampPart(now.getMinutes());
-  return `run-${year}${month}${day}-${hour}${minute}`;
-}
-
-function validateExplicitRunId(explicitRunId: string): string {
-  if (RUN_ID_RE.test(explicitRunId)) {
-    return explicitRunId;
-  }
-  throw new Error(`Invalid --run-id "${explicitRunId}". Expected format: run-YYYYMMDD-HHMM`);
-}
-
-function resolveRunId(runDir: string, explicitRunId?: string): string {
-  if (explicitRunId) {
-    return validateExplicitRunId(String(explicitRunId));
-  }
-
-  const inferred = findRunIdInPath(runDir);
-  if (inferred) {
-    return inferred;
-  }
-
-  return makeRunIdNow();
 }
 
 export async function runStage4({

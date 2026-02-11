@@ -1,24 +1,13 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
+import type { Stage4Data } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
 import {
   RawVoiceProfile,
   VoiceProfile,
   normalizeVoiceProfile
 } from "../shared/voice_profile.ts";
-
-interface Stage4Utterance {
-  utterance_id: string;
-  text: string;
-}
-
-interface Stage4Data {
-  meta: {
-    episode_id: string;
-  };
-  utterances: Stage4Utterance[];
-}
 
 interface Stage5Mora {
   text: string;

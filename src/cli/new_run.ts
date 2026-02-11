@@ -3,45 +3,17 @@ import { access, cp, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
+import { parseCliArgs, optionAsString } from "../shared/cli_args.ts";
+import { RUN_ID_RE, makeRunIdNow, validateRunId } from "../shared/run_id.ts";
 
-const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
+export { makeRunIdNow, validateRunId };
+
 const STAGES_TO_COPY = ["stage1", "stage2", "stage3"] as const;
-
-type CliOptions = Record<string, string | boolean>;
 
 interface CloneRunOptions {
 	sourceRunDir: string;
 	runDir: string;
 	stages?: ReadonlyArray<string>;
-}
-
-function parseArgs(argv: string[]): CliOptions {
-	const options: CliOptions = {};
-	for (let i = 0; i < argv.length; i += 1) {
-		const token = argv[i];
-		if (!token.startsWith("--")) {
-			continue;
-		}
-
-		const key = token.slice(2);
-		const value = argv[i + 1];
-		if (!value || value.startsWith("--")) {
-			options[key] = true;
-			continue;
-		}
-
-		options[key] = value;
-		i += 1;
-	}
-	return options;
-}
-
-function optionAsString(options: CliOptions, key: string): string | undefined {
-	const value = options[key];
-	if (!value || value === true) {
-		return undefined;
-	}
-	return String(value);
 }
 
 async function pathExists(filePath: string): Promise<boolean> {
@@ -51,28 +23,6 @@ async function pathExists(filePath: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
-}
-
-function toRunIdTimestampPart(value: number): string {
-	return String(value).padStart(2, "0");
-}
-
-export function makeRunIdNow(now: Date = new Date()): string {
-	const year = String(now.getFullYear());
-	const month = toRunIdTimestampPart(now.getMonth() + 1);
-	const day = toRunIdTimestampPart(now.getDate());
-	const hour = toRunIdTimestampPart(now.getHours());
-	const minute = toRunIdTimestampPart(now.getMinutes());
-	return `run-${year}${month}${day}-${hour}${minute}`;
-}
-
-export function validateRunId(runId: string): string {
-	if (RUN_ID_RE.test(runId)) {
-		return runId;
-	}
-	throw new Error(
-		`Invalid --run-id "${runId}". Expected format: run-YYYYMMDD-HHMM`,
-	);
 }
 
 async function listRunIds(projectDir: string): Promise<string[]> {
@@ -193,7 +143,7 @@ export async function cloneRunDirectories({
 }
 
 async function main() {
-	const options = parseArgs(process.argv.slice(2));
+	const options = parseCliArgs(process.argv.slice(2));
 	const showHelp = Boolean(options.help || options.h);
 	if (showHelp) {
 		printUsage();
