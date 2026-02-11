@@ -2,6 +2,7 @@
 import path from "node:path";
 import { runStage4 } from "../pipeline/stage4_voicevox_text.ts";
 import { runStage5 } from "../pipeline/stage5_voicevox_import.ts";
+import { validateStage123Run } from "../quality/stage123_run_validator.ts";
 
 type CliOptions = Record<string, string | boolean>;
 
@@ -39,6 +40,7 @@ function printUsage() {
   bun src/cli/main.ts stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]
   bun src/cli/main.ts stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal]
   bun src/cli/main.ts pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--run-id <run-YYYYMMDD-HHMM>] [stage4/stage5 options]
+  bun src/cli/main.ts validate-run --run-dir <projects/.../run-YYYYMMDD-HHMM>
 `);
 }
 
@@ -115,6 +117,18 @@ async function main() {
     console.log(
       `- stage5: ${path.relative(process.cwd(), stage5Result.importJsonPath)}, ${path.relative(process.cwd(), stage5Result.vvprojPath)}`
     );
+    return;
+  }
+
+  if (command === "validate-run") {
+    const result = await validateStage123Run({
+      runDir: ensureOption(options, "run-dir", command)
+    });
+
+    console.log(
+      `Validate run done: episodes=${result.validatedEpisodeIds.length}, stage2=${result.stage2EpisodeCount}, stage3=${result.stage3EpisodeCount}`
+    );
+    console.log(`- run: ${path.relative(process.cwd(), result.runDir)}`);
     return;
   }
 

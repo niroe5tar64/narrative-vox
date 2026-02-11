@@ -87,6 +87,10 @@ bun run stage5 -- \
   --stage4-json projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json \
   --out-dir projects/introducing-rescript/run-20260211-0000 \
   --prefill-query minimal
+
+# Stage1/2/3 生成物を検証する場合（Stage1/2はJSON Schema、Stage3は台本形式）
+bun src/cli/main.ts validate-run \
+  --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 
 - `--run-id` は任意です。
