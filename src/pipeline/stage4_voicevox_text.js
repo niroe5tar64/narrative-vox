@@ -9,6 +9,53 @@ const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
 const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
+const HIRAGANA_ONLY_RE = /^[ぁ-ゖー]+$/;
+const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
+const UPPERCASE_ASCII_RE = /^[A-Z]{2,8}$/;
+const NUMBER_ONLY_RE = /^[0-9]+$/;
+const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
+const FALLBACK_TOKEN_RE = /[A-Za-z][A-Za-z0-9_.+-]{1,}|[ァ-ヴー]{3,}|[一-龠々]{2,}/g;
+
+const LOW_SIGNAL_TOKENS = new Set([
+  "こと",
+  "ため",
+  "もの",
+  "よう",
+  "これ",
+  "それ",
+  "any"
+]);
+
+const UPPERCASE_ASCII_READING_MAP = Object.freeze({
+  A: "エー",
+  B: "ビー",
+  C: "シー",
+  D: "ディー",
+  E: "イー",
+  F: "エフ",
+  G: "ジー",
+  H: "エイチ",
+  I: "アイ",
+  J: "ジェー",
+  K: "ケー",
+  L: "エル",
+  M: "エム",
+  N: "エヌ",
+  O: "オー",
+  P: "ピー",
+  Q: "キュー",
+  R: "アール",
+  S: "エス",
+  T: "ティー",
+  U: "ユー",
+  V: "ブイ",
+  W: "ダブリュー",
+  X: "エックス",
+  Y: "ワイ",
+  Z: "ゼット"
+});
+
+let cachedJaWordSegmenter;
 
 function toUtteranceId(index) {
   return `U${String(index + 1).padStart(3, "0")}`;
@@ -39,14 +86,14 @@ export function collectRubyCandidates(text, map) {
 
     const current = map.get(surface);
     if (!current) {
-      map.set(surface, { reading, occurrences: 1, source: "ruby" });
+      map.set(surface, { reading, occurrences: 1, source: "ruby", readingSource: "ruby" });
       continue;
     }
 
     current.occurrences += 1;
-    if (!current.reading) {
-      current.reading = reading;
-    }
+    current.source = "ruby";
+    current.reading = reading;
+    current.readingSource = "ruby";
   }
 }
 
@@ -54,36 +101,118 @@ export function replaceRubyWithReading(text) {
   return text.replace(RUBY_RE, (_, _surface, reading) => reading);
 }
 
-export function collectTermCandidates(text, map) {
-  const tokenSets = [
-    text.match(/\b[A-Za-z][A-Za-z0-9_.+-]{1,}\b/g) ?? [],
-    text.match(/[ァ-ヴー]{4,}/g) ?? []
-  ];
+function getJapaneseWordSegmenter() {
+  if (cachedJaWordSegmenter !== undefined) {
+    return cachedJaWordSegmenter;
+  }
+  if (typeof Intl === "undefined" || typeof Intl.Segmenter !== "function") {
+    cachedJaWordSegmenter = null;
+    return cachedJaWordSegmenter;
+  }
+  cachedJaWordSegmenter = new Intl.Segmenter("ja", { granularity: "word" });
+  return cachedJaWordSegmenter;
+}
 
-  for (const token of tokenSets.flat()) {
+function normalizeCandidateSurface(token) {
+  return token
+    .replace(/^[^A-Za-z0-9一-龠々ぁ-ゖァ-ヴー]+/, "")
+    .replace(/[^A-Za-z0-9一-龠々ぁ-ゖァ-ヴー]+$/, "")
+    .trim();
+}
+
+function shouldCollectCandidate(surface) {
+  if (!surface || surface.length < 2) {
+    return false;
+  }
+  if (NUMBER_ONLY_RE.test(surface)) {
+    return false;
+  }
+  if (HIRAGANA_ONLY_RE.test(surface)) {
+    return false;
+  }
+  if (!WORDLIKE_RE.test(surface)) {
+    return false;
+  }
+  if (LOW_SIGNAL_TOKENS.has(surface)) {
+    return false;
+  }
+  if (LOW_SIGNAL_TOKENS.has(surface.toLowerCase())) {
+    return false;
+  }
+  return true;
+}
+
+export function inferReadingFromSurface(surface) {
+  if (!surface) {
+    return "";
+  }
+  if (KATAKANA_ONLY_RE.test(surface)) {
+    return surface;
+  }
+  if (!UPPERCASE_ASCII_RE.test(surface)) {
+    return "";
+  }
+  return [...surface].map((char) => UPPERCASE_ASCII_READING_MAP[char] || "").join("");
+}
+
+export function tokenizeDictionaryTerms(text) {
+  const segmenter = getJapaneseWordSegmenter();
+  if (!segmenter) {
+    return text.match(FALLBACK_TOKEN_RE) ?? [];
+  }
+
+  const tokens = [];
+  for (const segment of segmenter.segment(text)) {
+    if (!segment.isWordLike) {
+      continue;
+    }
+    const normalized = normalizeCandidateSurface(segment.segment);
+    if (!normalized) {
+      continue;
+    }
+    tokens.push(normalized);
+  }
+  return tokens;
+}
+
+export function collectTermCandidates(text, map) {
+  for (const token of tokenizeDictionaryTerms(text)) {
     const surface = token.trim();
-    if (surface.length < 2) {
+    if (!shouldCollectCandidate(surface)) {
       continue;
     }
 
+    const inferredReading = inferReadingFromSurface(surface);
     const current = map.get(surface);
     if (!current) {
-      map.set(surface, { reading: "", occurrences: 1, source: "token" });
+      map.set(surface, {
+        reading: inferredReading,
+        occurrences: 1,
+        source: "token",
+        readingSource: inferredReading ? "inferred" : ""
+      });
       continue;
     }
 
     current.occurrences += 1;
+    if (!current.reading && inferredReading) {
+      current.reading = inferredReading;
+      current.readingSource = current.readingSource || "inferred";
+    }
   }
 }
 
 export function priorityForCandidate(candidate) {
-  if (candidate.reading) {
+  if (candidate.source === "ruby") {
     return "HIGH";
   }
-  if (candidate.occurrences >= 3) {
+  if (candidate.occurrences >= 4) {
     return "HIGH";
   }
-  if (candidate.occurrences >= 2) {
+  if (candidate.reading && candidate.occurrences >= 2) {
+    return "HIGH";
+  }
+  if (candidate.reading || candidate.occurrences >= 2) {
     return "MEDIUM";
   }
   return "LOW";
@@ -120,7 +249,12 @@ export function toDictionaryCandidates(termCandidates) {
       priority: priorityForCandidate(info),
       occurrences: info.occurrences,
       source: info.source,
-      note: info.reading ? "ruby_from_script" : "auto_detected"
+      note:
+        info.readingSource === "ruby"
+          ? "ruby_from_script"
+          : info.reading
+            ? "reading_inferred"
+            : "auto_detected"
     }))
     .sort((a, b) => {
       if (b.occurrences !== a.occurrences) {

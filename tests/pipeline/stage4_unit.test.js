@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   collectRubyCandidates,
   collectTermCandidates,
+  inferReadingFromSurface,
   replaceRubyWithReading,
   splitIntoSentences,
   toDictionaryCandidates
@@ -60,10 +61,50 @@ test("dictionary candidate extraction keeps ruby readings and token frequencies"
   const testCase = candidates.find((item) => item.surface === "テストケース");
   assert.deepEqual(testCase, {
     surface: "テストケース",
-    reading_or_empty: "",
+    reading_or_empty: "テストケース",
     priority: "HIGH",
     occurrences: 3,
     source: "token",
-    note: "auto_detected"
+    note: "reading_inferred"
   });
+});
+
+test("inferReadingFromSurface infers katakana and uppercase acronym readings", () => {
+  assert.equal(inferReadingFromSurface("テストケース"), "テストケース");
+  assert.equal(inferReadingFromSurface("API"), "エーピーアイ");
+  assert.equal(inferReadingFromSurface("JS"), "ジェーエス");
+  assert.equal(inferReadingFromSurface("TypeScript"), "");
+});
+
+test("dictionary candidate extraction infers readings and excludes low-signal tokens", () => {
+  const termCandidates = new Map();
+  const lines = ["APIとFFIで検証する。", "APIの確認。", "anyの多用は避ける。"];
+
+  for (const line of lines) {
+    collectTermCandidates(line, termCandidates);
+  }
+
+  const candidates = toDictionaryCandidates(termCandidates);
+
+  const api = candidates.find((item) => item.surface === "API");
+  assert.deepEqual(api, {
+    surface: "API",
+    reading_or_empty: "エーピーアイ",
+    priority: "HIGH",
+    occurrences: 2,
+    source: "token",
+    note: "reading_inferred"
+  });
+
+  const ffi = candidates.find((item) => item.surface === "FFI");
+  assert.deepEqual(ffi, {
+    surface: "FFI",
+    reading_or_empty: "エフエフアイ",
+    priority: "MEDIUM",
+    occurrences: 1,
+    source: "token",
+    note: "reading_inferred"
+  });
+
+  assert.equal(candidates.some((item) => item.surface === "any"), false);
 });
