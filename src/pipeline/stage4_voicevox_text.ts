@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
-import { resolveRunId, inferProjectIdFromRunDir } from "../shared/run_id.ts";
 import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
 import type { DictionaryCandidate, Stage4Data, Stage4Utterance } from "../shared/types.ts";
 import {
@@ -20,6 +19,7 @@ import {
   toDictionaryCandidates,
   TermCandidateMap
 } from "./stage4/dictionary.ts";
+import { resolveRunMetadata } from "./stage4/run_metadata.ts";
 
 export {
   collectRubyCandidates,
@@ -86,36 +86,6 @@ function makeCsv(candidates: DictionaryCandidate[]): string {
     .join("\n");
 }
 
-function inferEpisodeId(scriptPath: string, explicitEpisodeId?: string): string {
-  if (explicitEpisodeId) {
-    return explicitEpisodeId;
-  }
-  const base = path.basename(scriptPath);
-  const match = base.match(/(E[0-9]{2})/);
-  if (!match) {
-    throw new Error("Could not infer episode_id from script path. Pass --episode-id E##.");
-  }
-  return match[1];
-}
-
-function inferProjectAndRun(
-  runDir: string,
-  explicitProjectId?: string,
-  explicitRunId?: string
-): { projectId: string; runId: string } {
-  const runId = resolveRunId(runDir, explicitRunId);
-  const projectId = explicitProjectId || inferProjectIdFromRunDir(runDir);
-  return { projectId, runId };
-}
-
-function inferRunDirFromScriptPath(scriptPath: string): string | undefined {
-  const stageDir = path.dirname(path.resolve(scriptPath));
-  if (path.basename(stageDir) !== "stage3") {
-    return undefined;
-  }
-  return path.dirname(stageDir);
-}
-
 export async function runStage4({
   scriptPath,
   runDir,
@@ -123,16 +93,25 @@ export async function runStage4({
   runId,
   episodeId
 }: RunStage4Options): Promise<RunStage4Result> {
-  const resolvedScriptPath = path.resolve(scriptPath);
-  const inferredRunDir = runDir ? path.resolve(runDir) : inferRunDirFromScriptPath(resolvedScriptPath);
-  if (!inferredRunDir) {
-    throw new Error(
-      "Could not infer run directory from --script path. Pass --run-dir explicitly."
-    );
-  }
-  const resolvedRunDir = inferredRunDir;
-  const finalEpisodeId = inferEpisodeId(resolvedScriptPath, episodeId);
-  const ids = inferProjectAndRun(resolvedRunDir, projectId, runId);
+  const metadata = resolveRunMetadata({
+    scriptPath,
+    runDir,
+    projectId,
+    runId,
+    episodeId
+  });
+  const {
+    resolvedScriptPath,
+    runDir: resolvedRunDir,
+    projectId: finalProjectId,
+    runId: finalRunId,
+    episodeId: finalEpisodeId,
+    stage4Dir,
+    stage4DictDir,
+    stage4JsonPath,
+    stage4TxtPath,
+    dictCsvPath
+  } = metadata;
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const lines = source.split(/\r?\n/);
@@ -207,8 +186,8 @@ export async function runStage4({
   const stage4Data: Stage4Data = {
     schema_version: "1.0",
     meta: {
-      project_id: ids.projectId,
-      run_id: ids.runId,
+      project_id: finalProjectId,
+      run_id: finalRunId,
       episode_id: finalEpisodeId,
       source_script_path: path.relative(process.cwd(), resolvedScriptPath),
       generated_at: new Date().toISOString()
@@ -229,14 +208,8 @@ export async function runStage4({
     path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
   );
 
-  const stage4Dir = path.join(resolvedRunDir, "stage4");
-  const stage4DictDir = path.join(resolvedRunDir, "stage4_dict");
   await mkdir(stage4Dir, { recursive: true });
   await mkdir(stage4DictDir, { recursive: true });
-
-  const stage4JsonPath = path.join(stage4Dir, `${finalEpisodeId}_voicevox_text.json`);
-  const stage4TxtPath = path.join(stage4Dir, `${finalEpisodeId}_voicevox.txt`);
-  const dictCsvPath = path.join(stage4DictDir, `${finalEpisodeId}_dict_candidates.csv`);
 
   await writeFile(stage4JsonPath, `${JSON.stringify(stage4Data, null, 2)}\n`, "utf-8");
   await writeFile(stage4TxtPath, `${utterances.map((entry) => entry.text).join("\n")}\n`, "utf-8");

@@ -50,6 +50,14 @@
   - Run ID／プロジェクト／エピソードの推論や出力パス構築など Stage4 の残り責務の切り出し。
 - 次セッション開始タスク:
   - Stage4 の Run ID 予測と出力ファイル構築ロジックを別モジュールへ移設し、`stage4_voicevox_text.ts` はオーケストレーターに集中させる。
+### 2026-02-12 (Phase 3 run metadata)
+- 完了:
+  - Stage4の Run ID/プロジェクト/エピソード推論や stage4/stage4_dict ディレクトリ・出力パス生成を `src/pipeline/stage4/run_metadata.ts` にまとめて `runStage4` はメタデータを消費するだけにした。
+  - `bun run typecheck` と `bun test` を再実行して変更後もすべてのテストが通ることを確認。
+- 未完了:
+  - 後続の Stage4責務（辞書候補出力/Run ディレクトリ構築以外のパイプライン固有処理）をさらに分割。
+- 次セッション開始タスク:
+  - Stage4 の出力書き込みと CLI 連携を最小化したオーケストレーター構成を固めつつ、Phase 4 へ向けて残り責務をさらに分離。
 ### 2026-02-11 (Phase 2リファクタリング)
 - 完了:
   - CLI引数パーサー・Run ID・スクリプト正規表現・Stage4/Stage5型を `src/shared/` 下のモジュールに集約し、CLI/パイプライン/検証の呼び出し先を共有化。
