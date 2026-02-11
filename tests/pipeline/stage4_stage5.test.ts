@@ -4,8 +4,24 @@ import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { runStage4 } from "../../src/pipeline/stage4_voicevox_text.js";
-import { runStage5 } from "../../src/pipeline/stage5_voicevox_import.js";
+import { runStage4 } from "../../src/pipeline/stage4_voicevox_text.ts";
+import { runStage5 } from "../../src/pipeline/stage5_voicevox_import.ts";
+
+interface Stage4JsonTest {
+  meta: {
+    episode_id: string;
+    run_id: string;
+  };
+  utterances: Array<{ utterance_id: string; text: string }>;
+  dictionary_candidates: Array<{ surface: string; reading_or_empty: string }>;
+}
+
+interface Stage5JsonTest {
+  talk: {
+    audioKeys: string[];
+    audioItems: Record<string, unknown>;
+  };
+}
 
 const sampleScriptPath = path.resolve(
   "projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md"
@@ -24,7 +40,7 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
     runId: "run-20260211-1234"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8"));
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
   assert.equal(stage4Json.meta.episode_id, "E01");
   assert.ok(stage4Json.utterances.length > 0);
 
@@ -34,7 +50,7 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
 
-  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8"));
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as Stage5JsonTest;
   assert.equal(stage5Json.talk.audioKeys.length, stage4Json.utterances.length);
   assert.ok(stage5Json.talk.audioItems[stage5Json.talk.audioKeys[0]]);
 });
@@ -51,7 +67,7 @@ test("stage4 uses run_id from out-dir path when --run-id is omitted", async () =
     projectId: "introducing-rescript"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8"));
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
   assert.equal(stage4Json.meta.run_id, "run-20260211-2222");
 });
 
@@ -67,7 +83,7 @@ test("stage4 auto-generates run_id when not found in --out-dir", async () => {
     projectId: "introducing-rescript"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8"));
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
   assert.match(stage4Json.meta.run_id, /^run-\d{8}-\d{4}$/);
 });
 
@@ -114,14 +130,14 @@ test("stage4 extracts dictionary candidates with readings from morphological ana
     runId: "run-20260211-3333"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8"));
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
   const dictionary = stage4Json.dictionary_candidates;
 
-  const kensho = dictionary.find((item) => item.surface === "検証");
+  const kensho = dictionary.find((item: { surface: string; reading_or_empty: string }) => item.surface === "検証");
   assert.ok(kensho);
   assert.equal(kensho.reading_or_empty.length > 0, true);
 
-  const api = dictionary.find((item) => item.surface === "API");
+  const api = dictionary.find((item: { surface: string; reading_or_empty: string }) => item.surface === "API");
   assert.ok(api);
   assert.equal(api.reading_or_empty, "エーピーアイ");
 });
