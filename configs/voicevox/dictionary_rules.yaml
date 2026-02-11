@@ -1,0 +1,4 @@
+# dictionary candidate extraction rules (planned)
+# example:
+# min_frequency: 3
+# target_pos: ["固有名詞"]
