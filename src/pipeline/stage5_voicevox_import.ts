@@ -1,6 +1,12 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
+import { loadJson } from "../shared/json.ts";
+import {
+  RawVoiceProfile,
+  VoiceProfile,
+  normalizeVoiceProfile
+} from "../shared/voice_profile.ts";
 
 interface Stage4Utterance {
   utterance_id: string;
@@ -12,30 +18,6 @@ interface Stage4Data {
     episode_id: string;
   };
   utterances: Stage4Utterance[];
-}
-
-interface VoiceProfile {
-  engineId: string;
-  speakerId: string;
-  styleId: number | string;
-  appVersion?: string;
-  tpqn?: number | string;
-  tempoBpm?: number | string;
-  timeSignature?: {
-    beats?: number | string;
-    beatType?: number | string;
-  };
-  queryDefaults?: {
-    speedScale?: number | string;
-    pitchScale?: number | string;
-    intonationScale?: number | string;
-    volumeScale?: number | string;
-    pauseLengthScale?: number | string;
-    prePhonemeLength?: number | string;
-    postPhonemeLength?: number | string;
-    outputSamplingRate?: number | string;
-    outputStereo?: boolean;
-  };
 }
 
 interface Stage5Mora {
@@ -102,11 +84,6 @@ function toAudioKey(episodeId: string, utteranceId: string): string {
   return `${episodeId}_${utteranceId}`;
 }
 
-async function loadJson<T>(filePath: string): Promise<T> {
-  const raw = await readFile(filePath, "utf-8");
-  return JSON.parse(raw) as T;
-}
-
 async function resolveProfilePath(profilePath?: string): Promise<string> {
   if (profilePath) {
     return path.resolve(profilePath);
@@ -129,24 +106,6 @@ function inferRunDirFromStage4JsonPath(stage4JsonPath: string): string | undefin
   return path.dirname(stage4Dir);
 }
 
-function toNumber(value: number | string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function toOutputSamplingRate(value: number | string | undefined): number | "engineDefault" {
-  if (value === "engineDefault") {
-    return "engineDefault";
-  }
-
-  const parsed = Number(value);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.trunc(parsed);
-  }
-
-  return "engineDefault";
-}
-
 function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
   if (!mode || mode === "none") {
     return "none";
@@ -161,15 +120,15 @@ function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
   const defaults = profile.queryDefaults;
   return {
     accentPhrases: [],
-    speedScale: toNumber(defaults?.speedScale, 1),
-    pitchScale: toNumber(defaults?.pitchScale, 0),
-    intonationScale: toNumber(defaults?.intonationScale, 1),
-    volumeScale: toNumber(defaults?.volumeScale, 1),
-    pauseLengthScale: toNumber(defaults?.pauseLengthScale, 1),
-    prePhonemeLength: toNumber(defaults?.prePhonemeLength, 0.1),
-    postPhonemeLength: toNumber(defaults?.postPhonemeLength, 0.1),
-    outputSamplingRate: toOutputSamplingRate(defaults?.outputSamplingRate),
-    outputStereo: defaults?.outputStereo ?? false
+    speedScale: defaults.speedScale,
+    pitchScale: defaults.pitchScale,
+    intonationScale: defaults.intonationScale,
+    volumeScale: defaults.volumeScale,
+    pauseLengthScale: defaults.pauseLengthScale,
+    prePhonemeLength: defaults.prePhonemeLength,
+    postPhonemeLength: defaults.postPhonemeLength,
+    outputSamplingRate: defaults.outputSamplingRate,
+    outputStereo: defaults.outputStereo
   };
 }
 
@@ -195,12 +154,16 @@ export async function runStage5({
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
 
-  const stage4Data = await loadJson<Stage4Data>(resolvedStage4Path);
-  const profile = await loadJson<VoiceProfile>(resolvedProfilePath);
+  const stage4Data = await loadJson<Stage4Data>(
+    resolvedStage4Path,
+    path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
+  );
+  const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
+  const profile = normalizeVoiceProfile(rawProfile);
 
   const finalEngineId = engineId || profile.engineId;
   const finalSpeakerId = speakerId || profile.speakerId;
-  const finalStyleId = Number(styleId ?? profile.styleId);
+  const finalStyleId = styleId ?? profile.styleId;
   const finalAppVersion = appVersion || profile.appVersion || "0.0.0";
   const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
 
@@ -231,18 +194,18 @@ export async function runStage5({
       audioItems
     },
     song: {
-      tpqn: Number(profile.tpqn ?? 480),
+      tpqn: profile.tpqn,
       tempos: [
         {
           position: 0,
-          bpm: Number(profile.tempoBpm ?? 120)
+          bpm: profile.tempoBpm
         }
       ],
       timeSignatures: [
         {
           measureNumber: 1,
-          beats: Number(profile.timeSignature?.beats ?? 4),
-          beatType: Number(profile.timeSignature?.beatType ?? 4)
+          beats: profile.timeSignature.beats,
+          beatType: profile.timeSignature.beatType
         }
       ],
       tracks: {},

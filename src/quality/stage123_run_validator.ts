@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { validateAgainstSchema } from "./schema_validator.ts";
+import { loadJson } from "../shared/json.ts";
 
 const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
@@ -16,11 +16,6 @@ export interface ValidateRunResult {
   stage2EpisodeCount: number;
   stage3EpisodeCount: number;
   validatedEpisodeIds: string[];
-}
-
-async function readJson<T>(filePath: string): Promise<T> {
-  const raw = await readFile(filePath, "utf-8");
-  return JSON.parse(raw) as T;
 }
 
 function toRelativePath(filePath: string): string {
@@ -79,9 +74,8 @@ export async function validateStage123Run({ runDir }: ValidateRunOptions): Promi
   const stage2Dir = path.join(resolvedRunDir, "stage2");
   const stage3Dir = path.join(resolvedRunDir, "stage3");
 
-  const stage1Data = await readJson<unknown>(stage1Path);
-  await validateAgainstSchema(
-    stage1Data,
+  await loadJson<unknown>(
+    stage1Path,
     path.resolve(process.cwd(), "schemas/stage1.book-blueprint.schema.json")
   );
 
@@ -92,9 +86,8 @@ export async function validateStage123Run({ runDir }: ValidateRunOptions): Promi
   const stage2EpisodeIds = collectEpisodeIds(stage2Files, STAGE2_FILE_RE);
   for (const fileName of stage2Files) {
     const filePath = path.join(stage2Dir, fileName);
-    const data = await readJson<unknown>(filePath);
-    await validateAgainstSchema(
-      data,
+    await loadJson<unknown>(
+      filePath,
       path.resolve(process.cwd(), "schemas/stage2.episode-variables.schema.json")
     );
   }
