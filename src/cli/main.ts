@@ -37,7 +37,7 @@ function ensureOption(options: CliOptions, key: string, command: string): string
 function printUsage() {
   console.log(`Usage:
   bun src/cli/main.ts stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]
-  bun src/cli/main.ts stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>]
+  bun src/cli/main.ts stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal]
   bun src/cli/main.ts pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--run-id <run-YYYYMMDD-HHMM>] [stage4/stage5 options]
 `);
 }
@@ -77,7 +77,8 @@ async function main() {
       engineId: options["engine-id"] ? String(options["engine-id"]) : undefined,
       speakerId: options["speaker-id"] ? String(options["speaker-id"]) : undefined,
       styleId: options["style-id"] ? Number(options["style-id"]) : undefined,
-      appVersion: options["app-version"] ? String(options["app-version"]) : undefined
+      appVersion: options["app-version"] ? String(options["app-version"]) : undefined,
+      prefillQuery: options["prefill-query"] ? String(options["prefill-query"]) : undefined
     });
 
     console.log(`Stage5 done: episode=${result.episodeId}, audioItems=${result.audioItemCount}`);
@@ -103,7 +104,8 @@ async function main() {
       engineId: options["engine-id"] ? String(options["engine-id"]) : undefined,
       speakerId: options["speaker-id"] ? String(options["speaker-id"]) : undefined,
       styleId: options["style-id"] ? Number(options["style-id"]) : undefined,
-      appVersion: options["app-version"] ? String(options["app-version"]) : undefined
+      appVersion: options["app-version"] ? String(options["app-version"]) : undefined,
+      prefillQuery: options["prefill-query"] ? String(options["prefill-query"]) : undefined
     });
 
     console.log(`Pipeline done: episode=${stage5Result.episodeId}`);

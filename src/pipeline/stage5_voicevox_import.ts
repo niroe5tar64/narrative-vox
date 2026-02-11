@@ -25,6 +25,47 @@ interface VoiceProfile {
     beats?: number | string;
     beatType?: number | string;
   };
+  queryDefaults?: {
+    speedScale?: number | string;
+    pitchScale?: number | string;
+    intonationScale?: number | string;
+    volumeScale?: number | string;
+    pauseLengthScale?: number | string;
+    prePhonemeLength?: number | string;
+    postPhonemeLength?: number | string;
+    outputSamplingRate?: number | string;
+    outputStereo?: boolean;
+  };
+}
+
+interface Stage5Mora {
+  text: string;
+  vowel: string;
+  vowelLength: number;
+  pitch: number;
+  consonant?: string;
+  consonantLength?: number;
+}
+
+interface Stage5AccentPhrase {
+  moras: Stage5Mora[];
+  accent: number;
+  pauseMora?: Stage5Mora;
+  isInterrogative?: boolean;
+}
+
+interface Stage5AudioQuery {
+  accentPhrases: Stage5AccentPhrase[];
+  speedScale: number;
+  pitchScale: number;
+  intonationScale: number;
+  volumeScale: number;
+  pauseLengthScale: number;
+  prePhonemeLength: number;
+  postPhonemeLength: number;
+  outputSamplingRate: number | "engineDefault";
+  outputStereo: boolean;
+  kana?: string;
 }
 
 interface Stage5AudioItem {
@@ -34,7 +75,10 @@ interface Stage5AudioItem {
     speakerId: string;
     styleId: number;
   };
+  query?: Stage5AudioQuery;
 }
+
+type QueryPrefillMode = "none" | "minimal";
 
 interface RunStage5Options {
   stage4JsonPath: string;
@@ -44,6 +88,7 @@ interface RunStage5Options {
   speakerId?: string;
   styleId?: number;
   appVersion?: string;
+  prefillQuery?: string;
 }
 
 interface RunStage5Result {
@@ -76,6 +121,50 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
   }
 }
 
+function toNumber(value: number | string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toOutputSamplingRate(value: number | string | undefined): number | "engineDefault" {
+  if (value === "engineDefault") {
+    return "engineDefault";
+  }
+
+  const parsed = Number(value);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.trunc(parsed);
+  }
+
+  return "engineDefault";
+}
+
+function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
+  if (!mode || mode === "none") {
+    return "none";
+  }
+  if (mode === "minimal") {
+    return "minimal";
+  }
+  throw new Error(`Invalid prefillQuery: ${mode}. Expected one of: none, minimal`);
+}
+
+function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
+  const defaults = profile.queryDefaults;
+  return {
+    accentPhrases: [],
+    speedScale: toNumber(defaults?.speedScale, 1),
+    pitchScale: toNumber(defaults?.pitchScale, 0),
+    intonationScale: toNumber(defaults?.intonationScale, 1),
+    volumeScale: toNumber(defaults?.volumeScale, 1),
+    pauseLengthScale: toNumber(defaults?.pauseLengthScale, 1),
+    prePhonemeLength: toNumber(defaults?.prePhonemeLength, 0.1),
+    postPhonemeLength: toNumber(defaults?.postPhonemeLength, 0.1),
+    outputSamplingRate: toOutputSamplingRate(defaults?.outputSamplingRate),
+    outputStereo: defaults?.outputStereo ?? false
+  };
+}
+
 export async function runStage5({
   stage4JsonPath,
   outDir,
@@ -83,7 +172,8 @@ export async function runStage5({
   engineId,
   speakerId,
   styleId,
-  appVersion
+  appVersion,
+  prefillQuery
 }: RunStage5Options): Promise<RunStage5Result> {
   const resolvedStage4Path = path.resolve(stage4JsonPath);
   const resolvedOutDir = path.resolve(outDir);
@@ -96,6 +186,7 @@ export async function runStage5({
   const finalSpeakerId = speakerId || profile.speakerId;
   const finalStyleId = Number(styleId ?? profile.styleId);
   const finalAppVersion = appVersion || profile.appVersion || "0.0.0";
+  const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
 
   const audioKeys: string[] = [];
   const audioItems: Record<string, Stage5AudioItem> = {};
@@ -103,7 +194,7 @@ export async function runStage5({
   for (const utterance of stage4Data.utterances) {
     const key = toAudioKey(stage4Data.meta.episode_id, utterance.utterance_id);
     audioKeys.push(key);
-    audioItems[key] = {
+    const audioItem: Stage5AudioItem = {
       text: utterance.text,
       voice: {
         engineId: finalEngineId,
@@ -111,6 +202,10 @@ export async function runStage5({
         styleId: finalStyleId
       }
     };
+    if (queryPrefillMode === "minimal") {
+      audioItem.query = buildMinimalQuery(profile);
+    }
+    audioItems[key] = audioItem;
   }
 
   const vvproj = {

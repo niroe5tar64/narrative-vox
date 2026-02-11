@@ -51,6 +51,7 @@
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
   - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
+  - `--prefill-query minimal` を指定すると `talk.audioItems[*].query` を最小値で事前埋めできる
 
 ## サンプルデータ
 
@@ -80,11 +81,18 @@ bun run stage4 -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
   --out-dir projects/introducing-rescript/run-20260211-0000 \
   --run-id run-20260211-1234
+
+# Stage5 で query を最小値で事前埋めする場合
+bun run stage5 -- \
+  --stage4-json projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json \
+  --out-dir projects/introducing-rescript/run-20260211-0000 \
+  --prefill-query minimal
 ```
 
 - `--run-id` は任意です。
 - 未指定時は `--out-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--out-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
+- `--prefill-query` は `none`（既定）または `minimal` を指定できます。
 
 ## Stage4 辞書CSVの確認観点
 

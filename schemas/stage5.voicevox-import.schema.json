@@ -71,6 +71,123 @@
                     "minimum": 0
                   }
                 }
+              },
+              "query": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "accentPhrases",
+                  "speedScale",
+                  "pitchScale",
+                  "intonationScale",
+                  "volumeScale",
+                  "pauseLengthScale",
+                  "prePhonemeLength",
+                  "postPhonemeLength",
+                  "outputSamplingRate",
+                  "outputStereo"
+                ],
+                "properties": {
+                  "accentPhrases": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "moras",
+                        "accent"
+                      ],
+                      "properties": {
+                        "moras": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/$defs/mora"
+                          }
+                        },
+                        "accent": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pauseMora": {
+                          "$ref": "#/$defs/mora"
+                        },
+                        "isInterrogative": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  },
+                  "speedScale": {
+                    "type": "number"
+                  },
+                  "pitchScale": {
+                    "type": "number"
+                  },
+                  "intonationScale": {
+                    "type": "number"
+                  },
+                  "volumeScale": {
+                    "type": "number"
+                  },
+                  "pauseLengthScale": {
+                    "type": "number"
+                  },
+                  "prePhonemeLength": {
+                    "type": "number"
+                  },
+                  "postPhonemeLength": {
+                    "type": "number"
+                  },
+                  "outputSamplingRate": {
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      {
+                        "type": "string",
+                        "const": "engineDefault"
+                      }
+                    ]
+                  },
+                  "outputStereo": {
+                    "type": "boolean"
+                  },
+                  "kana": {
+                    "type": "string"
+                  }
+                }
+              },
+              "presetKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "morphingInfo": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "rate",
+                  "targetEngineId",
+                  "targetSpeakerId",
+                  "targetStyleId"
+                ],
+                "properties": {
+                  "rate": {
+                    "type": "number"
+                  },
+                  "targetEngineId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "targetSpeakerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "targetStyleId": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
               }
             }
           }
@@ -150,6 +267,40 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "mora": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "vowel",
+        "vowelLength",
+        "pitch"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "vowel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vowelLength": {
+          "type": "number"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "consonant": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consonantLength": {
+          "type": "number"
         }
       }
     }

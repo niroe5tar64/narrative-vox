@@ -28,7 +28,30 @@ interface Stage4JsonTest {
 interface Stage5JsonTest {
   talk: {
     audioKeys: string[];
-    audioItems: Record<string, unknown>;
+    audioItems: Record<
+      string,
+      {
+        text: string;
+        voice: {
+          engineId: string;
+          speakerId: string;
+          styleId: number;
+        };
+        query?: {
+          accentPhrases: unknown[];
+          speedScale: number;
+          pitchScale: number;
+          intonationScale: number;
+          volumeScale: number;
+          pauseLengthScale: number;
+          prePhonemeLength: number;
+          postPhonemeLength: number;
+          outputSamplingRate: number | "engineDefault";
+          outputStereo: boolean;
+          kana?: string;
+        };
+      }
+    >;
   };
 }
 
@@ -64,6 +87,71 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
   const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as Stage5JsonTest;
   assert.equal(stage5Json.talk.audioKeys.length, stage4Json.utterances.length);
   assert.ok(stage5Json.talk.audioItems[stage5Json.talk.audioKeys[0]]);
+});
+
+test("stage5 prefill-query=minimal adds query defaults to every audio item", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const outDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(outDir, { recursive: true });
+
+  const stage4 = await runStage4({
+    scriptPath: sampleScriptPath,
+    outDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  const stage5 = await runStage5({
+    stage4JsonPath: stage4.stage4JsonPath,
+    outDir,
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+    prefillQuery: "minimal"
+  });
+
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as Stage5JsonTest;
+  assert.equal(stage5Json.talk.audioKeys.length > 0, true);
+
+  for (const audioKey of stage5Json.talk.audioKeys) {
+    const audioItem = stage5Json.talk.audioItems[audioKey];
+    assert.ok(audioItem);
+    assert.ok(audioItem.query);
+    assert.deepEqual(audioItem.query?.accentPhrases, []);
+    assert.equal(audioItem.query?.speedScale, 1);
+    assert.equal(audioItem.query?.pitchScale, 0);
+    assert.equal(audioItem.query?.intonationScale, 1);
+    assert.equal(audioItem.query?.volumeScale, 1);
+    assert.equal(audioItem.query?.pauseLengthScale, 1);
+    assert.equal(audioItem.query?.prePhonemeLength, 0.1);
+    assert.equal(audioItem.query?.postPhonemeLength, 0.1);
+    assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
+    assert.equal(audioItem.query?.outputStereo, false);
+  }
+});
+
+test("stage5 rejects unsupported prefill-query mode", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const outDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(outDir, { recursive: true });
+
+  const stage4 = await runStage4({
+    scriptPath: sampleScriptPath,
+    outDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await assert.rejects(
+    () =>
+      runStage5({
+        stage4JsonPath: stage4.stage4JsonPath,
+        outDir,
+        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        prefillQuery: "invalid" as "minimal"
+      }),
+    /Expected one of: none, minimal/
+  );
 });
 
 test("stage4 uses run_id from out-dir path when --run-id is omitted", async () => {
