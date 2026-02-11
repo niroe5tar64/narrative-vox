@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -87,4 +87,41 @@ test("stage4 rejects invalid --run-id format with expected pattern in message", 
       }),
     /run-YYYYMMDD-HHMM/
   );
+});
+
+test("stage4 extracts dictionary candidates with readings from morphological analysis", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const outDir = path.join(tempRoot, "introducing-rescript", "run-20260211-3333");
+  await mkdir(outDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E99_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "検証の流れを整理する。",
+      "APIの挙動も検証する。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const stage4 = await runStage4({
+    scriptPath,
+    outDir,
+    episodeId: "E99",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-3333"
+  });
+
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8"));
+  const dictionary = stage4Json.dictionary_candidates;
+
+  const kensho = dictionary.find((item) => item.surface === "検証");
+  assert.ok(kensho);
+  assert.equal(kensho.reading_or_empty.length > 0, true);
+
+  const api = dictionary.find((item) => item.surface === "API");
+  assert.ok(api);
+  assert.equal(api.reading_or_empty, "エーピーアイ");
 });

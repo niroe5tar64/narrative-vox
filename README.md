@@ -48,6 +48,7 @@
 - Stage 2: エピソード変数 JSON 生成
 - Stage 3: 固定フレーム台本生成
 - Stage 4: `script.md` から `voicevox_text.json / voicevox.txt / dict_candidates.csv` 生成
+  - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
 
 ## サンプルデータ

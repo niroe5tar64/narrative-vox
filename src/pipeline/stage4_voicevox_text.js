@@ -1,5 +1,7 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { validateAgainstSchema } from "../quality/schema_validator.js";
 
 const SECTION_RE = /^\s*([1-8])\.\s+(.+)$/;
@@ -56,6 +58,8 @@ const UPPERCASE_ASCII_READING_MAP = Object.freeze({
 });
 
 let cachedJaWordSegmenter;
+let cachedMorphTokenizer;
+let cachedMorphTokenizerPromise;
 
 function toUtteranceId(index) {
   return `U${String(index + 1).padStart(3, "0")}`;
@@ -111,6 +115,51 @@ function getJapaneseWordSegmenter() {
   }
   cachedJaWordSegmenter = new Intl.Segmenter("ja", { granularity: "word" });
   return cachedJaWordSegmenter;
+}
+
+function resolveKuromojiDictPath() {
+  const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    path.resolve(process.cwd(), "node_modules/kuromoji/dict"),
+    path.resolve(currentFileDir, "../../node_modules/kuromoji/dict")
+  ];
+  return candidates.find((candidatePath) => existsSync(candidatePath));
+}
+
+async function buildJapaneseMorphTokenizer() {
+  const dictPath = resolveKuromojiDictPath();
+  if (!dictPath) {
+    return null;
+  }
+
+  try {
+    const module = await import("kuromoji");
+    const kuromoji = module.default ?? module;
+    return await new Promise((resolve) => {
+      kuromoji.builder({ dicPath: dictPath }).build((error, tokenizer) => {
+        if (error || !tokenizer) {
+          resolve(null);
+          return;
+        }
+        resolve(tokenizer);
+      });
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function getJapaneseMorphTokenizer() {
+  if (cachedMorphTokenizer !== undefined) {
+    return cachedMorphTokenizer;
+  }
+
+  if (!cachedMorphTokenizerPromise) {
+    cachedMorphTokenizerPromise = buildJapaneseMorphTokenizer();
+  }
+
+  cachedMorphTokenizer = await cachedMorphTokenizerPromise;
+  return cachedMorphTokenizer;
 }
 
 function normalizeCandidateSurface(token) {
@@ -175,6 +224,39 @@ export function tokenizeDictionaryTerms(text) {
   return tokens;
 }
 
+function normalizeMorphReading(reading) {
+  const normalized = String(reading || "").trim();
+  if (!normalized || normalized === "*") {
+    return "";
+  }
+  return KATAKANA_ONLY_RE.test(normalized) ? normalized : "";
+}
+
+function upsertTermCandidate(
+  map,
+  { surface, reading, source = "token", readingSource = "" }
+) {
+  const current = map.get(surface);
+  if (!current) {
+    map.set(surface, { reading, occurrences: 1, source, readingSource });
+    return;
+  }
+
+  current.occurrences += 1;
+  if (current.source !== "ruby" && source === "morph") {
+    current.source = "morph";
+  }
+  if (!current.reading && reading) {
+    current.reading = reading;
+    if (current.readingSource !== "ruby") {
+      current.readingSource = readingSource || current.readingSource;
+    }
+  }
+  if (current.readingSource !== "ruby" && readingSource === "morph" && reading) {
+    current.readingSource = "morph";
+  }
+}
+
 export function collectTermCandidates(text, map) {
   for (const token of tokenizeDictionaryTerms(text)) {
     const surface = token.trim();
@@ -183,22 +265,40 @@ export function collectTermCandidates(text, map) {
     }
 
     const inferredReading = inferReadingFromSurface(surface);
-    const current = map.get(surface);
-    if (!current) {
-      map.set(surface, {
-        reading: inferredReading,
-        occurrences: 1,
-        source: "token",
-        readingSource: inferredReading ? "inferred" : ""
-      });
+    upsertTermCandidate(map, {
+      surface,
+      reading: inferredReading,
+      source: "token",
+      readingSource: inferredReading ? "inferred" : ""
+    });
+  }
+}
+
+export function collectTermCandidatesWithMorphology(text, map, tokenizer) {
+  if (!tokenizer || typeof tokenizer.tokenize !== "function") {
+    collectTermCandidates(text, map);
+    return;
+  }
+
+  for (const token of tokenizer.tokenize(text)) {
+    if (!token || token.pos !== "名詞" || token.pos_detail_1 === "非自立") {
       continue;
     }
 
-    current.occurrences += 1;
-    if (!current.reading && inferredReading) {
-      current.reading = inferredReading;
-      current.readingSource = current.readingSource || "inferred";
+    const surface = normalizeCandidateSurface(token.surface_form || "");
+    if (!shouldCollectCandidate(surface)) {
+      continue;
     }
+
+    const readingFromMorph = normalizeMorphReading(token.reading);
+    const inferredReading = readingFromMorph ? "" : inferReadingFromSurface(surface);
+    const reading = readingFromMorph || inferredReading;
+    upsertTermCandidate(map, {
+      surface,
+      reading,
+      source: "morph",
+      readingSource: readingFromMorph ? "morph" : inferredReading ? "inferred" : ""
+    });
   }
 }
 
@@ -252,6 +352,8 @@ export function toDictionaryCandidates(termCandidates) {
       note:
         info.readingSource === "ruby"
           ? "ruby_from_script"
+          : info.readingSource === "morph"
+            ? "reading_from_morphology"
           : info.reading
             ? "reading_inferred"
             : "auto_detected"
@@ -334,6 +436,7 @@ export async function runStage4({ scriptPath, outDir, projectId, runId, episodeI
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const lines = source.split(/\r?\n/);
+  const morphTokenizer = await getJapaneseMorphTokenizer();
 
   const termCandidates = new Map();
   const utterances = [];
@@ -367,7 +470,7 @@ export async function runStage4({ scriptPath, outDir, projectId, runId, episodeI
     const sentences = splitIntoSentences(withoutRuby);
 
     for (const sentence of sentences) {
-      collectTermCandidates(sentence, termCandidates);
+      collectTermCandidatesWithMorphology(sentence, termCandidates, morphTokenizer);
       const pauseLengthMs = /[。！？!?]$/.test(sentence) ? 300 : 150;
       utterances.push({
         utterance_id: toUtteranceId(utterances.length),
