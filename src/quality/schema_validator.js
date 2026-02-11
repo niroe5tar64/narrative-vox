@@ -7,11 +7,17 @@ const ajv = new Ajv2020({
   strict: false,
   validateFormats: false
 });
+const validatorBySchemaPath = new Map();
 
 export async function validateAgainstSchema(data, schemaPath) {
-  const raw = await readFile(schemaPath, "utf-8");
-  const schema = JSON.parse(raw);
-  const validate = ajv.compile(schema);
+  const resolvedSchemaPath = path.resolve(schemaPath);
+  let validate = validatorBySchemaPath.get(resolvedSchemaPath);
+  if (!validate) {
+    const raw = await readFile(resolvedSchemaPath, "utf-8");
+    const schema = JSON.parse(raw);
+    validate = ajv.compile(schema);
+    validatorBySchemaPath.set(resolvedSchemaPath, validate);
+  }
   const valid = validate(data);
   if (valid) {
     return;
@@ -24,5 +30,5 @@ export async function validateAgainstSchema(data, schemaPath) {
     })
     .join("; ");
 
-  throw new Error(`Schema validation failed (${path.basename(schemaPath)}): ${details}`);
+  throw new Error(`Schema validation failed (${path.basename(resolvedSchemaPath)}): ${details}`);
 }

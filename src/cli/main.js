@@ -34,9 +34,9 @@ function ensureOption(options, key, command) {
 
 function printUsage() {
   console.log(`Usage:
-  bun src/cli/main.js stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <id>]
+  bun src/cli/main.js stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]
   bun src/cli/main.js stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>]
-  bun src/cli/main.js pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [stage4/stage5 options]
+  bun src/cli/main.js pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--run-id <run-YYYYMMDD-HHMM>] [stage4/stage5 options]
 `);
 }
 

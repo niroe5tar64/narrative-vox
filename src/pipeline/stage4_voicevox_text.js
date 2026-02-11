@@ -8,6 +8,7 @@ const DURATION_SUFFIX_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
+const RUN_ID_RE = /^run-\d{8}-\d{4}$/;
 
 function toUtteranceId(index) {
   return `U${String(index + 1).padStart(3, "0")}`;
@@ -124,9 +125,53 @@ function inferEpisodeId(scriptPath, explicitEpisodeId) {
 }
 
 function inferProjectAndRun(outDir, explicitProjectId, explicitRunId) {
-  const runId = explicitRunId || path.basename(outDir);
+  const runId = resolveRunId(outDir, explicitRunId);
   const projectId = explicitProjectId || path.basename(path.dirname(outDir));
   return { projectId, runId };
+}
+
+function findRunIdInPath(outDir) {
+  const segments = path.resolve(outDir).split(path.sep).filter(Boolean);
+  for (let index = segments.length - 1; index >= 0; index -= 1) {
+    const candidate = segments[index];
+    if (RUN_ID_RE.test(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function toRunIdTimestampPart(value) {
+  return String(value).padStart(2, "0");
+}
+
+function makeRunIdNow(now = new Date()) {
+  const year = String(now.getFullYear());
+  const month = toRunIdTimestampPart(now.getMonth() + 1);
+  const day = toRunIdTimestampPart(now.getDate());
+  const hour = toRunIdTimestampPart(now.getHours());
+  const minute = toRunIdTimestampPart(now.getMinutes());
+  return `run-${year}${month}${day}-${hour}${minute}`;
+}
+
+function validateExplicitRunId(explicitRunId) {
+  if (RUN_ID_RE.test(explicitRunId)) {
+    return explicitRunId;
+  }
+  throw new Error(`Invalid --run-id "${explicitRunId}". Expected format: run-YYYYMMDD-HHMM`);
+}
+
+function resolveRunId(outDir, explicitRunId) {
+  if (explicitRunId) {
+    return validateExplicitRunId(String(explicitRunId));
+  }
+
+  const inferred = findRunIdInPath(outDir);
+  if (inferred) {
+    return inferred;
+  }
+
+  return makeRunIdNow();
 }
 
 export async function runStage4({ scriptPath, outDir, projectId, runId, episodeId }) {

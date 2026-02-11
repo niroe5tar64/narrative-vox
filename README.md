@@ -71,4 +71,14 @@
 bun run pipeline -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
   --out-dir projects/introducing-rescript/run-20260211-0000
+
+# run_id を明示する場合（形式: run-YYYYMMDD-HHMM）
+bun run stage4 -- \
+  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
+  --out-dir projects/introducing-rescript/run-20260211-0000 \
+  --run-id run-20260211-1234
 ```
+
+- `--run-id` は任意です。
+- 未指定時は `--out-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
+- `--out-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
