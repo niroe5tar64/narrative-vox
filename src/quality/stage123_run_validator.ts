@@ -1,7 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "../shared/json.ts";
-import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
+import { SchemaPaths } from "../shared/schema_paths.ts";
+import { validateRequiredScriptStructure } from "../shared/script_structure.ts";
 
 const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
@@ -22,29 +23,15 @@ function toRelativePath(filePath: string): string {
 }
 
 function ensureHasAllSections(scriptText: string, scriptPath: string): void {
-  const sectionIds = new Set<number>();
-  let hasTotalTime = false;
-
-  for (const line of scriptText.split(/\r?\n/)) {
-    const sectionMatch = line.match(SECTION_RE);
-    if (sectionMatch?.[1]) {
-      sectionIds.add(Number(sectionMatch[1]));
-    }
-    if (TOTAL_TIME_RE.test(line)) {
-      hasTotalTime = true;
-    }
-  }
-
-  const missingSections = Array.from({ length: 8 }, (_, index) => index + 1).filter(
-    (id) => !sectionIds.has(id)
-  );
+  const validation = validateRequiredScriptStructure(scriptText);
+  const missingSections = validation.missingSectionIds;
   if (missingSections.length > 0) {
     throw new Error(
       `${toRelativePath(scriptPath)} is missing required sections: ${missingSections.join(", ")}`
     );
   }
 
-  if (!hasTotalTime) {
+  if (!validation.hasTotalTimeLine) {
     throw new Error(`${toRelativePath(scriptPath)} is missing "合計想定時間:" line`);
   }
 }
@@ -73,10 +60,7 @@ export async function validateStage123Run({ runDir }: ValidateRunOptions): Promi
   const stage2Dir = path.join(resolvedRunDir, "stage2");
   const stage3Dir = path.join(resolvedRunDir, "stage3");
 
-  await loadJson<unknown>(
-    stage1Path,
-    path.resolve(process.cwd(), "schemas/stage1.book-blueprint.schema.json")
-  );
+  await loadJson<unknown>(stage1Path, SchemaPaths.stage1BookBlueprint);
 
   const stage2Files = (await readdir(stage2Dir)).filter((name) => STAGE2_FILE_RE.test(name)).sort();
   if (stage2Files.length === 0) {
@@ -85,10 +69,7 @@ export async function validateStage123Run({ runDir }: ValidateRunOptions): Promi
   const stage2EpisodeIds = collectEpisodeIds(stage2Files, STAGE2_FILE_RE);
   for (const fileName of stage2Files) {
     const filePath = path.join(stage2Dir, fileName);
-    await loadJson<unknown>(
-      filePath,
-      path.resolve(process.cwd(), "schemas/stage2.episode-variables.schema.json")
-    );
+    await loadJson<unknown>(filePath, SchemaPaths.stage2EpisodeVariables);
   }
 
   const stage3Files = (await readdir(stage3Dir)).filter((name) => STAGE3_FILE_RE.test(name)).sort();

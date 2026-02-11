@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
-import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
-import type { Stage4Data, Stage4Utterance } from "../shared/types.ts";
+import { parseSectionHeader, isTotalTimeLine } from "../shared/script_structure.ts";
+import { SchemaPaths } from "../shared/schema_paths.ts";
+import type { Stage4Data, Stage4QualityChecks, Stage4Utterance } from "../shared/types.ts";
 import {
   splitIntoSentences,
   decidePauseLengthMs,
@@ -75,52 +76,25 @@ export function replaceRubyWithReading(text: string): string {
   return text.replace(RUBY_RE, (_matched, _surface, reading: string) => reading);
 }
 
-export async function runStage4({
-  scriptPath,
-  runDir,
-  projectId,
-  runId,
-  episodeId
-}: RunStage4Options): Promise<RunStage4Result> {
-  const metadata = resolveRunMetadata({
-    scriptPath,
-    runDir,
-    projectId,
-    runId,
-    episodeId
-  });
-  const {
-    resolvedScriptPath,
-    runDir: resolvedRunDir,
-    projectId: finalProjectId,
-    runId: finalRunId,
-    episodeId: finalEpisodeId,
-    stage4Dir,
-    stage4DictDir,
-    stage4JsonPath,
-    stage4TxtPath,
-    dictCsvPath
-  } = metadata;
-
-  const source = await readFile(resolvedScriptPath, "utf-8");
+function buildUtterancesAndCandidates(
+  source: string,
+  morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>
+): { utterances: Stage4Utterance[]; dictionaryCandidates: ReturnType<typeof toDictionaryCandidates> } {
   const lines = source.split(/\r?\n/);
-  const morphTokenizer = await getJapaneseMorphTokenizer();
-
   const termCandidates: TermCandidateMap = new Map();
   const utterances: Stage4Utterance[] = [];
-
   let currentSectionId = 0;
   let currentSectionTitle = "";
 
   for (const rawLine of lines) {
-    const sectionMatch = rawLine.match(SECTION_RE);
-    if (sectionMatch) {
-      currentSectionId = Number(sectionMatch[1]);
-      currentSectionTitle = sectionMatch[2].trim();
+    const sectionHeader = parseSectionHeader(rawLine);
+    if (sectionHeader) {
+      currentSectionId = sectionHeader.id;
+      currentSectionTitle = sectionHeader.title;
       continue;
     }
 
-    if (TOTAL_TIME_RE.test(rawLine)) {
+    if (isTotalTimeLine(rawLine)) {
       continue;
     }
 
@@ -128,7 +102,6 @@ export async function runStage4({
     if (!normalized) {
       continue;
     }
-
     if (currentSectionId < 1 || currentSectionId > 8) {
       continue;
     }
@@ -136,28 +109,27 @@ export async function runStage4({
     collectRubyCandidates(normalized, termCandidates);
     const withoutRuby = replaceRubyWithReading(normalized);
     const sentences = splitIntoSentences(withoutRuby);
-
     for (const [sentenceIndex, sentence] of sentences.entries()) {
       collectTermCandidatesWithMorphology(sentence, termCandidates, morphTokenizer);
-      const pauseLengthMs = decidePauseLengthMs(sentence, {
-        isTerminalInSourceLine: sentenceIndex === sentences.length - 1
-      });
       utterances.push({
         utterance_id: toUtteranceId(utterances.length),
         section_id: currentSectionId,
         section_title: currentSectionTitle,
         text: sentence,
-        pause_length_ms: pauseLengthMs
+        pause_length_ms: decidePauseLengthMs(sentence, {
+          isTerminalInSourceLine: sentenceIndex === sentences.length - 1
+        })
       });
     }
   }
 
-  if (utterances.length === 0) {
-    throw new Error("No utterances generated from script. Check script format.");
-  }
+  return {
+    utterances,
+    dictionaryCandidates: toDictionaryCandidates(termCandidates)
+  };
+}
 
-  const dictionaryCandidates = toDictionaryCandidates(termCandidates);
-
+function buildQualityChecks(source: string, utterances: Stage4Utterance[]): Stage4QualityChecks {
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
   const speakability = evaluateSpeakability(utterances);
@@ -186,30 +158,86 @@ export async function runStage4({
     );
   }
 
-  const stage4Data: Stage4Data = {
+  return {
+    utterance_count: utterances.length,
+    max_chars_per_utterance: maxChars,
+    has_ruby_notation: hasRuby,
+    speakability,
+    warnings
+  };
+}
+
+function buildStage4Data(params: {
+  finalProjectId: string;
+  finalRunId: string;
+  finalEpisodeId: string;
+  resolvedScriptPath: string;
+  utterances: Stage4Utterance[];
+  dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
+  source: string;
+}): Stage4Data {
+  const qualityChecks = buildQualityChecks(params.source, params.utterances);
+  return {
     schema_version: "1.0",
     meta: {
-      project_id: finalProjectId,
-      run_id: finalRunId,
-      episode_id: finalEpisodeId,
-      source_script_path: path.relative(process.cwd(), resolvedScriptPath),
+      project_id: params.finalProjectId,
+      run_id: params.finalRunId,
+      episode_id: params.finalEpisodeId,
+      source_script_path: path.relative(process.cwd(), params.resolvedScriptPath),
       generated_at: new Date().toISOString()
     },
-    utterances,
-    dictionary_candidates: dictionaryCandidates,
-    quality_checks: {
-      utterance_count: utterances.length,
-      max_chars_per_utterance: maxChars,
-      has_ruby_notation: hasRuby,
-      speakability,
-      warnings
-    }
+    utterances: params.utterances,
+    dictionary_candidates: params.dictionaryCandidates,
+    quality_checks: qualityChecks
   };
+}
 
-  await validateAgainstSchema(
-    stage4Data,
-    path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
-  );
+export async function runStage4({
+  scriptPath,
+  runDir,
+  projectId,
+  runId,
+  episodeId
+}: RunStage4Options): Promise<RunStage4Result> {
+  const metadata = resolveRunMetadata({
+    scriptPath,
+    runDir,
+    projectId,
+    runId,
+    episodeId
+  });
+  const {
+    resolvedScriptPath,
+    runDir: resolvedRunDir,
+    projectId: finalProjectId,
+    runId: finalRunId,
+    episodeId: finalEpisodeId,
+    stage4Dir,
+    stage4DictDir,
+    stage4JsonPath,
+    stage4TxtPath,
+    dictCsvPath
+  } = metadata;
+
+  const source = await readFile(resolvedScriptPath, "utf-8");
+  const morphTokenizer = await getJapaneseMorphTokenizer();
+  const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(source, morphTokenizer);
+
+  if (utterances.length === 0) {
+    throw new Error("No utterances generated from script. Check script format.");
+  }
+
+  const stage4Data = buildStage4Data({
+    finalProjectId,
+    finalRunId,
+    finalEpisodeId,
+    resolvedScriptPath,
+    utterances,
+    dictionaryCandidates,
+    source
+  });
+
+  await validateAgainstSchema(stage4Data, SchemaPaths.stage4VoicevoxText);
 
   const paths: Stage4Paths = {
     stage4Dir,

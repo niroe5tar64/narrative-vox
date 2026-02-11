@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
+import { SchemaPaths } from "../shared/schema_paths.ts";
 import type { Stage4Data } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
 import {
@@ -145,7 +146,7 @@ export async function runStage5({
 
   const stage4Data = await loadJson<Stage4Data>(
     resolvedStage4Path,
-    path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
+    SchemaPaths.stage4VoicevoxText
   );
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
@@ -202,10 +203,7 @@ export async function runStage5({
     }
   };
 
-  await validateAgainstSchema(
-    vvproj,
-    path.resolve(process.cwd(), "schemas/stage5.voicevox-import.schema.json")
-  );
+  await validateAgainstSchema(vvproj, SchemaPaths.stage5VoicevoxImport);
 
   const stage5Dir = path.join(resolvedRunDir, "stage5");
   await mkdir(stage5Dir, { recursive: true });
