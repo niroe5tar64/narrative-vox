@@ -1,107 +1,10 @@
-# TypeScript Migration Guide (AI実行前提)
+# TypeScript Operation Guide (移行完了後)
 
-## 結論
+## 状態
 
-AI が修正を支援できても、移行手順書は必要です。  
-理由は、`失敗時の復旧速度` と `再現性` が上がるためです。
+このリポジトリの Stage4/Stage5 実装と関連テストは、2026-02-11 時点で `.ts` へ移行済みです。
 
-このリポジトリは規模が小さいため、段階移行よりも「事前に型チェックを通しつつ、短時間で一括 `.ts` 化」が安全です。
-
-## 対象範囲
-
-- `src/cli/main.js`
-- `src/pipeline/stage4_voicevox_text.js`
-- `src/pipeline/stage5_voicevox_import.js`
-- `src/quality/schema_validator.js`
-- `tests/pipeline/stage4_stage5.test.js`
-- `tests/pipeline/stage4_unit.test.js`
-
-## 完了条件
-
-- `bun run typecheck` が成功する
-- `bun test` が成功する
-- `bun run pipeline -- ...` で Stage4/5 の出力が従来同等になる
-
-## 移行方針
-
-1. 先に TypeScript の型チェック基盤を入れる（`allowJs` で共存）
-2. JS のまま型エラーを減らす（必要に応じて JSDoc 補助）
-3. 最後に対象ファイルを一括で `.ts` へ変更
-4. 実行コマンド・import 拡張子・テストをまとめて整合
-
-この順序にすると、AI が途中で誤修正しても戻しやすくなります。
-
-## 実施手順
-
-### 0. ベースライン確保
-
-```bash
-git status
-bun test
-```
-
-任意で、既知入力に対する出力を保存して比較基準を作る:
-
-```bash
-bun run pipeline -- \
-  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000
-```
-
-### 1. TypeScript 基盤を追加
-
-```bash
-bun add -d typescript @types/node @types/kuromoji
-```
-
-`tsconfig.json` を追加（未作成なら）:
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noEmit": true,
-    "allowJs": true,
-    "checkJs": true,
-    "types": ["node"],
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*", "tests/**/*"]
-}
-```
-
-`package.json` に型チェック script を追加:
-
-```json
-{
-  "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
-  }
-}
-```
-
-### 2. JS共存状態で型エラーを潰す
-
-```bash
-bun run typecheck
-```
-
-ここでの対応例:
-
-- `Map` や `options` の型が曖昧な箇所に JSDoc を追加
-- `JSON.parse` 結果を `unknown` 扱いにして必要最小限で絞る
-- `kuromoji` の動的 import 部分に narrow/cast を入れる
-
-この段階で `bun run typecheck` と `bun test` が通る状態にする。
-
-### 3. 一括 `.ts` 化
-
-対象ファイルを `.js` から `.ts` に変更し、ローカル import を `.ts` 参照へ更新する。
-
-変更対象:
+主要ファイル:
 
 - `src/cli/main.ts`
 - `src/pipeline/stage4_voicevox_text.ts`
@@ -110,48 +13,72 @@ bun run typecheck
 - `tests/pipeline/stage4_stage5.test.ts`
 - `tests/pipeline/stage4_unit.test.ts`
 
-`package.json` の実行 script も更新:
-
-```json
-{
-  "scripts": {
-    "stage4": "bun src/cli/main.ts stage4",
-    "stage5": "bun src/cli/main.ts stage5",
-    "pipeline": "bun src/cli/main.ts pipeline"
-  }
-}
-```
-
-### 4. 最終検証
+## 日常運用コマンド
 
 ```bash
+# 型チェック
 bun run typecheck
+
+# テスト
 bun test
+
+# パイプライン実行
 bun run pipeline -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
   --out-dir projects/introducing-rescript/run-20260211-0000
 ```
 
-確認ポイント:
+PR/コミット前の最低ライン:
 
-- 出力ファイル名・JSON 構造が変わっていない
-- `run_id` 推論と `--run-id` バリデーションが従来通り
-- 辞書候補（`dictionary_candidates`）の抽出数が極端に変化していない
+1. `bun run typecheck`
+2. `bun test`
 
-## 失敗時の戻し方
+## 実装ルール
 
-段階ごとにコミットしておくと、次の単位で戻せます。
+1. 新規コードは原則 `.ts` / `.test.ts` で作成する。
+2. ローカル import は `.ts` 拡張子付きで記述する（現行 `tsconfig.json` は `allowImportingTsExtensions: true`）。
+3. `JSON.parse` の戻り値は型注釈や `unknown` 経由で扱い、暗黙 `any` を避ける。
+4. `bun run typecheck` をパスしない変更はマージしない。
 
-1. `chore(ts): 型チェック基盤追加`
-2. `refactor(ts): JS共存で型エラー解消`
-3. `refactor(ts): 本体とテストを.tsへ移行`
+## `tsconfig.json` の方針
 
-一時的に詰まった場合は、`.ts` 化を戻すのではなく `allowJs: true` の状態に戻して再開する方が速いです。
+現行は以下を採用:
 
-## AIに依頼する時の最小プロンプト
+- `strict: true`
+- `noEmit: true`
+- `allowImportingTsExtensions: true`
+- `allowJs: true`
+- `checkJs: true`
+
+`allowJs` / `checkJs` は、将来 JS を一時混在させる余地を残す設定です。  
+JS の再混在を禁止したい場合は、次の変更を別PRで実施してください。
+
+```json
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "checkJs": false
+  }
+}
+```
+
+## トラブルシュート
+
+### `An import path can only end with a '.ts' extension ...`
+
+- `tsconfig.json` に `allowImportingTsExtensions: true` があるか確認する。
+
+### `Cannot find module ...`（型定義不足）
+
+- `bun add -d @types/node @types/kuromoji typescript` を確認する。
+
+### 型チェックは通るが実行が失敗する
+
+- `bun run pipeline -- ...` を再実行し、入力パスと `configs/voicevox` 配下のファイル存在を確認する。
+
+## AI への依頼テンプレート（運用版）
 
 ```text
-このリポジトリを docs/architecture/typescript-migration.md の手順に従ってTS化してください。
-フェーズごとに bun run typecheck / bun test を実行し、失敗時は原因と修正を反映して継続してください。
-最後に変更ファイル一覧と検証結果を報告してください。
+このリポジトリはTS移行済みです。TypeScript前提で修正してください。
+必ず bun run typecheck と bun test を実行し、必要なら bun run pipeline -- ... で実動作確認してください。
 ```
