@@ -392,13 +392,23 @@ export function priorityForCandidate(candidate: TermCandidateState): CandidatePr
   if (candidate.source === "ruby") {
     return "HIGH";
   }
-  if (candidate.occurrences >= 4) {
+
+  const hasReading = candidate.reading.length > 0;
+  const hasMorphReading = candidate.readingSource === "morph";
+  const hasInferredReading = candidate.readingSource === "inferred";
+
+  if (candidate.occurrences >= 3) {
     return "HIGH";
   }
-  if (candidate.reading && candidate.occurrences >= 2) {
+  if (candidate.occurrences >= 2 && (hasMorphReading || candidate.source === "morph")) {
     return "HIGH";
   }
-  if (candidate.reading || candidate.occurrences >= 2) {
+
+  if (candidate.source === "token" && hasInferredReading && candidate.occurrences === 1) {
+    return "LOW";
+  }
+
+  if (candidate.occurrences >= 2 || hasMorphReading || hasReading) {
     return "MEDIUM";
   }
   return "LOW";

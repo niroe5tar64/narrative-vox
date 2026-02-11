@@ -90,7 +90,7 @@ test("dictionary candidate extraction infers readings and excludes low-signal to
   assert.deepEqual(api, {
     surface: "API",
     reading_or_empty: "エーピーアイ",
-    priority: "HIGH",
+    priority: "MEDIUM",
     occurrences: 2,
     source: "token",
     note: "reading_inferred"
@@ -100,11 +100,57 @@ test("dictionary candidate extraction infers readings and excludes low-signal to
   assert.deepEqual(ffi, {
     surface: "FFI",
     reading_or_empty: "エフエフアイ",
-    priority: "MEDIUM",
+    priority: "LOW",
     occurrences: 1,
     source: "token",
     note: "reading_inferred"
   });
 
   assert.equal(candidates.some((item) => item.surface === "any"), false);
+});
+
+test("priority balances source reliability and occurrences", () => {
+  const termCandidates = new Map<
+    string,
+    {
+      reading: string;
+      occurrences: number;
+      source: "ruby" | "token" | "morph";
+      readingSource: "" | "ruby" | "morph" | "inferred";
+    }
+  >([
+    [
+      "FFI",
+      {
+        reading: "エフエフアイ",
+        occurrences: 1,
+        source: "token",
+        readingSource: "inferred"
+      }
+    ],
+    [
+      "検証",
+      {
+        reading: "ケンショウ",
+        occurrences: 1,
+        source: "morph",
+        readingSource: "morph"
+      }
+    ],
+    [
+      "ユースケース",
+      {
+        reading: "ユースケース",
+        occurrences: 3,
+        source: "token",
+        readingSource: "inferred"
+      }
+    ]
+  ]);
+
+  const candidates = toDictionaryCandidates(termCandidates);
+
+  assert.equal(candidates.find((item) => item.surface === "FFI")?.priority, "LOW");
+  assert.equal(candidates.find((item) => item.surface === "検証")?.priority, "MEDIUM");
+  assert.equal(candidates.find((item) => item.surface === "ユースケース")?.priority, "HIGH");
 });
