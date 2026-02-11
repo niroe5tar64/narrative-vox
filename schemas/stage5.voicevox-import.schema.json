@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/stage5.voicevox-import.schema.json",
+  "title": "Stage5 VoiceVox Import",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "appVersion",
+    "talk",
+    "song"
+  ],
+  "properties": {
+    "appVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "talk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "audioKeys",
+        "audioItems"
+      ],
+      "properties": {
+        "audioKeys": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "audioItems": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "voice"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "voice": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "engineId",
+                  "speakerId",
+                  "styleId"
+                ],
+                "properties": {
+                  "engineId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "speakerId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "styleId": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "song": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tpqn",
+        "tempos",
+        "timeSignatures",
+        "tracks",
+        "trackOrder"
+      ],
+      "properties": {
+        "tpqn": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tempos": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "position",
+              "bpm"
+            ],
+            "properties": {
+              "position": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bpm": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        "timeSignatures": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "measureNumber",
+              "beats",
+              "beatType"
+            ],
+            "properties": {
+              "measureNumber": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "beats": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "beatType": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "tracks": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "trackOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
