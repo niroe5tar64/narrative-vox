@@ -120,8 +120,8 @@ bun run build-all -- \
 
 | 警告 | 期待値 | 対策例 | 再現テスト |
 | --- | --- | --- | --- |
-| Speakability score is low | `quality_checks.speakability.score < 70` | 長文を複数の文章に分割し、`PauseConfig` の `bases` か `lengthBonus` を見直す | `E04 script` を使用するとスコア60が出ることを確認可 |
-| Terminal punctuation is infrequent | `terminal_punctuation_ratio < 0.65` | 句点/感嘆符などを意識的に末尾に追加し、`SpeakabilityWarningConfig.minTerminalPunctuationRatio` を上回るようにする | `E01/E02 script` で0.5/0.467 の比率が出て警告再現 |
-| Long utterance ratio is high | `long_utterance_ratio > 0.25` | `splitIntoSentences` の `maxCharsPerSentence` 制御点の範囲を狭め、`collectPreferredSplitPoints` を強調 | `E04 script` で 44% の長文率が出て警告再現 |
+| Speakability score is low | `quality_checks.speakability.score < 70` | 長文を複数の文章に分割し、`PauseConfig` の `bases` か `lengthBonus` を見直す | `E04 script` で score=60 を再現 |
+| Terminal punctuation is infrequent | `terminal_punctuation_ratio < 0.65` | 句点/感嘆符などを末尾に追加し、`SpeakabilityWarningConfig.minTerminalPunctuationRatio` を上回るようにする | `E01/E02 script` で 0.5/0.467 の比率を確認 |
+| Long utterance ratio is high | `long_utterance_ratio > 0.25` | `splitIntoSentences` の `maxCharsPerSentence` 制御点を引き締め、`collectPreferredSplitPoints` を再考する | `E04 script` で 44% の長文率を再現 |
 
-チェックリストには上記の期待動作に加えて CSV ヘッダーの確認手順や Phase5 での改善アクション案（分割位置の追加、`SpeakabilityWarningConfig` のしきい値明示）も含まれているので、QA は実行ごとに同ドキュメントを参照してください。
+チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。

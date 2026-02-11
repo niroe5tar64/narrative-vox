@@ -33,8 +33,16 @@
 | Terminal punctuation is infrequent | `bun run build-text -- --script /tmp/nv-stage4-script/E01_script.md --run-dir /tmp/nv-test-run/run-20260211-8888 --project-id introducing-rescript --run-id run-20260211-8888 --episode-id E01` | `terminal_punctuation_ratio=0.5` / Terminal punctuation 警告 |
 | Terminal punctuation is infrequent（比率低） | `bun run build-text -- --script /tmp/nv-stage4-script/E02_script.md --run-dir /tmp/nv-test-run/run-20260211-9999 --project-id introducing-rescript --run-id run-20260211-9999 --episode-id E02` | `terminal_punctuation_ratio=0.467` / `long_utterance_ratio=0.067` / Terminal punctuation 警告 |
 
+## 警告別ドキュメント更新のたたき台
+
+| 警告 | `SpeakabilityWarningConfig` 設定 | README/チェックリストで追記すべきポイント | Phase5 ガイド |
+| --- | --- | --- | --- |
+| Speakability score is low | `SpeakabilityWarningConfig.scoreThreshold` | スコア 70 以上の状態を「読みやすい」と定義し、分割/`PauseConfig` 係数調整の手順を記録 | `docs/phase5-speakability-guidance.md` の該当行 |
+| Terminal punctuation is infrequent | `SpeakabilityWarningConfig.minTerminalPunctuationRatio` | 終端句読点が 0.65 以上になるまでのアクション（句点追加例など）を案内 | 同上 |
+| Long utterance ratio is high | `SpeakabilityWarningConfig.maxLongUtteranceRatio` | 25% 以下に抑えるための `splitIntoSentences` 識別ルールやテストケースを追加 | 同上 |
+
 ## Phase5 に向けた追加作業
 
 - 上記チェックを README や `docs/quality` に記載することで他のチームメンバーでも再現できるようにする。  
-- 警告が出たときの対応方針（例：分割ポイントを増やす、話者の pause を強めるなど）を簡潔にまとめ、Stage4 スクリプト作成者や QA が参照できるように整備する。  
-- Phase5 で残る軽微指摘（README で言及した警告条件のアップデートや追加テストの記録）を洗い出すため、このチェックリストに従って各ケースを再確認する。  
+- 警告が出たときの対応方針（例：分割ポイントを増やす、話者の pause を強めるなど）を簡潔にまとめ、 `docs/phase5-speakability-guidance.md` へ各警告の期待値・再現・対策・ドキュメントリンクを集約。  
+- Phase5 で残る軽微指摘（README で言及した警告条件のアップデートや追加テストの記録）を洗い出すため、このチェックリストと `docs/phase5-speakability-guidance.md` に従って各ケースを再確認する。  
