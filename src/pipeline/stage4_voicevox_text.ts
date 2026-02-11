@@ -62,6 +62,13 @@ interface Stage4Utterance {
   pause_length_ms: number;
 }
 
+interface SpeakabilityMetrics {
+  score: number;
+  average_chars_per_utterance: number;
+  long_utterance_ratio: number;
+  terminal_punctuation_ratio: number;
+}
+
 interface Stage4Data {
   schema_version: "1.0";
   meta: {
@@ -77,6 +84,7 @@ interface Stage4Data {
     utterance_count: number;
     max_chars_per_utterance: number;
     has_ruby_notation: boolean;
+    speakability: SpeakabilityMetrics;
     warnings: string[];
   };
 }
@@ -256,6 +264,47 @@ export function decidePauseLengthMs(
   const rawPause = base + lengthBonus - conjunctionPenalty - continuationPenalty;
   const normalized = Math.round(rawPause / 10) * 10;
   return clampNumber(normalized, MIN_PAUSE_MS, MAX_PAUSE_MS);
+}
+
+function roundTo(value: number, digits: number): number {
+  const base = 10 ** digits;
+  return Math.round(value * base) / base;
+}
+
+export function evaluateSpeakability(
+  utterances: Array<Pick<Stage4Utterance, "text">>
+): SpeakabilityMetrics {
+  if (utterances.length === 0) {
+    return {
+      score: 0,
+      average_chars_per_utterance: 0,
+      long_utterance_ratio: 0,
+      terminal_punctuation_ratio: 0
+    };
+  }
+
+  const lengths = utterances.map((utterance) => utterance.text.trim().length);
+  const totalChars = lengths.reduce((sum, length) => sum + length, 0);
+  const averageChars = totalChars / utterances.length;
+  const longCount = lengths.filter((length) => length > DEFAULT_MAX_CHARS_PER_SENTENCE).length;
+  const terminalCount = utterances.filter((utterance) =>
+    /[。！？!?]$/.test(utterance.text.trim())
+  ).length;
+
+  const longRatio = longCount / utterances.length;
+  const terminalRatio = terminalCount / utterances.length;
+
+  const avgPenalty = clampNumber(Math.max(averageChars - 32, 0) * 1.2, 0, 35);
+  const longPenalty = longRatio * 45;
+  const punctuationPenalty = (1 - terminalRatio) * 20;
+  const score = Math.round(clampNumber(100 - avgPenalty - longPenalty - punctuationPenalty, 0, 100));
+
+  return {
+    score,
+    average_chars_per_utterance: roundTo(averageChars, 1),
+    long_utterance_ratio: roundTo(longRatio, 3),
+    terminal_punctuation_ratio: roundTo(terminalRatio, 3)
+  };
 }
 
 function normalizeScriptLine(rawLine: string): string {
@@ -722,10 +771,16 @@ export async function runStage4({
 
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
+  const speakability = evaluateSpeakability(utterances);
   const warnings: string[] = [];
 
   if (maxChars > 80) {
     warnings.push("Some utterances exceed 80 chars. Consider additional sentence split.");
+  }
+  if (speakability.score < 70) {
+    warnings.push(
+      `Speakability score is low (${speakability.score}/100). Consider shorter utterances and clearer sentence endings.`
+    );
   }
 
   const stage4Data: Stage4Data = {
@@ -743,6 +798,7 @@ export async function runStage4({
       utterance_count: utterances.length,
       max_chars_per_utterance: maxChars,
       has_ruby_notation: hasRuby,
+      speakability,
       warnings
     }
   };

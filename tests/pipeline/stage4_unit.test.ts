@@ -5,6 +5,7 @@ import {
   collectRubyCandidates,
   collectTermCandidates,
   decidePauseLengthMs,
+  evaluateSpeakability,
   inferReadingFromSurface,
   replaceRubyWithReading,
   splitIntoSentences,
@@ -45,6 +46,19 @@ test("decidePauseLengthMs increases pause for longer utterances", () => {
   const longSentence = `${"a".repeat(55)}。`;
   assert.equal(decidePauseLengthMs(shortSentence), 320);
   assert.equal(decidePauseLengthMs(longSentence), 380);
+});
+
+test("evaluateSpeakability gives higher score to easy-to-read utterances", () => {
+  const easy = evaluateSpeakability([
+    { text: "導入です。" },
+    { text: "次に進みます。" },
+    { text: "最後にまとめます。" }
+  ]);
+  const hard = evaluateSpeakability([{ text: "a".repeat(95) }]);
+
+  assert.equal(easy.score > hard.score, true);
+  assert.equal(easy.score >= 80, true);
+  assert.equal(hard.score <= 40, true);
 });
 
 test("replaceRubyWithReading replaces ruby notation with reading", () => {

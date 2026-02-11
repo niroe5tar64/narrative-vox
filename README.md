@@ -49,6 +49,7 @@
 - Stage 3: 固定フレーム台本生成
 - Stage 4: `script.md` から `voicevox_text.json / voicevox.txt / dict_candidates.csv` 生成
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
+  - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
 
 ## サンプルデータ

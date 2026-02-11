@@ -138,6 +138,7 @@
         "utterance_count",
         "max_chars_per_utterance",
         "has_ruby_notation",
+        "speakability",
         "warnings"
       ],
       "properties": {
@@ -151,6 +152,37 @@
         },
         "has_ruby_notation": {
           "type": "boolean"
+        },
+        "speakability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "score",
+            "average_chars_per_utterance",
+            "long_utterance_ratio",
+            "terminal_punctuation_ratio"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "average_chars_per_utterance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "long_utterance_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "terminal_punctuation_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
         },
         "warnings": {
           "type": "array",
