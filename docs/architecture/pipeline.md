@@ -41,3 +41,21 @@
 
 - Stage 1-3 prompt/サンプルは配置済み
 - Stage 4/5 は最小実装済み（CLI: `src/cli/main.ts`）
+
+## Stage4 Speakability warning guidance
+
+- `src/pipeline/stage4/text_processing.ts` と `src/pipeline/stage4_voicevox_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
+  - `scoreThreshold = 70`：平均文字数や長文率／終端句読点比率を組み合わせたスコアが 70 未満だと「Speakability score is low」警告が出ます。E04 スクリプト（`run-20260211-1111`）では `score=60` となり、この警告と併せて長文率警告も出ています。
+  - `minTerminalPunctuationRatio = 0.65`：終端句読点付き utterance が全体の 65% 未満だと「Terminal punctuation is infrequent」警告が入りました（E01 と E02 では 0.5 / 0.467、E04 では 0%）。  
+  - `maxLongUtteranceRatio = 0.25`：1 文あたり 49 文字超の utterance 数が 25% を超えると「Long utterance ratio is high」警告が出ます（E04 では 44.4%）。必要なら `splitIntoSentences` で 48 字以上の区切りを意図的に作るスクリプトを追加してこの警告を再現してください。
+
+上記警告はすべて同時に出ることがあり、ドキュメント化した新しいスクリプト（E01/E02/E04）を Stage4 実行の例として共有しています。Phase5 ではこのドキュメントを元に、警告が出る条件と対策を README や docs にまとめたチェックリストを作成する予定です。
+
+## Stage4 Speakability warning guidance
+
+- `src/pipeline/stage4/text_processing.ts` と `src/pipeline/stage4_voicevox_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
+  - `scoreThreshold = 70`：平均文字数や長文率／終端句読点比率を組み合わせたスコアが 70 未満だと「Speakability score is low」警告が出ます。E04 スクリプト（`run-20260211-1111`）では `score=60` となり、この警告と併せて長文率警告も出ています。
+  - `minTerminalPunctuationRatio = 0.65`：終端句読点付き utterance が全体の 65% 未満だと「Terminal punctuation is infrequent」警告が入りました（E01 と E02 では 0.5 / 0.467、E04 では 0%）。  
+  - `maxLongUtteranceRatio = 0.25`：1 文あたり 49 文字超の utterance 数が 25% を超えると「Long utterance ratio is high」警告が出ます（E04 では 44.4%）。必要なら `splitIntoSentences` で 48 字以上の区切りを意図的に作るスクリプトを追加してこの警告を再現してください。
+
+上記警告はすべて同時に出ることがあり、ドキュメント化した新しいスクリプト（E01/E02/E04）を Stage4 実行の例として共有しています。Phase5 ではこのドキュメントを元に、警告が出る条件と対策を README や docs にまとめたチェックリストを作成する予定です。
