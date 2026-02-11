@@ -45,7 +45,6 @@ fi
 
 first_line="$(sed -n '1p' "$message_file")"
 type_pattern='^(feat|fix|refactor|docs|style|test|chore|perf):[[:space:]].+'
-japanese_pattern='[\p{Hiragana}\p{Katakana}\p{Han}ー々]'
 
 if ! printf '%s\n' "$first_line" | grep -Eq "$type_pattern"; then
   echo "Invalid summary format." >&2
@@ -54,7 +53,14 @@ if ! printf '%s\n' "$first_line" | grep -Eq "$type_pattern"; then
   exit 1
 fi
 
-if ! printf '%s\n' "$first_line" | grep -Pq "$japanese_pattern"; then
+if ! python3 - "$first_line" <<'PY'
+import re, sys
+line = sys.argv[1]
+pattern = re.compile(
+    r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3000-\u303F\u30FC\u3005]')
+sys.exit(0 if pattern.search(line) else 1)
+PY
+then
   echo "Summary must include Japanese characters." >&2
   exit 1
 fi

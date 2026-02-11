@@ -62,8 +62,9 @@
   - `projects/introducing-rescript/run-20260211-0000/stage3/`
   - `projects/introducing-rescript/run-20260211-0000/stage4/`
   - `projects/introducing-rescript/run-20260211-0000/stage4_dict/`
-  - `projects/introducing-rescript/run-20260211-0000/stage5/`
-  - `projects/introducing-rescript/run-20260211-0000/reports/`
+- `projects/introducing-rescript/run-20260211-0000/stage5/`
+- `projects/introducing-rescript/run-20260211-0000/reports/`
+- Stage4 の Speakability 警告再現手順は `docs/architecture/stage4-speakability-checklist.md` を参照してください。
 
 詳細フローは `docs/architecture/pipeline.md` を参照。
 TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migration.md` を参照。
