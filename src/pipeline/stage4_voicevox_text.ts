@@ -1,8 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SECTION_RE, TOTAL_TIME_RE } from "../shared/script_patterns.ts";
-import type { DictionaryCandidate, Stage4Data, Stage4Utterance } from "../shared/types.ts";
+import type { Stage4Data, Stage4Utterance } from "../shared/types.ts";
 import {
   splitIntoSentences,
   decidePauseLengthMs,
@@ -19,6 +19,7 @@ import {
   toDictionaryCandidates,
   TermCandidateMap
 } from "./stage4/dictionary.ts";
+import { writeStage4Artifacts, Stage4Paths } from "./stage4/io.ts";
 import { resolveRunMetadata } from "./stage4/run_metadata.ts";
 
 export {
@@ -61,29 +62,6 @@ function toUtteranceId(index: number): string {
 
 export function replaceRubyWithReading(text: string): string {
   return text.replace(RUBY_RE, (_matched, _surface, reading: string) => reading);
-}
-
-function makeCsv(candidates: DictionaryCandidate[]): string {
-  const header = ["surface", "reading", "priority", "occurrences", "source", "note"];
-  const rows = candidates.map((item) => [
-    item.surface,
-    item.reading_or_empty,
-    item.priority,
-    String(item.occurrences),
-    item.source,
-    item.note || ""
-  ]);
-
-  return [header, ...rows]
-    .map((columns) =>
-      columns
-        .map((value) => {
-          const escaped = String(value).replaceAll('"', '""');
-          return `"${escaped}"`;
-        })
-        .join(",")
-    )
-    .join("\n");
 }
 
 export async function runStage4({
@@ -208,12 +186,14 @@ export async function runStage4({
     path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
   );
 
-  await mkdir(stage4Dir, { recursive: true });
-  await mkdir(stage4DictDir, { recursive: true });
-
-  await writeFile(stage4JsonPath, `${JSON.stringify(stage4Data, null, 2)}\n`, "utf-8");
-  await writeFile(stage4TxtPath, `${utterances.map((entry) => entry.text).join("\n")}\n`, "utf-8");
-  await writeFile(dictCsvPath, `${makeCsv(dictionaryCandidates)}\n`, "utf-8");
+  const paths: Stage4Paths = {
+    stage4Dir,
+    stage4DictDir,
+    stage4JsonPath,
+    stage4TxtPath,
+    dictCsvPath
+  };
+  await writeStage4Artifacts(paths, stage4Data);
 
   return {
     stage4JsonPath,

@@ -53,6 +53,7 @@
 ### 2026-02-12 (Phase 3 run metadata)
 - 完了:
   - Stage4の Run ID/プロジェクト/エピソード推論や stage4/stage4_dict ディレクトリ・出力パス生成を `src/pipeline/stage4/run_metadata.ts` にまとめて `runStage4` はメタデータを消費するだけにした。
+  - JSON/TXT/CSV のファイル出力を `src/pipeline/stage4/io.ts` に切り出し、Stage4 のオーケストレーションはパス＋データを渡すだけになった。
   - `bun run typecheck` と `bun test` を再実行して変更後もすべてのテストが通ることを確認。
 - 未完了:
   - 後続の Stage4責務（辞書候補出力/Run ディレクトリ構築以外のパイプライン固有処理）をさらに分割。
