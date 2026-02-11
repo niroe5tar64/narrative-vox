@@ -82,7 +82,7 @@ type QueryPrefillMode = "none" | "minimal";
 
 interface RunStage5Options {
   stage4JsonPath: string;
-  runDir: string;
+  runDir?: string;
   profilePath?: string;
   engineId?: string;
   speakerId?: string;
@@ -119,6 +119,14 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
   } catch {
     return path.resolve("configs/voicevox/default_profile.example.json");
   }
+}
+
+function inferRunDirFromStage4JsonPath(stage4JsonPath: string): string | undefined {
+  const stage4Dir = path.dirname(path.resolve(stage4JsonPath));
+  if (path.basename(stage4Dir) !== "stage4") {
+    return undefined;
+  }
+  return path.dirname(stage4Dir);
 }
 
 function toNumber(value: number | string | undefined, fallback: number): number {
@@ -176,7 +184,15 @@ export async function runStage5({
   prefillQuery
 }: RunStage5Options): Promise<RunStage5Result> {
   const resolvedStage4Path = path.resolve(stage4JsonPath);
-  const resolvedRunDir = path.resolve(runDir);
+  const inferredRunDir = runDir
+    ? path.resolve(runDir)
+    : inferRunDirFromStage4JsonPath(resolvedStage4Path);
+  if (!inferredRunDir) {
+    throw new Error(
+      "Could not infer run directory from --stage4-json path. Pass --run-dir explicitly."
+    );
+  }
+  const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
 
   const stage4Data = await loadJson<Stage4Data>(resolvedStage4Path);

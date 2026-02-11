@@ -26,6 +26,7 @@
 ```bash
 bun run build-project -- \
   --stage4-json projects/<id>/run-YYYYMMDD-HHMM/stage4/E01_voicevox_text.json \
-  --run-dir projects/<id>/run-YYYYMMDD-HHMM \
   --prefill-query minimal
 ```
+
+- `--run-dir` は任意（`--stage4-json` が `.../run-.../stage4/...` 配下なら自動推論）。

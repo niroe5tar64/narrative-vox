@@ -118,10 +118,11 @@ export async function findLatestRunDir(
 
 function printUsage() {
 	console.log(`Usage:
-  bun src/cli/new_run.ts [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--no-prompt]
+  bun src/cli/new_run.ts [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]
 
 Behavior:
   - Missing arguments are asked interactively when TTY is available.
+  - Default values can be overridden by --default-* options.
   - Copies stage1/stage2/stage3 from source run into target run directory.
 `);
 }
@@ -209,6 +210,13 @@ async function main() {
 	let sourceRunDir = optionAsString(options, "source-run-dir");
 	let projectId = optionAsString(options, "project-id");
 	let runId = optionAsString(options, "run-id");
+	const defaultProjectId = optionAsString(options, "default-project-id");
+	const defaultSourceRunDir = optionAsString(options, "default-source-run-dir");
+	const defaultRunId = optionAsString(options, "default-run-id");
+
+	if (runDir && runId) {
+		throw new Error("Specify either --run-dir or --run-id, not both.");
+	}
 
 	if (!projectId && sourceRunDir) {
 		projectId = deriveProjectIdFromRunDir(sourceRunDir);
@@ -221,7 +229,7 @@ async function main() {
 
 	try {
 		if (!projectId) {
-			const inferred = await inferDefaultProjectId(projectsDir);
+			const inferred = defaultProjectId || (await inferDefaultProjectId(projectsDir));
 			if (interactive && rl) {
 				projectId = await askWithDefault(rl, "project-id", inferred);
 			} else {
@@ -238,18 +246,21 @@ async function main() {
 			const latestRunDir = await findLatestRunDir(
 				path.join(projectsDir, projectId),
 			);
+			const inferredSourceRunDir = defaultSourceRunDir
+				? path.resolve(defaultSourceRunDir)
+				: latestRunDir || undefined;
 			if (interactive && rl) {
-				const defaultSourceRun = latestRunDir
-					? path.relative(process.cwd(), latestRunDir)
+				const promptDefaultSourceRun = inferredSourceRunDir
+					? path.relative(process.cwd(), inferredSourceRunDir)
 					: undefined;
 				const answer = await askWithDefault(
 					rl,
 					"source-run-dir",
-					defaultSourceRun,
+					promptDefaultSourceRun,
 				);
 				sourceRunDir = answer ? path.resolve(answer) : undefined;
 			} else {
-				sourceRunDir = latestRunDir || undefined;
+				sourceRunDir = inferredSourceRunDir;
 			}
 		} else {
 			sourceRunDir = path.resolve(sourceRunDir);
@@ -260,11 +271,11 @@ async function main() {
 
 		if (!runDir) {
 			if (!runId) {
-				const defaultRunId = makeRunIdNow();
+				const selectedDefaultRunId = defaultRunId || makeRunIdNow();
 				if (interactive && rl) {
-					runId = await askWithDefault(rl, "run-id", defaultRunId);
+					runId = await askWithDefault(rl, "run-id", selectedDefaultRunId);
 				} else {
-					runId = defaultRunId;
+					runId = selectedDefaultRunId;
 				}
 			}
 			const finalRunId = validateRunId(runId);

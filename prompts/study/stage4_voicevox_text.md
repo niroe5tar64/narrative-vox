@@ -26,6 +26,7 @@
 
 ```bash
 bun run build-text -- \
-  --script projects/<id>/run-YYYYMMDD-HHMM/stage3/E01_script.md \
-  --run-dir projects/<id>/run-YYYYMMDD-HHMM
+  --script projects/<id>/run-YYYYMMDD-HHMM/stage3/E01_script.md
 ```
+
+- `--run-dir` は任意（`--script` が `.../run-.../stage3/...` 配下なら自動推論）。

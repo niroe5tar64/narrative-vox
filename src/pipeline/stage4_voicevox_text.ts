@@ -91,7 +91,7 @@ interface Stage4Data {
 
 interface RunStage4Options {
   scriptPath: string;
-  runDir: string;
+  runDir?: string;
   projectId?: string;
   runId?: string;
   episodeId?: string;
@@ -657,6 +657,14 @@ function inferProjectAndRun(
   return { projectId, runId };
 }
 
+function inferRunDirFromScriptPath(scriptPath: string): string | undefined {
+  const stageDir = path.dirname(path.resolve(scriptPath));
+  if (path.basename(stageDir) !== "stage3") {
+    return undefined;
+  }
+  return path.dirname(stageDir);
+}
+
 function findRunIdInPath(runDir: string): string | undefined {
   const segments = path.resolve(runDir).split(path.sep).filter(Boolean);
   for (let index = segments.length - 1; index >= 0; index -= 1) {
@@ -709,7 +717,13 @@ export async function runStage4({
   episodeId
 }: RunStage4Options): Promise<RunStage4Result> {
   const resolvedScriptPath = path.resolve(scriptPath);
-  const resolvedRunDir = path.resolve(runDir);
+  const inferredRunDir = runDir ? path.resolve(runDir) : inferRunDirFromScriptPath(resolvedScriptPath);
+  if (!inferredRunDir) {
+    throw new Error(
+      "Could not infer run directory from --script path. Pass --run-dir explicitly."
+    );
+  }
+  const resolvedRunDir = inferredRunDir;
   const finalEpisodeId = inferEpisodeId(resolvedScriptPath, episodeId);
   const ids = inferProjectAndRun(resolvedRunDir, projectId, runId);
 

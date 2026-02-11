@@ -186,6 +186,53 @@ test("stage4 auto-generates run_id when not found in --run-dir", async () => {
   assert.match(stage4Json.meta.run_id, /^run-\d{8}-\d{4}$/);
 });
 
+test("stage4 infers run-dir from --script path when run-dir is omitted", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-5555");
+  const stage3Dir = path.join(runDir, "stage3");
+  await mkdir(stage3Dir, { recursive: true });
+
+  const scriptPath = path.join(stage3Dir, "E03_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "これは推論テストです。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const stage4 = await runStage4({
+    scriptPath
+  });
+
+  assert.equal(path.dirname(stage4.stage4JsonPath), path.join(runDir, "stage4"));
+  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  assert.equal(stage4Json.meta.run_id, "run-20260211-5555");
+});
+
+test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-6666");
+  await mkdir(runDir, { recursive: true });
+
+  const stage4 = await runStage4({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-6666"
+  });
+
+  const stage5 = await runStage5({
+    stage4JsonPath: stage4.stage4JsonPath,
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json")
+  });
+
+  assert.equal(path.dirname(stage5.importJsonPath), path.join(runDir, "stage5"));
+});
+
 test("stage4 rejects invalid --run-id format with expected pattern in message", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-0000");
