@@ -25,7 +25,7 @@
 ## 実行
 
 ```bash
-bun run stage4 -- \
+bun run build-text -- \
   --script projects/<id>/run-YYYYMMDD-HHMM/stage3/E01_script.md \
-  --out-dir projects/<id>/run-YYYYMMDD-HHMM
+  --run-dir projects/<id>/run-YYYYMMDD-HHMM
 ```

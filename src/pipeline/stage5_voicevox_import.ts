@@ -82,7 +82,7 @@ type QueryPrefillMode = "none" | "minimal";
 
 interface RunStage5Options {
   stage4JsonPath: string;
-  outDir: string;
+  runDir: string;
   profilePath?: string;
   engineId?: string;
   speakerId?: string;
@@ -146,7 +146,7 @@ function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
   if (mode === "minimal") {
     return "minimal";
   }
-  throw new Error(`Invalid prefillQuery: ${mode}. Expected one of: none, minimal`);
+  throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal`);
 }
 
 function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
@@ -167,7 +167,7 @@ function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
 
 export async function runStage5({
   stage4JsonPath,
-  outDir,
+  runDir,
   profilePath,
   engineId,
   speakerId,
@@ -176,7 +176,7 @@ export async function runStage5({
   prefillQuery
 }: RunStage5Options): Promise<RunStage5Result> {
   const resolvedStage4Path = path.resolve(stage4JsonPath);
-  const resolvedOutDir = path.resolve(outDir);
+  const resolvedRunDir = path.resolve(runDir);
   const resolvedProfilePath = await resolveProfilePath(profilePath);
 
   const stage4Data = await loadJson<Stage4Data>(resolvedStage4Path);
@@ -239,7 +239,7 @@ export async function runStage5({
     path.resolve(process.cwd(), "schemas/stage5.voicevox-import.schema.json")
   );
 
-  const stage5Dir = path.join(resolvedOutDir, "stage5");
+  const stage5Dir = path.join(resolvedRunDir, "stage5");
   await mkdir(stage5Dir, { recursive: true });
 
   const episodeId = stage4Data.meta.episode_id;

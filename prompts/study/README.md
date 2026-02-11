@@ -65,7 +65,7 @@ Stage 2で回を切り替える場合は以下を追加します。
 ## CLI 実行例（Stage4/5）
 
 ```bash
-bun run pipeline -- \
+bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000
+  --run-dir projects/introducing-rescript/run-20260211-0000
 ```

@@ -91,7 +91,7 @@ interface Stage4Data {
 
 interface RunStage4Options {
   scriptPath: string;
-  outDir: string;
+  runDir: string;
   projectId?: string;
   runId?: string;
   episodeId?: string;
@@ -648,17 +648,17 @@ function inferEpisodeId(scriptPath: string, explicitEpisodeId?: string): string 
 }
 
 function inferProjectAndRun(
-  outDir: string,
+  runDir: string,
   explicitProjectId?: string,
   explicitRunId?: string
 ): { projectId: string; runId: string } {
-  const runId = resolveRunId(outDir, explicitRunId);
-  const projectId = explicitProjectId || path.basename(path.dirname(outDir));
+  const runId = resolveRunId(runDir, explicitRunId);
+  const projectId = explicitProjectId || path.basename(path.dirname(runDir));
   return { projectId, runId };
 }
 
-function findRunIdInPath(outDir: string): string | undefined {
-  const segments = path.resolve(outDir).split(path.sep).filter(Boolean);
+function findRunIdInPath(runDir: string): string | undefined {
+  const segments = path.resolve(runDir).split(path.sep).filter(Boolean);
   for (let index = segments.length - 1; index >= 0; index -= 1) {
     const candidate = segments[index];
     if (RUN_ID_RE.test(candidate)) {
@@ -688,12 +688,12 @@ function validateExplicitRunId(explicitRunId: string): string {
   throw new Error(`Invalid --run-id "${explicitRunId}". Expected format: run-YYYYMMDD-HHMM`);
 }
 
-function resolveRunId(outDir: string, explicitRunId?: string): string {
+function resolveRunId(runDir: string, explicitRunId?: string): string {
   if (explicitRunId) {
     return validateExplicitRunId(String(explicitRunId));
   }
 
-  const inferred = findRunIdInPath(outDir);
+  const inferred = findRunIdInPath(runDir);
   if (inferred) {
     return inferred;
   }
@@ -703,15 +703,15 @@ function resolveRunId(outDir: string, explicitRunId?: string): string {
 
 export async function runStage4({
   scriptPath,
-  outDir,
+  runDir,
   projectId,
   runId,
   episodeId
 }: RunStage4Options): Promise<RunStage4Result> {
   const resolvedScriptPath = path.resolve(scriptPath);
-  const resolvedOutDir = path.resolve(outDir);
+  const resolvedRunDir = path.resolve(runDir);
   const finalEpisodeId = inferEpisodeId(resolvedScriptPath, episodeId);
-  const ids = inferProjectAndRun(resolvedOutDir, projectId, runId);
+  const ids = inferProjectAndRun(resolvedRunDir, projectId, runId);
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const lines = source.split(/\r?\n/);
@@ -808,8 +808,8 @@ export async function runStage4({
     path.resolve(process.cwd(), "schemas/stage4.voicevox-text.schema.json")
   );
 
-  const stage4Dir = path.join(resolvedOutDir, "stage4");
-  const stage4DictDir = path.join(resolvedOutDir, "stage4_dict");
+  const stage4Dir = path.join(resolvedRunDir, "stage4");
+  const stage4DictDir = path.join(resolvedRunDir, "stage4_dict");
   await mkdir(stage4Dir, { recursive: true });
   await mkdir(stage4DictDir, { recursive: true });
 

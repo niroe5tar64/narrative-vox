@@ -39,7 +39,7 @@
 ├── docs/
 │   ├── architecture/
 │   └── decisions/
-└── tmp/
+└── .tmp/
 ```
 
 ## 現在の実装スコープ
@@ -71,38 +71,38 @@ TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migratio
 ## 実行コマンド（最小）
 
 ```bash
-# 既存 run を複製して新しい run を作る（引数不足時は対話入力）
-bun run new-run -- \
+# 1) 既存 run を複製して新しい run を作る（引数不足時は対話入力）
+bun run prepare-run -- \
   --project-id introducing-rescript \
-  --base-run projects/introducing-rescript/run-20260211-0000
+  --source-run-dir projects/introducing-rescript/run-20260211-0000
 
-# Stage1/2/3 生成物を検証する場合（Stage1/2はJSON Schema、Stage3は台本形式）
-bun src/cli/main.ts validate-run \
+# 2) Stage1/2/3 生成物を検証する（Stage1/2はJSON Schema、Stage3は台本形式）
+bun run check-run -- \
   --run-dir projects/introducing-rescript/run-20260211-0000
 
-# run_id を明示する場合（形式: run-YYYYMMDD-HHMM）
-bun run stage4 -- \
+# 3) script.md から VOICEVOX text を生成（run_id を明示する場合）
+bun run build-text -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000 \
+  --run-dir projects/introducing-rescript/run-20260211-0000 \
   --run-id run-20260211-1234
 
-# Stage5 で query を最小値で事前埋めする場合
-bun run stage5 -- \
+# 4) Stage4 JSON から VOICEVOX project を生成
+bun run build-project -- \
   --stage4-json projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json \
-  --out-dir projects/introducing-rescript/run-20260211-0000 \
+  --run-dir projects/introducing-rescript/run-20260211-0000 \
   --prefill-query minimal
 
 # Stage4 + Stage5 を連続実行
-bun run pipeline -- \
+bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000
+  --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 
 - `--run-id` は任意です。
-- 未指定時は `--out-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
-- `--out-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
+- 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
+- `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `--prefill-query` は `none`（既定）または `minimal` を指定できます。
-- `bun run new-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
+- `bun run prepare-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
 
 ## Stage4 辞書CSVの確認観点
 

@@ -24,8 +24,8 @@
 ## 実行
 
 ```bash
-bun run stage5 -- \
+bun run build-project -- \
   --stage4-json projects/<id>/run-YYYYMMDD-HHMM/stage4/E01_voicevox_text.json \
-  --out-dir projects/<id>/run-YYYYMMDD-HHMM \
+  --run-dir projects/<id>/run-YYYYMMDD-HHMM \
   --prefill-query minimal
 ```

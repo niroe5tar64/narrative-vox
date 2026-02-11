@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "stage4": "bun src/cli/main.ts stage4",
-    "stage5": "bun src/cli/main.ts stage5",
-    "pipeline": "bun src/cli/main.ts pipeline",
-    "validate-run": "bun src/cli/main.ts validate-run",
-    "new-run": "bun src/cli/new_run.ts",
+    "build-text": "bun src/cli/main.ts build-text",
+    "build-project": "bun src/cli/main.ts build-project",
+    "build-all": "bun src/cli/main.ts build-all",
+    "check-run": "bun src/cli/main.ts check-run",
+    "prepare-run": "bun src/cli/new_run.ts",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },

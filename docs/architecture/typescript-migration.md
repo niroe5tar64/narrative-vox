@@ -23,9 +23,9 @@ bun run typecheck
 bun test
 
 # パイプライン実行
-bun run pipeline -- \
+bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000
+  --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 
 PR/コミット前の最低ライン:
@@ -85,11 +85,11 @@ JS の再混在を禁止したい場合は、次の変更を別PRで実施して
 
 ### 型チェックは通るが実行が失敗する
 
-- `bun run pipeline -- ...` を再実行し、入力パスと `configs/voicevox` 配下のファイル存在を確認する。
+- `bun run build-all -- ...` を再実行し、入力パスと `configs/voicevox` 配下のファイル存在を確認する。
 
 ## AI への依頼テンプレート（運用版）
 
 ```text
 このリポジトリはTS移行済みです。TypeScript前提で修正してください。
-必ず bun run typecheck と bun test を実行し、必要なら bun run pipeline -- ... で実動作確認してください。
+必ず bun run typecheck と bun test を実行し、必要なら bun run build-all -- ... で実動作確認してください。
 ```

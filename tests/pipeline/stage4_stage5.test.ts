@@ -61,12 +61,12 @@ const sampleScriptPath = path.resolve(
 
 test("stage4 -> stage5 pipeline works with sample script", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-test");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
 
   const stage4 = await runStage4({
     scriptPath: sampleScriptPath,
-    outDir,
+    runDir,
     episodeId: "E01",
     projectId: "introducing-rescript",
     runId: "run-20260211-1234"
@@ -80,7 +80,7 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
 
   const stage5 = await runStage5({
     stage4JsonPath: stage4.stage4JsonPath,
-    outDir,
+    runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
 
@@ -91,12 +91,12 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
 
 test("stage5 prefill-query=minimal adds query defaults to every audio item", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-test");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
 
   const stage4 = await runStage4({
     scriptPath: sampleScriptPath,
-    outDir,
+    runDir,
     episodeId: "E01",
     projectId: "introducing-rescript",
     runId: "run-20260211-1234"
@@ -104,7 +104,7 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
 
   const stage5 = await runStage5({
     stage4JsonPath: stage4.stage4JsonPath,
-    outDir,
+    runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
     prefillQuery: "minimal"
   });
@@ -131,12 +131,12 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
 
 test("stage5 rejects unsupported prefill-query mode", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-test");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
 
   const stage4 = await runStage4({
     scriptPath: sampleScriptPath,
-    outDir,
+    runDir,
     episodeId: "E01",
     projectId: "introducing-rescript",
     runId: "run-20260211-1234"
@@ -146,7 +146,7 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
     () =>
       runStage5({
         stage4JsonPath: stage4.stage4JsonPath,
-        outDir,
+        runDir,
         profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
         prefillQuery: "invalid" as "minimal"
       }),
@@ -154,14 +154,14 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
   );
 });
 
-test("stage4 uses run_id from out-dir path when --run-id is omitted", async () => {
+test("stage4 uses run_id from run-dir path when --run-id is omitted", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-20260211-2222", "artifacts");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-2222", "artifacts");
+  await mkdir(runDir, { recursive: true });
 
   const stage4 = await runStage4({
     scriptPath: sampleScriptPath,
-    outDir,
+    runDir,
     episodeId: "E01",
     projectId: "introducing-rescript"
   });
@@ -170,14 +170,14 @@ test("stage4 uses run_id from out-dir path when --run-id is omitted", async () =
   assert.equal(stage4Json.meta.run_id, "run-20260211-2222");
 });
 
-test("stage4 auto-generates run_id when not found in --out-dir", async () => {
+test("stage4 auto-generates run_id when not found in --run-dir", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "output");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "output");
+  await mkdir(runDir, { recursive: true });
 
   const stage4 = await runStage4({
     scriptPath: sampleScriptPath,
-    outDir,
+    runDir,
     episodeId: "E01",
     projectId: "introducing-rescript"
   });
@@ -188,14 +188,14 @@ test("stage4 auto-generates run_id when not found in --out-dir", async () => {
 
 test("stage4 rejects invalid --run-id format with expected pattern in message", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-20260211-0000");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-0000");
+  await mkdir(runDir, { recursive: true });
 
   await assert.rejects(
     () =>
       runStage4({
         scriptPath: sampleScriptPath,
-        outDir,
+        runDir,
         episodeId: "E01",
         projectId: "introducing-rescript",
         runId: "run-2026-02-11-1234"
@@ -206,8 +206,8 @@ test("stage4 rejects invalid --run-id format with expected pattern in message", 
 
 test("stage4 extracts dictionary candidates with readings from morphological analysis", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-20260211-3333");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-3333");
+  await mkdir(runDir, { recursive: true });
 
   const scriptPath = path.join(tempRoot, "E99_script.md");
   await writeFile(
@@ -223,7 +223,7 @@ test("stage4 extracts dictionary candidates with readings from morphological ana
 
   const stage4 = await runStage4({
     scriptPath,
-    outDir,
+    runDir,
     episodeId: "E99",
     projectId: "introducing-rescript",
     runId: "run-20260211-3333"
@@ -243,8 +243,8 @@ test("stage4 extracts dictionary candidates with readings from morphological ana
 
 test("stage4 adds warning when speakability score is low", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const outDir = path.join(tempRoot, "introducing-rescript", "run-20260211-4444");
-  await mkdir(outDir, { recursive: true });
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-4444");
+  await mkdir(runDir, { recursive: true });
 
   const scriptPath = path.join(tempRoot, "E98_script.md");
   const lowSpeakabilityLine = `${"a".repeat(53)}、${"a".repeat(60)}`;
@@ -260,7 +260,7 @@ test("stage4 adds warning when speakability score is low", async () => {
 
   const stage4 = await runStage4({
     scriptPath,
-    outDir,
+    runDir,
     episodeId: "E98",
     projectId: "introducing-rescript",
     runId: "run-20260211-4444"

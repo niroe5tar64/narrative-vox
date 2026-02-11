@@ -37,28 +37,28 @@ test("findLatestRunDir chooses newest run id", async () => {
 
 test("cloneRunDirectories copies stage1-3 into target run", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-new-run-"));
-  const baseRunDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0000");
-  const targetRunDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0100");
+  const sourceRunDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0000");
+  const runDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0100");
 
-  await mkdir(path.join(baseRunDir, "stage1"), { recursive: true });
-  await mkdir(path.join(baseRunDir, "stage2"), { recursive: true });
-  await mkdir(path.join(baseRunDir, "stage3"), { recursive: true });
+  await mkdir(path.join(sourceRunDir, "stage1"), { recursive: true });
+  await mkdir(path.join(sourceRunDir, "stage2"), { recursive: true });
+  await mkdir(path.join(sourceRunDir, "stage3"), { recursive: true });
 
-  await writeFile(path.join(baseRunDir, "stage1", "book_blueprint.json"), '{"ok":true}\n', "utf-8");
-  await writeFile(path.join(baseRunDir, "stage2", "E01_variables.json"), '{"ok":true}\n', "utf-8");
-  await writeFile(path.join(baseRunDir, "stage3", "E01_script.md"), "1. 見出し\n本文\n", "utf-8");
+  await writeFile(path.join(sourceRunDir, "stage1", "book_blueprint.json"), '{"ok":true}\n', "utf-8");
+  await writeFile(path.join(sourceRunDir, "stage2", "E01_variables.json"), '{"ok":true}\n', "utf-8");
+  await writeFile(path.join(sourceRunDir, "stage3", "E01_script.md"), "1. 見出し\n本文\n", "utf-8");
 
-  await cloneRunDirectories({ baseRunDir, targetRunDir });
+  await cloneRunDirectories({ sourceRunDir, runDir });
 
-  const stage1 = await readFile(path.join(targetRunDir, "stage1", "book_blueprint.json"), "utf-8");
-  const stage2 = await readFile(path.join(targetRunDir, "stage2", "E01_variables.json"), "utf-8");
-  const stage3 = await readFile(path.join(targetRunDir, "stage3", "E01_script.md"), "utf-8");
+  const stage1 = await readFile(path.join(runDir, "stage1", "book_blueprint.json"), "utf-8");
+  const stage2 = await readFile(path.join(runDir, "stage2", "E01_variables.json"), "utf-8");
+  const stage3 = await readFile(path.join(runDir, "stage3", "E01_script.md"), "utf-8");
   assert.equal(stage1, '{"ok":true}\n');
   assert.equal(stage2, '{"ok":true}\n');
   assert.equal(stage3, "1. 見出し\n本文\n");
 
   await assert.rejects(
-    () => cloneRunDirectories({ baseRunDir, targetRunDir }),
+    () => cloneRunDirectories({ sourceRunDir, runDir }),
     /Target run directory already exists/
   );
 });

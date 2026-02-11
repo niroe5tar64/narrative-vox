@@ -5,6 +5,7 @@
 現状のエントリポイント:
 
 - `src/cli/main.ts`
-  - `stage4`: script -> voicevox text
-  - `stage5`: stage4 json -> vvproj
-  - `pipeline`: stage4 + stage5
+  - `build-text`: script -> voicevox text
+  - `build-project`: stage4 json -> vvproj
+  - `build-all`: build-text + build-project
+  - `check-run`: stage1-3 validation
