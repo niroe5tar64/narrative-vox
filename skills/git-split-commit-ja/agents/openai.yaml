@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Split Commit JA"
+  short_description: "大規模差分を意味単位で分割コミット"
+  default_prompt: "Use $git-split-commit-ja to split my large git diff into meaningful commits with Japanese conventional commit subjects."

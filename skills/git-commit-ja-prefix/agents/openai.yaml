@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Commit JA Prefix"
+  short_description: "prefix付き日本語subjectでコミット作成"
+  default_prompt: "Use $git-commit-ja-prefix to commit staged changes with a conventional type prefix and a Japanese subject."
