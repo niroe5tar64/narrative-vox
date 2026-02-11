@@ -14,7 +14,7 @@ function toUtteranceId(index) {
   return `U${String(index + 1).padStart(3, "0")}`;
 }
 
-function splitIntoSentences(text) {
+export function splitIntoSentences(text) {
   return text
     .replace(/([。！？!?])/g, "$1\n")
     .split(/\n+/)
@@ -29,7 +29,7 @@ function normalizeScriptLine(rawLine) {
   return withoutInlineCode.replace(/\s+/g, " ").trim();
 }
 
-function collectRubyCandidates(text, map) {
+export function collectRubyCandidates(text, map) {
   for (const match of text.matchAll(RUBY_RE)) {
     const surface = (match[1] || "").trim();
     const reading = (match[2] || "").trim();
@@ -50,11 +50,11 @@ function collectRubyCandidates(text, map) {
   }
 }
 
-function replaceRubyWithReading(text) {
+export function replaceRubyWithReading(text) {
   return text.replace(RUBY_RE, (_, _surface, reading) => reading);
 }
 
-function collectTermCandidates(text, map) {
+export function collectTermCandidates(text, map) {
   const tokenSets = [
     text.match(/\b[A-Za-z][A-Za-z0-9_.+-]{1,}\b/g) ?? [],
     text.match(/[ァ-ヴー]{4,}/g) ?? []
@@ -76,7 +76,7 @@ function collectTermCandidates(text, map) {
   }
 }
 
-function priorityForCandidate(candidate) {
+export function priorityForCandidate(candidate) {
   if (candidate.reading) {
     return "HIGH";
   }
@@ -110,6 +110,24 @@ function makeCsv(candidates) {
         .join(",")
     )
     .join("\n");
+}
+
+export function toDictionaryCandidates(termCandidates) {
+  return [...termCandidates.entries()]
+    .map(([surface, info]) => ({
+      surface,
+      reading_or_empty: info.reading,
+      priority: priorityForCandidate(info),
+      occurrences: info.occurrences,
+      source: info.source,
+      note: info.reading ? "ruby_from_script" : "auto_detected"
+    }))
+    .sort((a, b) => {
+      if (b.occurrences !== a.occurrences) {
+        return b.occurrences - a.occurrences;
+      }
+      return a.surface.localeCompare(b.surface, "ja");
+    });
 }
 
 function inferEpisodeId(scriptPath, explicitEpisodeId) {
@@ -231,21 +249,7 @@ export async function runStage4({ scriptPath, outDir, projectId, runId, episodeI
     throw new Error("No utterances generated from script. Check script format.");
   }
 
-  const dictionaryCandidates = [...termCandidates.entries()]
-    .map(([surface, info]) => ({
-      surface,
-      reading_or_empty: info.reading,
-      priority: priorityForCandidate(info),
-      occurrences: info.occurrences,
-      source: info.source,
-      note: info.reading ? "ruby_from_script" : "auto_detected"
-    }))
-    .sort((a, b) => {
-      if (b.occurrences !== a.occurrences) {
-        return b.occurrences - a.occurrences;
-      }
-      return a.surface.localeCompare(b.surface, "ja");
-    });
+  const dictionaryCandidates = toDictionaryCandidates(termCandidates);
 
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
