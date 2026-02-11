@@ -13,7 +13,25 @@ const DEFAULT_MAX_CHARS_PER_SENTENCE = 48;
 const MIN_SPLITTABLE_CHARS = 8;
 const MIN_PAUSE_MS = 120;
 const MAX_PAUSE_MS = 520;
+const SPLIT_POINT_TOLERANCE = 6;
 
+const PAUSE_BASES = {
+  DEFAULT: 190,
+  STRONG_ENDING: 360,
+  FULL_STOP: 320,
+  CLAUSE_END: 240
+};
+const LENGTH_BONUS_STEP = 10;
+const LENGTH_BONUS_INCREMENT = 20;
+const LENGTH_BONUS_MAX = 120;
+const CONJUNCTION_PENALTY_VALUE = 40;
+const CONTINUATION_PENALTY_VALUE = 50;
+
+const SPEAKABILITY_TARGET_AVERAGE_CHARS = 32;
+const SPEAKABILITY_AVERAGE_PENALTY_FACTOR = 1.2;
+const SPEAKABILITY_AVERAGE_PENALTY_MAX = 35;
+const SPEAKABILITY_LONG_RATIO_WEIGHT = 45;
+const SPEAKABILITY_PUNCTUATION_WEIGHT = 20;
 function collectPreferredSplitPoints(text: string): number[] {
   const points = new Set<number>();
 
@@ -46,7 +64,7 @@ function chooseSplitPoint(text: string, maxCharsPerSentence: number): number {
   }
 
   const nearestAfterLimit = preferredPoints.find(
-    (point) => point > maxCharsPerSentence && point <= maxCharsPerSentence + 6
+    (point) => point > maxCharsPerSentence && point <= maxCharsPerSentence + SPLIT_POINT_TOLERANCE
   );
   if (nearestAfterLimit) {
     return nearestAfterLimit;
@@ -115,18 +133,22 @@ export function decidePauseLengthMs(
   const length = trimmed.length;
   const isTerminalInSourceLine = options.isTerminalInSourceLine !== false;
 
-  let base = 190;
+  let base = PAUSE_BASES.DEFAULT;
   if (STRONG_END_PUNCTUATION_RE.test(trimmed)) {
-    base = 360;
+    base = PAUSE_BASES.STRONG_ENDING;
   } else if (FULL_STOP_END_RE.test(trimmed)) {
-    base = 320;
+    base = PAUSE_BASES.FULL_STOP;
   } else if (CLAUSE_END_RE.test(trimmed)) {
-    base = 240;
+    base = PAUSE_BASES.CLAUSE_END;
   }
 
-  const lengthBonus = clampNumber(Math.floor((length - 18) / 10) * 20, 0, 120);
-  const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed) ? 40 : 0;
-  const continuationPenalty = isTerminalInSourceLine ? 0 : 50;
+  const lengthBonus = clampNumber(
+    Math.floor((length - 18) / LENGTH_BONUS_STEP) * LENGTH_BONUS_INCREMENT,
+    0,
+    LENGTH_BONUS_MAX
+  );
+  const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed) ? CONJUNCTION_PENALTY_VALUE : 0;
+  const continuationPenalty = isTerminalInSourceLine ? 0 : CONTINUATION_PENALTY_VALUE;
 
   const rawPause = base + lengthBonus - conjunctionPenalty - continuationPenalty;
   const normalized = Math.round(rawPause / 10) * 10;
@@ -161,9 +183,13 @@ export function evaluateSpeakability(
   const longRatio = longCount / utterances.length;
   const terminalRatio = terminalCount / utterances.length;
 
-  const avgPenalty = clampNumber(Math.max(averageChars - 32, 0) * 1.2, 0, 35);
-  const longPenalty = longRatio * 45;
-  const punctuationPenalty = (1 - terminalRatio) * 20;
+  const avgPenalty = clampNumber(
+    Math.max(averageChars - SPEAKABILITY_TARGET_AVERAGE_CHARS, 0) * SPEAKABILITY_AVERAGE_PENALTY_FACTOR,
+    0,
+    SPEAKABILITY_AVERAGE_PENALTY_MAX
+  );
+  const longPenalty = longRatio * SPEAKABILITY_LONG_RATIO_WEIGHT;
+  const punctuationPenalty = (1 - terminalRatio) * SPEAKABILITY_PUNCTUATION_WEIGHT;
   const score = Math.round(clampNumber(100 - avgPenalty - longPenalty - punctuationPenalty, 0, 100));
 
   return {

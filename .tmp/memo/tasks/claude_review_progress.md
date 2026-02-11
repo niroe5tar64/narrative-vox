@@ -56,6 +56,18 @@
   - JSON/TXT/CSV のファイル出力を `src/pipeline/stage4/io.ts` に切り出し、Stage4 のオーケストレーションはパス＋データを渡すだけになった。
   - `bun run typecheck` と `bun test` を再実行して変更後もすべてのテストが通ることを確認。
 - 未完了:
+-  - 後続の Stage4責務（辞書候補出力/Runディレクトリ構築以外）をさらに分割。
+- 次セッション開始タスク:
+-  - Stage4 の出力書き込みと CLI 連携を最小化したオーケストレーター構成を固めつつ、Phase 4 に進む準備をする。
+### 2026-02-12 (Phase 3 magic numbers)
+- 完了:
+  - `src/pipeline/stage4/text_processing.ts` に `SPLIT_POINT_TOLERANCE`、`PAUSE_BASES`、停止ペナルティ定数、`SPEAKABILITY_*` 定数といったマジックナンバーを整理して `chooseSplitPoint`/`decidePauseLengthMs`/`evaluateSpeakability` で使い、調整ポイントを一か所に集中させた。
+  - `bun run typecheck` と `bun test` を改めて通して新しい定数群とスコア計算が壊れていないことを確認。
+- 未完了:
+  - Stage4 の仕上げ（CLI 連携・出力ディレクトリ周り）を Phase 3 でまとめ、Phase 4 への橋渡しを完了する。
+- 次セッション開始タスク:
+  - Stage4 の残る責務を完全に切り出し終えたと判断したら、Phase 4（マジックナンバー/命名整理）に移行。
+- 未完了:
   - 後続の Stage4責務（辞書候補出力/Run ディレクトリ構築以外のパイプライン固有処理）をさらに分割。
 - 次セッション開始タスク:
   - Stage4 の出力書き込みと CLI 連携を最小化したオーケストレーター構成を固めつつ、Phase 4 へ向けて残り責務をさらに分離。
