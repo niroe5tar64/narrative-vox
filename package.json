@@ -1,0 +1,15 @@
+{
+  "name": "narrative-vox",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "stage4": "bun src/cli/main.js stage4",
+    "stage5": "bun src/cli/main.js stage5",
+    "pipeline": "bun src/cli/main.js pipeline",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  }
+}
