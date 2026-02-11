@@ -39,6 +39,16 @@ export {
 } from "./stage4/text_processing.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
+
+const SpeakabilityWarningConfig = {
+  scoreThreshold: 70,
+  minTerminalPunctuationRatio: 0.65,
+  maxLongUtteranceRatio: 0.25
+} as const;
+
+function formatPercentage(value: number): string {
+  return `${Math.round(value * 1000) / 10}%`;
+}
 interface RunStage4Options {
   scriptPath: string;
   runDir?: string;
@@ -155,9 +165,23 @@ export async function runStage4({
   if (maxChars > 80) {
     warnings.push("Some utterances exceed 80 chars. Consider additional sentence split.");
   }
-  if (speakability.score < 70) {
+  if (speakability.score < SpeakabilityWarningConfig.scoreThreshold) {
     warnings.push(
       `Speakability score is low (${speakability.score}/100). Consider shorter utterances and clearer sentence endings.`
+    );
+  }
+  if (speakability.terminal_punctuation_ratio < SpeakabilityWarningConfig.minTerminalPunctuationRatio) {
+    warnings.push(
+      `Terminal punctuation is infrequent (${formatPercentage(
+        speakability.terminal_punctuation_ratio
+      )}). Aim for clearer sentence endings (。！？).`
+    );
+  }
+  if (speakability.long_utterance_ratio > SpeakabilityWarningConfig.maxLongUtteranceRatio) {
+    warnings.push(
+      `Long utterance ratio is high (${formatPercentage(
+        speakability.long_utterance_ratio
+      )}). Split longer lines into tighter sentences.`
     );
   }
 

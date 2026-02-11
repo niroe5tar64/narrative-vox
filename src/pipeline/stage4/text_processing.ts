@@ -11,27 +11,35 @@ const FULL_STOP_END_RE = /。$/;
 const CLAUSE_END_RE = /[、，；;：:]/;
 const DEFAULT_MAX_CHARS_PER_SENTENCE = 48;
 const MIN_SPLITTABLE_CHARS = 8;
-const MIN_PAUSE_MS = 120;
-const MAX_PAUSE_MS = 520;
 const SPLIT_POINT_TOLERANCE = 6;
 
-const PAUSE_BASES = {
-  DEFAULT: 190,
-  STRONG_ENDING: 360,
-  FULL_STOP: 320,
-  CLAUSE_END: 240
-};
-const LENGTH_BONUS_STEP = 10;
-const LENGTH_BONUS_INCREMENT = 20;
-const LENGTH_BONUS_MAX = 120;
-const CONJUNCTION_PENALTY_VALUE = 40;
-const CONTINUATION_PENALTY_VALUE = 50;
+export const PauseConfig = {
+  minMs: 120,
+  maxMs: 520,
+  bases: {
+    default: 190,
+    strongEnding: 360,
+    fullStop: 320,
+    clauseEnd: 240
+  },
+  lengthBonus: {
+    step: 10,
+    increment: 20,
+    max: 120
+  },
+  penalties: {
+    conjunction: 40,
+    continuation: 50
+  }
+} as const;
 
-const SPEAKABILITY_TARGET_AVERAGE_CHARS = 32;
-const SPEAKABILITY_AVERAGE_PENALTY_FACTOR = 1.2;
-const SPEAKABILITY_AVERAGE_PENALTY_MAX = 35;
-const SPEAKABILITY_LONG_RATIO_WEIGHT = 45;
-const SPEAKABILITY_PUNCTUATION_WEIGHT = 20;
+export const SpeakabilityConfig = {
+  targetAverageChars: 32,
+  averagePenaltyFactor: 1.2,
+  averagePenaltyMax: 35,
+  longRatioWeight: 45,
+  punctuationWeight: 20
+} as const;
 function collectPreferredSplitPoints(text: string): number[] {
   const points = new Set<number>();
 
@@ -127,32 +135,34 @@ export function decidePauseLengthMs(
 ): number {
   const trimmed = sentence.trim();
   if (!trimmed) {
-    return MIN_PAUSE_MS;
+    return PauseConfig.minMs;
   }
 
   const length = trimmed.length;
   const isTerminalInSourceLine = options.isTerminalInSourceLine !== false;
 
-  let base = PAUSE_BASES.DEFAULT;
+  let base: number = PauseConfig.bases.default;
   if (STRONG_END_PUNCTUATION_RE.test(trimmed)) {
-    base = PAUSE_BASES.STRONG_ENDING;
+    base = PauseConfig.bases.strongEnding;
   } else if (FULL_STOP_END_RE.test(trimmed)) {
-    base = PAUSE_BASES.FULL_STOP;
+    base = PauseConfig.bases.fullStop;
   } else if (CLAUSE_END_RE.test(trimmed)) {
-    base = PAUSE_BASES.CLAUSE_END;
+    base = PauseConfig.bases.clauseEnd;
   }
 
   const lengthBonus = clampNumber(
-    Math.floor((length - 18) / LENGTH_BONUS_STEP) * LENGTH_BONUS_INCREMENT,
+    Math.floor((length - 18) / PauseConfig.lengthBonus.step) * PauseConfig.lengthBonus.increment,
     0,
-    LENGTH_BONUS_MAX
+    PauseConfig.lengthBonus.max
   );
-  const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed) ? CONJUNCTION_PENALTY_VALUE : 0;
-  const continuationPenalty = isTerminalInSourceLine ? 0 : CONTINUATION_PENALTY_VALUE;
+  const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed)
+    ? PauseConfig.penalties.conjunction
+    : 0;
+  const continuationPenalty = isTerminalInSourceLine ? 0 : PauseConfig.penalties.continuation;
 
   const rawPause = base + lengthBonus - conjunctionPenalty - continuationPenalty;
   const normalized = Math.round(rawPause / 10) * 10;
-  return clampNumber(normalized, MIN_PAUSE_MS, MAX_PAUSE_MS);
+  return clampNumber(normalized, PauseConfig.minMs, PauseConfig.maxMs);
 }
 
 function roundTo(value: number, digits: number): number {
@@ -184,12 +194,13 @@ export function evaluateSpeakability(
   const terminalRatio = terminalCount / utterances.length;
 
   const avgPenalty = clampNumber(
-    Math.max(averageChars - SPEAKABILITY_TARGET_AVERAGE_CHARS, 0) * SPEAKABILITY_AVERAGE_PENALTY_FACTOR,
+    Math.max(averageChars - SpeakabilityConfig.targetAverageChars, 0) *
+      SpeakabilityConfig.averagePenaltyFactor,
     0,
-    SPEAKABILITY_AVERAGE_PENALTY_MAX
+    SpeakabilityConfig.averagePenaltyMax
   );
-  const longPenalty = longRatio * SPEAKABILITY_LONG_RATIO_WEIGHT;
-  const punctuationPenalty = (1 - terminalRatio) * SPEAKABILITY_PUNCTUATION_WEIGHT;
+  const longPenalty = longRatio * SpeakabilityConfig.longRatioWeight;
+  const punctuationPenalty = (1 - terminalRatio) * SpeakabilityConfig.punctuationWeight;
   const score = Math.round(clampNumber(100 - avgPenalty - longPenalty - punctuationPenalty, 0, 100));
 
   return {

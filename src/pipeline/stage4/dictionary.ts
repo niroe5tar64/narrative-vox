@@ -19,7 +19,22 @@ export interface TermCandidateState {
 export type TermCandidateMap = Map<string, TermCandidateState>;
 export type MorphTokenizer = Tokenizer<IpadicFeatures>;
 
-const LOW_SIGNAL_TOKENS = new Set(["こと", "ため", "もの", "よう", "これ", "それ", "any"]);
+export enum DictionaryCsvField {
+  surface = "surface",
+  reading = "reading",
+  priority = "priority",
+  occurrences = "occurrences",
+  source = "source",
+  note = "note"
+}
+
+export const DictionaryNoiseConfig = {
+  /**
+   * Terms that skew dictionary quality because they are frequent grammatical particles,
+   * vague demonstratives, or general-purpose fillers. We treat them as noise when collecting candidates.
+   */
+  lowSignalTokens: new Set(["こと", "ため", "もの", "よう", "これ", "それ", "any"])
+} as const;
 const UPPERCASE_ASCII_READING_MAP = Object.freeze({
   A: "エー",
   B: "ビー",
@@ -63,6 +78,20 @@ function normalizeCandidateSurface(token: string): string {
     .trim();
 }
 
+function isLowSignalSurface(surface: string): boolean {
+  if (!surface) {
+    return false;
+  }
+
+  if (DictionaryNoiseConfig.lowSignalTokens.has(surface)) {
+    return true;
+  }
+  if (DictionaryNoiseConfig.lowSignalTokens.has(surface.toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
 function shouldCollectCandidate(surface: string): boolean {
   if (!surface || surface.length < 2) {
     return false;
@@ -76,10 +105,7 @@ function shouldCollectCandidate(surface: string): boolean {
   if (!WORDLIKE_RE.test(surface)) {
     return false;
   }
-  if (LOW_SIGNAL_TOKENS.has(surface)) {
-    return false;
-  }
-  if (LOW_SIGNAL_TOKENS.has(surface.toLowerCase())) {
+  if (isLowSignalSurface(surface)) {
     return false;
   }
   return true;
@@ -325,29 +351,6 @@ export function priorityForCandidate(candidate: TermCandidateState): CandidatePr
     return "MEDIUM";
   }
   return "LOW";
-}
-
-function makeCsv(candidates: DictionaryCandidate[]): string {
-  const header = ["surface", "reading", "priority", "occurrences", "source", "note"];
-  const rows = candidates.map((item) => [
-    item.surface,
-    item.reading_or_empty,
-    item.priority,
-    String(item.occurrences),
-    item.source,
-    item.note || ""
-  ]);
-
-  return [header, ...rows]
-    .map((columns) =>
-      columns
-        .map((value) => {
-          const escaped = String(value).replaceAll('"', '""');
-          return `"${escaped}"`;
-        })
-        .join(",")
-    )
-    .join("\n");
 }
 
 export function toDictionaryCandidates(termCandidates: TermCandidateMap): DictionaryCandidate[] {
