@@ -64,6 +64,7 @@
   - `projects/introducing-rescript/run-20260211-0000/reports/`
 
 詳細フローは `docs/architecture/pipeline.md` を参照。
+TypeScript への移行方針は `docs/architecture/typescript-migration.md` を参照。
 
 ## 実行コマンド（最小）
 
