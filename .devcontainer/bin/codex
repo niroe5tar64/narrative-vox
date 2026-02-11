@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# config.toml で設定済みのため、基本的にオプション付与は不要
+# Landlock が利用不可の場合は自動的にフォールバック（config.toml で対応）
+
+# PATHの先頭にこのラッパーがいる想定なので、which -a で「本物」を探す
+# 他のbashラッパーをスキップして、実際のバイナリ（.js等）を見つける
+real=""
+this_script="$(readlink -f "$0")"
+while IFS= read -r candidate; do
+  # 自分自身をスキップ（絶対パスで比較）
+  candidate_path="$(readlink -f "$candidate")"
+  if [ "$candidate_path" = "$this_script" ]; then
+    continue
+  fi
+  # ファイルの1行目を確認し、bashスクリプトでない場合は採用
+  first_line="$(head -n 1 "$candidate" 2>/dev/null || true)"
+  if [[ ! "$first_line" =~ ^#!.*bash ]]; then
+    real="$candidate"
+    break
+  fi
+done < <(which -a codex)
+
+if [ -z "${real:-}" ] || [ ! -x "$real" ]; then
+  echo "Error: real codex binary not found (all entries appear to be bash wrappers)." >&2
+  echo "Hint: run: which -a codex" >&2
+  exit 127
+fi
+
+# loginコマンドの場合はデバイスコード認証を使用（DevContainer環境向け）
+if [ "${1:-}" = "login" ]; then
+  # ブラウザベース認証が動作しないため、デバイスコード認証を使用
+  exec "$real" login --device-auth "${@:2}"
+else
+  # その他のコマンドは config.toml の設定で実行
+  exec "$real" "$@"
+fi

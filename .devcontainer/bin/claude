@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 自分自身を除外して実体バイナリを探す（codex ラッパーと同様のロジック）
+this_script="$(readlink -f "$0")"
+real=""
+
+# 1. VS Code 拡張機能のバイナリを探す
+real=$(find "$HOME/.vscode-server/extensions" -name "claude" -path "*/resources/native-binary/claude" -type f 2>/dev/null | head -1) || true
+
+# 2. 見つからない場合は PATH から探す（自分自身を除外）
+if [ -z "${real:-}" ] || [ ! -x "$real" ]; then
+  while IFS= read -r candidate; do
+    candidate_path="$(readlink -f "$candidate")"
+    [ "$candidate_path" = "$this_script" ] && continue
+    # bash ラッパーをスキップ
+    first_line="$(head -n 1 "$candidate" 2>/dev/null || true)"
+    if [[ ! "$first_line" =~ ^#!.*bash ]]; then
+      real="$candidate"
+      break
+    fi
+  done < <(which -a claude 2>/dev/null)
+fi
+
+# 3. npm グローバルインストールを直接確認
+if [ -z "${real:-}" ] || [ ! -x "$real" ]; then
+  npm_global="$(npm root -g 2>/dev/null)/@anthropic-ai/claude-code/cli.js" || true
+  if [ -f "$npm_global" ]; then
+    real="$npm_global"
+  fi
+fi
+
+if [ -z "${real:-}" ] || [ ! -x "$real" ]; then
+  echo "Error: claude binary not found" >&2
+  echo "Hint: Ensure the Claude Code extension is installed or '@anthropic-ai/claude-code' is globally installed via npm" >&2
+  exit 127
+fi
+
+exec "$real" --dangerously-skip-permissions "$@"
