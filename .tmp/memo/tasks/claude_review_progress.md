@@ -21,7 +21,7 @@
 | Phase 0 | 安全網確認（test/typecheck基準化） | DONE | 2026-02-11 | bun test / bun run typecheck / CLI --help を記録 |
 | Phase 1 | 型安全性改善 | DONE | 2026-02-11 | `src/shared/json.ts` と `src/shared/voice_profile.ts` を導入し、Stage5 で Stage4 スキーマ検証を追加 |
 | Phase 2 | 重複コード統合 | DONE | 2026-02-11 | CLI引数/Run ID/スクリプト正規表現/Stage4・Stage5型を共有モジュール化し、重複実装を解消 |
-| Phase 3 | Stage4ファイル分割 | DOING | - | Stage4 の責務を少しずつ新モジュールへ切り出し中（先行してテキスト処理を分離） |
+| Phase 3 | Stage4ファイル分割 | DOING | - | Stage4 の責務を段階的に新モジュールへ切り出し中（テキスト処理＋辞書候補評価を分離） |
 | Phase 4 | マジックナンバー/命名整理 | TODO | - | 未着手 |
 | Phase 5 | 軽微修正 | TODO | - | 未着手 |
 
@@ -41,14 +41,15 @@
 - [x] 最終: `bun test` / `bun run typecheck` 再実行
 
 ## セッションログ
-### 2026-02-12 (Phase 3分割開始)
+### 2026-02-12 (Phase 3分割推進)
 - 完了:
   - `src/pipeline/stage4_voicevox_text.ts` から文分割・読みやすさ評価・スクリプト正規化ロジックを `src/pipeline/stage4/text_processing.ts` に切り出し、Stage4 モジュールは新しいヘルパーをインポート／再エクスポートする形で責務を縮小。
+  - 辞書候補・Morph Tokenizer・CSV 変換ロジックを `src/pipeline/stage4/dictionary.ts` に移して `stage4_voicevox_text.ts` は必要な機能をインポートし直しつつ `toDictionaryCandidates` や `priorityForCandidate` 等を再エクスポート。
   - `bun run typecheck` と `bun test` を再実行して変更を検証。
 - 未完了:
-  - 辞書候補抽出・Run ID 推論など他の責務の分割。
+  - Run ID／プロジェクト／エピソードの推論や出力パス構築など Stage4 の残り責務の切り出し。
 - 次セッション開始タスク:
-  - Stage4 の残りの責務（辞書候補収集や Run ID 推論など）をさらに `src/pipeline/stage4_*` モジュールに切り出していく。
+  - Stage4 の Run ID 予測と出力ファイル構築ロジックを別モジュールへ移設し、`stage4_voicevox_text.ts` はオーケストレーターに集中させる。
 ### 2026-02-11 (Phase 2リファクタリング)
 - 完了:
   - CLI引数パーサー・Run ID・スクリプト正規表現・Stage4/Stage5型を `src/shared/` 下のモジュールに集約し、CLI/パイプライン/検証の呼び出し先を共有化。
