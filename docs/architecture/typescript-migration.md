@@ -33,6 +33,17 @@ PR/コミット前の最低ライン:
 1. `bun run typecheck`
 2. `bun test`
 
+## CI チェック手順
+
+GitHub Actions は `/.github/workflows/ci.yml` で定義済みです。  
+`pull_request` と `main` への `push` をトリガーに、次を実行します。
+
+1. `bun install --frozen-lockfile`
+2. `bun run typecheck`
+3. `bun test`
+
+保護ルールを有効にする場合は、GitHub の Branch protection で `CI / typecheck-and-test` を必須ステータスに設定してください。
+
 ## 実装ルール
 
 1. 新規コードは原則 `.ts` / `.test.ts` で作成する。
