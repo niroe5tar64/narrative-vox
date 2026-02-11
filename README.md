@@ -71,10 +71,14 @@ TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migratio
 ## 実行コマンド（最小）
 
 ```bash
-# Stage4 + Stage5 を連続実行
-bun run pipeline -- \
-  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --out-dir projects/introducing-rescript/run-20260211-0000
+# 既存 run を複製して新しい run を作る（引数不足時は対話入力）
+bun run new-run -- \
+  --project-id introducing-rescript \
+  --base-run projects/introducing-rescript/run-20260211-0000
+
+# Stage1/2/3 生成物を検証する場合（Stage1/2はJSON Schema、Stage3は台本形式）
+bun src/cli/main.ts validate-run \
+  --run-dir projects/introducing-rescript/run-20260211-0000
 
 # run_id を明示する場合（形式: run-YYYYMMDD-HHMM）
 bun run stage4 -- \
@@ -88,15 +92,17 @@ bun run stage5 -- \
   --out-dir projects/introducing-rescript/run-20260211-0000 \
   --prefill-query minimal
 
-# Stage1/2/3 生成物を検証する場合（Stage1/2はJSON Schema、Stage3は台本形式）
-bun src/cli/main.ts validate-run \
-  --run-dir projects/introducing-rescript/run-20260211-0000
+# Stage4 + Stage5 を連続実行
+bun run pipeline -- \
+  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
+  --out-dir projects/introducing-rescript/run-20260211-0000
 ```
 
 - `--run-id` は任意です。
 - 未指定時は `--out-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--out-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `--prefill-query` は `none`（既定）または `minimal` を指定できます。
+- `bun run new-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
 
 ## Stage4 辞書CSVの確認観点
 

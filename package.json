@@ -8,6 +8,7 @@
     "stage5": "bun src/cli/main.ts stage5",
     "pipeline": "bun src/cli/main.ts pipeline",
     "validate-run": "bun src/cli/main.ts validate-run",
+    "new-run": "bun src/cli/new_run.ts",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },
