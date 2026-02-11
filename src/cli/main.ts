@@ -1,10 +1,12 @@
 #!/usr/bin/env bun
 import path from "node:path";
-import { runStage4 } from "../pipeline/stage4_voicevox_text.js";
-import { runStage5 } from "../pipeline/stage5_voicevox_import.js";
+import { runStage4 } from "../pipeline/stage4_voicevox_text.ts";
+import { runStage5 } from "../pipeline/stage5_voicevox_import.ts";
 
-function parseArgs(argv) {
-  const options = {};
+type CliOptions = Record<string, string | boolean>;
+
+function parseArgs(argv: string[]): CliOptions {
+  const options: CliOptions = {};
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (!token.startsWith("--")) {
@@ -24,7 +26,7 @@ function parseArgs(argv) {
   return options;
 }
 
-function ensureOption(options, key, command) {
+function ensureOption(options: CliOptions, key: string, command: string): string {
   const value = options[key];
   if (!value || value === true) {
     throw new Error(`Missing required option --${key} for ${command}`);
@@ -34,14 +36,14 @@ function ensureOption(options, key, command) {
 
 function printUsage() {
   console.log(`Usage:
-  bun src/cli/main.js stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]
-  bun src/cli/main.js stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>]
-  bun src/cli/main.js pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--run-id <run-YYYYMMDD-HHMM>] [stage4/stage5 options]
+  bun src/cli/main.ts stage4 --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]
+  bun src/cli/main.ts stage5 --stage4-json <stage4/E##_voicevox_text.json> --out-dir <projects/.../run-...> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>]
+  bun src/cli/main.ts pipeline --script <stage3/E##_script.md> --out-dir <projects/.../run-...> [--run-id <run-YYYYMMDD-HHMM>] [stage4/stage5 options]
 `);
 }
 
 async function main() {
-  const command = process.argv[2];
+  const command = process.argv[2] ?? "";
   const options = parseArgs(process.argv.slice(3));
 
   if (!command || command === "--help" || command === "-h") {

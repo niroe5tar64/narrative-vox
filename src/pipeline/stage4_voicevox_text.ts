@@ -2,7 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateAgainstSchema } from "../quality/schema_validator.js";
+import type { IpadicFeatures, Tokenizer } from "kuromoji";
+import { validateAgainstSchema } from "../quality/schema_validator.ts";
 
 const SECTION_RE = /^\s*([1-8])\.\s+(.+)$/;
 const TOTAL_TIME_RE = /^\s*合計想定時間\s*:/;
@@ -18,15 +19,75 @@ const NUMBER_ONLY_RE = /^[0-9]+$/;
 const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
 const FALLBACK_TOKEN_RE = /[A-Za-z][A-Za-z0-9_.+-]{1,}|[ァ-ヴー]{3,}|[一-龠々]{2,}/g;
 
-const LOW_SIGNAL_TOKENS = new Set([
-  "こと",
-  "ため",
-  "もの",
-  "よう",
-  "これ",
-  "それ",
-  "any"
-]);
+type CandidateSource = "ruby" | "token" | "morph";
+type ReadingSource = "" | "ruby" | "morph" | "inferred";
+type CandidatePriority = "HIGH" | "MEDIUM" | "LOW";
+
+type MorphTokenizer = Tokenizer<IpadicFeatures>;
+
+interface TermCandidateState {
+  reading: string;
+  occurrences: number;
+  source: CandidateSource;
+  readingSource: ReadingSource;
+}
+
+interface DictionaryCandidate {
+  surface: string;
+  reading_or_empty: string;
+  priority: CandidatePriority;
+  occurrences: number;
+  source: CandidateSource;
+  note: string;
+}
+
+interface Stage4Utterance {
+  utterance_id: string;
+  section_id: number;
+  section_title: string;
+  text: string;
+  pause_length_ms: number;
+}
+
+interface Stage4Data {
+  schema_version: "1.0";
+  meta: {
+    project_id: string;
+    run_id: string;
+    episode_id: string;
+    source_script_path: string;
+    generated_at: string;
+  };
+  utterances: Stage4Utterance[];
+  dictionary_candidates: DictionaryCandidate[];
+  quality_checks: {
+    utterance_count: number;
+    max_chars_per_utterance: number;
+    has_ruby_notation: boolean;
+    warnings: string[];
+  };
+}
+
+interface RunStage4Options {
+  scriptPath: string;
+  outDir: string;
+  projectId?: string;
+  runId?: string;
+  episodeId?: string;
+}
+
+interface RunStage4Result {
+  stage4JsonPath: string;
+  stage4TxtPath: string;
+  dictCsvPath: string;
+  utteranceCount: number;
+  dictionaryCount: number;
+  episodeId: string;
+}
+
+type TermCandidateMap = Map<string, TermCandidateState>;
+
+const LOW_SIGNAL_TOKENS = new Set(["こと", "ため", "もの", "よう", "これ", "それ", "any"]);
 
 const UPPERCASE_ASCII_READING_MAP = Object.freeze({
   A: "エー",
@@ -57,15 +118,15 @@ const UPPERCASE_ASCII_READING_MAP = Object.freeze({
   Z: "ゼット"
 });
 
-let cachedJaWordSegmenter;
-let cachedMorphTokenizer;
-let cachedMorphTokenizerPromise;
+let cachedJaWordSegmenter: Intl.Segmenter | null | undefined;
+let cachedMorphTokenizer: MorphTokenizer | null | undefined;
+let cachedMorphTokenizerPromise: Promise<MorphTokenizer | null> | undefined;
 
-function toUtteranceId(index) {
+function toUtteranceId(index: number): string {
   return `U${String(index + 1).padStart(3, "0")}`;
 }
 
-export function splitIntoSentences(text) {
+export function splitIntoSentences(text: string): string[] {
   return text
     .replace(/([。！？!?])/g, "$1\n")
     .split(/\n+/)
@@ -73,14 +134,14 @@ export function splitIntoSentences(text) {
     .filter((line) => line.length > 0);
 }
 
-function normalizeScriptLine(rawLine) {
+function normalizeScriptLine(rawLine: string): string {
   const withoutDuration = rawLine.replace(DURATION_SUFFIX_RE, "");
   const withoutSilence = withoutDuration.replace(SILENCE_TAG_RE, "");
   const withoutInlineCode = withoutSilence.replace(INLINE_CODE_RE, "$1");
   return withoutInlineCode.replace(/\s+/g, " ").trim();
 }
 
-export function collectRubyCandidates(text, map) {
+export function collectRubyCandidates(text: string, map: TermCandidateMap): void {
   for (const match of text.matchAll(RUBY_RE)) {
     const surface = (match[1] || "").trim();
     const reading = (match[2] || "").trim();
@@ -101,11 +162,11 @@ export function collectRubyCandidates(text, map) {
   }
 }
 
-export function replaceRubyWithReading(text) {
-  return text.replace(RUBY_RE, (_, _surface, reading) => reading);
+export function replaceRubyWithReading(text: string): string {
+  return text.replace(RUBY_RE, (_matched, _surface, reading: string) => reading);
 }
 
-function getJapaneseWordSegmenter() {
+function getJapaneseWordSegmenter(): Intl.Segmenter | null {
   if (cachedJaWordSegmenter !== undefined) {
     return cachedJaWordSegmenter;
   }
@@ -117,7 +178,7 @@ function getJapaneseWordSegmenter() {
   return cachedJaWordSegmenter;
 }
 
-function resolveKuromojiDictPath() {
+function resolveKuromojiDictPath(): string | undefined {
   const currentFileDir = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
     path.resolve(process.cwd(), "node_modules/kuromoji/dict"),
@@ -126,17 +187,25 @@ function resolveKuromojiDictPath() {
   return candidates.find((candidatePath) => existsSync(candidatePath));
 }
 
-async function buildJapaneseMorphTokenizer() {
+async function buildJapaneseMorphTokenizer(): Promise<MorphTokenizer | null> {
   const dictPath = resolveKuromojiDictPath();
   if (!dictPath) {
     return null;
   }
 
   try {
-    const module = await import("kuromoji");
-    const kuromoji = module.default ?? module;
-    return await new Promise((resolve) => {
-      kuromoji.builder({ dicPath: dictPath }).build((error, tokenizer) => {
+    const kuromojiModule = (await import("kuromoji")) as {
+      builder?: typeof import("kuromoji").builder;
+      default?: { builder?: typeof import("kuromoji").builder };
+    };
+
+    const builder = kuromojiModule.builder ?? kuromojiModule.default?.builder;
+    if (!builder) {
+      return null;
+    }
+
+    return await new Promise<MorphTokenizer | null>((resolve) => {
+      builder({ dicPath: dictPath }).build((error, tokenizer) => {
         if (error || !tokenizer) {
           resolve(null);
           return;
@@ -149,7 +218,7 @@ async function buildJapaneseMorphTokenizer() {
   }
 }
 
-async function getJapaneseMorphTokenizer() {
+async function getJapaneseMorphTokenizer(): Promise<MorphTokenizer | null> {
   if (cachedMorphTokenizer !== undefined) {
     return cachedMorphTokenizer;
   }
@@ -162,14 +231,14 @@ async function getJapaneseMorphTokenizer() {
   return cachedMorphTokenizer;
 }
 
-function normalizeCandidateSurface(token) {
+function normalizeCandidateSurface(token: string): string {
   return token
     .replace(/^[^A-Za-z0-9一-龠々ぁ-ゖァ-ヴー]+/, "")
     .replace(/[^A-Za-z0-9一-龠々ぁ-ゖァ-ヴー]+$/, "")
     .trim();
 }
 
-function shouldCollectCandidate(surface) {
+function shouldCollectCandidate(surface: string): boolean {
   if (!surface || surface.length < 2) {
     return false;
   }
@@ -191,7 +260,7 @@ function shouldCollectCandidate(surface) {
   return true;
 }
 
-export function inferReadingFromSurface(surface) {
+export function inferReadingFromSurface(surface: string): string {
   if (!surface) {
     return "";
   }
@@ -201,16 +270,19 @@ export function inferReadingFromSurface(surface) {
   if (!UPPERCASE_ASCII_RE.test(surface)) {
     return "";
   }
-  return [...surface].map((char) => UPPERCASE_ASCII_READING_MAP[char] || "").join("");
+
+  return [...surface]
+    .map((char) => UPPERCASE_ASCII_READING_MAP[char as keyof typeof UPPERCASE_ASCII_READING_MAP] || "")
+    .join("");
 }
 
-export function tokenizeDictionaryTerms(text) {
+export function tokenizeDictionaryTerms(text: string): string[] {
   const segmenter = getJapaneseWordSegmenter();
   if (!segmenter) {
     return text.match(FALLBACK_TOKEN_RE) ?? [];
   }
 
-  const tokens = [];
+  const tokens: string[] = [];
   for (const segment of segmenter.segment(text)) {
     if (!segment.isWordLike) {
       continue;
@@ -224,7 +296,7 @@ export function tokenizeDictionaryTerms(text) {
   return tokens;
 }
 
-function normalizeMorphReading(reading) {
+function normalizeMorphReading(reading?: string): string {
   const normalized = String(reading || "").trim();
   if (!normalized || normalized === "*") {
     return "";
@@ -233,9 +305,19 @@ function normalizeMorphReading(reading) {
 }
 
 function upsertTermCandidate(
-  map,
-  { surface, reading, source = "token", readingSource = "" }
-) {
+  map: TermCandidateMap,
+  {
+    surface,
+    reading,
+    source = "token",
+    readingSource = ""
+  }: {
+    surface: string;
+    reading: string;
+    source?: CandidateSource;
+    readingSource?: ReadingSource;
+  }
+): void {
   const current = map.get(surface);
   if (!current) {
     map.set(surface, { reading, occurrences: 1, source, readingSource });
@@ -257,7 +339,7 @@ function upsertTermCandidate(
   }
 }
 
-export function collectTermCandidates(text, map) {
+export function collectTermCandidates(text: string, map: TermCandidateMap): void {
   for (const token of tokenizeDictionaryTerms(text)) {
     const surface = token.trim();
     if (!shouldCollectCandidate(surface)) {
@@ -274,7 +356,11 @@ export function collectTermCandidates(text, map) {
   }
 }
 
-export function collectTermCandidatesWithMorphology(text, map, tokenizer) {
+export function collectTermCandidatesWithMorphology(
+  text: string,
+  map: TermCandidateMap,
+  tokenizer: MorphTokenizer | null | undefined
+): void {
   if (!tokenizer || typeof tokenizer.tokenize !== "function") {
     collectTermCandidates(text, map);
     return;
@@ -302,7 +388,7 @@ export function collectTermCandidatesWithMorphology(text, map, tokenizer) {
   }
 }
 
-export function priorityForCandidate(candidate) {
+export function priorityForCandidate(candidate: TermCandidateState): CandidatePriority {
   if (candidate.source === "ruby") {
     return "HIGH";
   }
@@ -318,7 +404,7 @@ export function priorityForCandidate(candidate) {
   return "LOW";
 }
 
-function makeCsv(candidates) {
+function makeCsv(candidates: DictionaryCandidate[]): string {
   const header = ["surface", "reading", "priority", "occurrences", "source", "note"];
   const rows = candidates.map((item) => [
     item.surface,
@@ -341,7 +427,7 @@ function makeCsv(candidates) {
     .join("\n");
 }
 
-export function toDictionaryCandidates(termCandidates) {
+export function toDictionaryCandidates(termCandidates: TermCandidateMap): DictionaryCandidate[] {
   return [...termCandidates.entries()]
     .map(([surface, info]) => ({
       surface,
@@ -354,9 +440,9 @@ export function toDictionaryCandidates(termCandidates) {
           ? "ruby_from_script"
           : info.readingSource === "morph"
             ? "reading_from_morphology"
-          : info.reading
-            ? "reading_inferred"
-            : "auto_detected"
+            : info.reading
+              ? "reading_inferred"
+              : "auto_detected"
     }))
     .sort((a, b) => {
       if (b.occurrences !== a.occurrences) {
@@ -366,7 +452,7 @@ export function toDictionaryCandidates(termCandidates) {
     });
 }
 
-function inferEpisodeId(scriptPath, explicitEpisodeId) {
+function inferEpisodeId(scriptPath: string, explicitEpisodeId?: string): string {
   if (explicitEpisodeId) {
     return explicitEpisodeId;
   }
@@ -378,13 +464,17 @@ function inferEpisodeId(scriptPath, explicitEpisodeId) {
   return match[1];
 }
 
-function inferProjectAndRun(outDir, explicitProjectId, explicitRunId) {
+function inferProjectAndRun(
+  outDir: string,
+  explicitProjectId?: string,
+  explicitRunId?: string
+): { projectId: string; runId: string } {
   const runId = resolveRunId(outDir, explicitRunId);
   const projectId = explicitProjectId || path.basename(path.dirname(outDir));
   return { projectId, runId };
 }
 
-function findRunIdInPath(outDir) {
+function findRunIdInPath(outDir: string): string | undefined {
   const segments = path.resolve(outDir).split(path.sep).filter(Boolean);
   for (let index = segments.length - 1; index >= 0; index -= 1) {
     const candidate = segments[index];
@@ -395,11 +485,11 @@ function findRunIdInPath(outDir) {
   return undefined;
 }
 
-function toRunIdTimestampPart(value) {
+function toRunIdTimestampPart(value: number): string {
   return String(value).padStart(2, "0");
 }
 
-function makeRunIdNow(now = new Date()) {
+function makeRunIdNow(now: Date = new Date()): string {
   const year = String(now.getFullYear());
   const month = toRunIdTimestampPart(now.getMonth() + 1);
   const day = toRunIdTimestampPart(now.getDate());
@@ -408,14 +498,14 @@ function makeRunIdNow(now = new Date()) {
   return `run-${year}${month}${day}-${hour}${minute}`;
 }
 
-function validateExplicitRunId(explicitRunId) {
+function validateExplicitRunId(explicitRunId: string): string {
   if (RUN_ID_RE.test(explicitRunId)) {
     return explicitRunId;
   }
   throw new Error(`Invalid --run-id "${explicitRunId}". Expected format: run-YYYYMMDD-HHMM`);
 }
 
-function resolveRunId(outDir, explicitRunId) {
+function resolveRunId(outDir: string, explicitRunId?: string): string {
   if (explicitRunId) {
     return validateExplicitRunId(String(explicitRunId));
   }
@@ -428,7 +518,13 @@ function resolveRunId(outDir, explicitRunId) {
   return makeRunIdNow();
 }
 
-export async function runStage4({ scriptPath, outDir, projectId, runId, episodeId }) {
+export async function runStage4({
+  scriptPath,
+  outDir,
+  projectId,
+  runId,
+  episodeId
+}: RunStage4Options): Promise<RunStage4Result> {
   const resolvedScriptPath = path.resolve(scriptPath);
   const resolvedOutDir = path.resolve(outDir);
   const finalEpisodeId = inferEpisodeId(resolvedScriptPath, episodeId);
@@ -438,8 +534,8 @@ export async function runStage4({ scriptPath, outDir, projectId, runId, episodeI
   const lines = source.split(/\r?\n/);
   const morphTokenizer = await getJapaneseMorphTokenizer();
 
-  const termCandidates = new Map();
-  const utterances = [];
+  const termCandidates: TermCandidateMap = new Map();
+  const utterances: Stage4Utterance[] = [];
 
   let currentSectionId = 0;
   let currentSectionTitle = "";
@@ -490,13 +586,13 @@ export async function runStage4({ scriptPath, outDir, projectId, runId, episodeI
 
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
-  const warnings = [];
+  const warnings: string[] = [];
 
   if (maxChars > 80) {
     warnings.push("Some utterances exceed 80 chars. Consider additional sentence split.");
   }
 
-  const stage4Data = {
+  const stage4Data: Stage4Data = {
     schema_version: "1.0",
     meta: {
       project_id: ids.projectId,

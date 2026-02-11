@@ -40,4 +40,4 @@
 ## Current status (2026-02-11)
 
 - Stage 1-3 prompt/サンプルは配置済み
-- Stage 4/5 は最小実装済み（CLI: `src/cli/main.js`）
+- Stage 4/5 は最小実装済み（CLI: `src/cli/main.ts`）

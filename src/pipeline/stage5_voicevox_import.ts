@@ -1,17 +1,68 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { validateAgainstSchema } from "../quality/schema_validator.js";
+import { validateAgainstSchema } from "../quality/schema_validator.ts";
 
-function toAudioKey(episodeId, utteranceId) {
+interface Stage4Utterance {
+  utterance_id: string;
+  text: string;
+}
+
+interface Stage4Data {
+  meta: {
+    episode_id: string;
+  };
+  utterances: Stage4Utterance[];
+}
+
+interface VoiceProfile {
+  engineId: string;
+  speakerId: string;
+  styleId: number | string;
+  appVersion?: string;
+  tpqn?: number | string;
+  tempoBpm?: number | string;
+  timeSignature?: {
+    beats?: number | string;
+    beatType?: number | string;
+  };
+}
+
+interface Stage5AudioItem {
+  text: string;
+  voice: {
+    engineId: string;
+    speakerId: string;
+    styleId: number;
+  };
+}
+
+interface RunStage5Options {
+  stage4JsonPath: string;
+  outDir: string;
+  profilePath?: string;
+  engineId?: string;
+  speakerId?: string;
+  styleId?: number;
+  appVersion?: string;
+}
+
+interface RunStage5Result {
+  importJsonPath: string;
+  vvprojPath: string;
+  audioItemCount: number;
+  episodeId: string;
+}
+
+function toAudioKey(episodeId: string, utteranceId: string): string {
   return `${episodeId}_${utteranceId}`;
 }
 
-async function loadJson(filePath) {
+async function loadJson<T>(filePath: string): Promise<T> {
   const raw = await readFile(filePath, "utf-8");
-  return JSON.parse(raw);
+  return JSON.parse(raw) as T;
 }
 
-async function resolveProfilePath(profilePath) {
+async function resolveProfilePath(profilePath?: string): Promise<string> {
   if (profilePath) {
     return path.resolve(profilePath);
   }
@@ -33,21 +84,21 @@ export async function runStage5({
   speakerId,
   styleId,
   appVersion
-}) {
+}: RunStage5Options): Promise<RunStage5Result> {
   const resolvedStage4Path = path.resolve(stage4JsonPath);
   const resolvedOutDir = path.resolve(outDir);
   const resolvedProfilePath = await resolveProfilePath(profilePath);
 
-  const stage4Data = await loadJson(resolvedStage4Path);
-  const profile = await loadJson(resolvedProfilePath);
+  const stage4Data = await loadJson<Stage4Data>(resolvedStage4Path);
+  const profile = await loadJson<VoiceProfile>(resolvedProfilePath);
 
   const finalEngineId = engineId || profile.engineId;
   const finalSpeakerId = speakerId || profile.speakerId;
   const finalStyleId = Number(styleId ?? profile.styleId);
   const finalAppVersion = appVersion || profile.appVersion || "0.0.0";
 
-  const audioKeys = [];
-  const audioItems = {};
+  const audioKeys: string[] = [];
+  const audioItems: Record<string, Stage5AudioItem> = {};
 
   for (const utterance of stage4Data.utterances) {
     const key = toAudioKey(stage4Data.meta.episode_id, utterance.utterance_id);
