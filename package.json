@@ -7,10 +7,16 @@
     "stage4": "bun src/cli/main.js stage4",
     "stage5": "bun src/cli/main.js stage5",
     "pipeline": "bun src/cli/main.js pipeline",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "ajv": "^8.17.1",
     "kuromoji": "^0.1.2"
+  },
+  "devDependencies": {
+    "@types/kuromoji": "^0.1.3",
+    "@types/node": "^25.2.3",
+    "typescript": "^5.9.3"
   }
 }
