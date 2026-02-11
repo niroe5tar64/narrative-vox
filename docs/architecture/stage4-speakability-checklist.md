@@ -33,6 +33,17 @@
 | Terminal punctuation is infrequent | `bun run build-text -- --script /tmp/nv-stage4-script/E01_script.md --run-dir /tmp/nv-test-run/run-20260211-8888 --project-id introducing-rescript --run-id run-20260211-8888 --episode-id E01` | `terminal_punctuation_ratio=0.5` / Terminal punctuation 警告 |
 | Terminal punctuation is infrequent（比率低） | `bun run build-text -- --script /tmp/nv-stage4-script/E02_script.md --run-dir /tmp/nv-test-run/run-20260211-9999 --project-id introducing-rescript --run-id run-20260211-9999 --episode-id E02` | `terminal_punctuation_ratio=0.467` / `long_utterance_ratio=0.067` / Terminal punctuation 警告 |
 
+## 再現ログの活用
+
+- `projects/introducing-rescript/run-20260211-0000/stage4/E04_voicevox_text.json` には `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` と `quality_checks.warnings` の 3 件警告が記録されているため、Phase5 ではこの JSON を参照して「低スコア・長文率・終端句読点不足」がいずれも観察できる状況を再現します。
+- `projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json` および `E02_voicevox_text.json` では `terminal_punctuation_ratio=0.5` / `0.467` が記録されており、`quality_checks.warnings` には Terminal punctuation 警告のみが含まれているので、読点/句点追加の対策と `SpeakabilityWarningConfig.minTerminalPunctuationRatio=0.65` に関する説明を補強する材料になります。
+- `stage4_dict/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
+
+## テストとの紐付け
+
+- `tests/pipeline/stage4_stage5.test.ts` では `/tmp/nv-stage4-script/E04_script.md` を使って `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と Jira などの報告をリンクさせることで再現済みシナリオを維持できます。
+- `tests/pipeline/stage4_unit.test.ts` 系のユニットテストは `evaluateSpeakability`/`splitIntoSentences`/`decidePauseLengthMs` などの内部ロジックが期待どおりに動作し、`SpeakabilityWarningConfig.*` の各しきい値で警告をトリガーする前提を支えるため、変更を加える際は該当テストの入力値も見直してください。
+
 ## 警告別ドキュメント更新のたたき台
 
 | 警告 | `SpeakabilityWarningConfig` 設定 | README/チェックリストで追記すべきポイント | Phase5 ガイド |

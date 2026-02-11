@@ -125,3 +125,5 @@ bun run build-all -- \
 | Long utterance ratio is high | `long_utterance_ratio > 0.25` | `splitIntoSentences` の `maxCharsPerSentence` 制御点を引き締め、`collectPreferredSplitPoints` を再考する | `E04 script` で 44% の長文率を再現 |
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
+
+再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/stage4/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `stage4_dict/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/stage4_voicevox_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。

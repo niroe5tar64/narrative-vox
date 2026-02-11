@@ -45,6 +45,7 @@ const SpeakabilityWarningConfig = {
   minTerminalPunctuationRatio: 0.65,
   maxLongUtteranceRatio: 0.25
 } as const;
+const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 
 function formatPercentage(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -167,21 +168,21 @@ export async function runStage4({
   }
   if (speakability.score < SpeakabilityWarningConfig.scoreThreshold) {
     warnings.push(
-      `Speakability score is low (${speakability.score}/100). Consider shorter utterances and clearer sentence endings.`
+      `Speakability score is low (score=${speakability.score}/100, threshold=${SpeakabilityWarningConfig.scoreThreshold}). Refer to ${phase5GuidanceRelativePath} to correlate with SpeakabilityWarningConfig.scoreThreshold guidance.`
     );
   }
   if (speakability.terminal_punctuation_ratio < SpeakabilityWarningConfig.minTerminalPunctuationRatio) {
     warnings.push(
       `Terminal punctuation is infrequent (${formatPercentage(
         speakability.terminal_punctuation_ratio
-      )}). Aim for clearer sentence endings (。！？).`
+      )}, threshold=${SpeakabilityWarningConfig.minTerminalPunctuationRatio}). Add clearer sentence endings and see ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio context.`
     );
   }
   if (speakability.long_utterance_ratio > SpeakabilityWarningConfig.maxLongUtteranceRatio) {
     warnings.push(
       `Long utterance ratio is high (${formatPercentage(
         speakability.long_utterance_ratio
-      )}). Split longer lines into tighter sentences.`
+      )}, threshold=${SpeakabilityWarningConfig.maxLongUtteranceRatio}). Split longer lines and consult ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
     );
   }
 

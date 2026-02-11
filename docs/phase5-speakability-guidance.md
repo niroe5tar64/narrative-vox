@@ -23,3 +23,8 @@ Phase5 では Stage4 の Speakability 警告を軽微指摘として整備し、
 - `README.md` Stage4 セクションには、本ドキュメントと `docs/architecture/stage4-speakability-checklist.md` へのリンクを並べて、Stage4 の警告処理フローを伝える。
 - `docs/architecture/stage4-speakability-checklist.md` では、警告条件・`SpeakabilityWarningConfig` 設定名・再現スクリプト・CSV ヘッダー確認の手順を維持しつつ、`docs/phase5-speakability-guidance.md` で挙げた期待値・対策・テストへのリンクを追記する。
 - Phase5 の軽微指摘一覧（`.tmp/memo/tasks/claude_review_progress.md`）と今回の `docs/phase5-speakability-guidance.md` を合わせて、QA/レビュー担当が次の作業順序（期待値整理 → 再現テスト → 文言・リンク仕上げ → 追加テスト）を理解できるようにする。
+
+## テストとのリンク
+
+- `tests/pipeline/stage4_stage5.test.ts` は `/tmp/nv-stage4-script/E04_script.md` を使用して Speakability 警告（score/long ratio/terminal punctuation）を再現しているため、Phase5 の再現ログと一致する振る舞いを継続するのに役立ちます。
+- `tests/pipeline/stage4_unit.test.ts` は `evaluateSpeakability`/`splitIntoSentences`/`decidePauseLengthMs` の個別関数が想定どおりの値を返すことを確認しているので、`SpeakabilityWarningConfig.*` のしきい値をいじる際にはこのテスト群の fixture も見直し、説明を README/チェックリストに追記してください。
