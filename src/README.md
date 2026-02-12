@@ -6,6 +6,6 @@
 
 - `src/cli/main.ts`
   - `build-text`: script -> voicevox text
-  - `build-project`: stage4 json -> vvproj
+  - `build-project`: voicevox_text json -> vvproj
   - `build-all`: build-text + build-project
   - `check-run`: stage1-3 validation

@@ -28,9 +28,9 @@
 │       ├── stage1/
 │       ├── stage2/
 │       ├── stage3/
-│       ├── stage4/
-│       ├── stage4_dict/
-│       ├── stage5/
+│       ├── voicevox_text/
+│       ├── dict_candidates/
+│       ├── voicevox_project/
 │       ├── reports/
 │       └── logs/
 ├── schemas/
@@ -60,9 +60,9 @@
   - `projects/introducing-rescript/run-20260211-0000/stage1/`
   - `projects/introducing-rescript/run-20260211-0000/stage2/`
   - `projects/introducing-rescript/run-20260211-0000/stage3/`
-  - `projects/introducing-rescript/run-20260211-0000/stage4/`
-  - `projects/introducing-rescript/run-20260211-0000/stage4_dict/`
-- `projects/introducing-rescript/run-20260211-0000/stage5/`
+  - `projects/introducing-rescript/run-20260211-0000/voicevox_text/`
+  - `projects/introducing-rescript/run-20260211-0000/dict_candidates/`
+- `projects/introducing-rescript/run-20260211-0000/voicevox_project/`
 - `projects/introducing-rescript/run-20260211-0000/reports/`
 - Stage4 の Speakability 警告再現手順は `docs/architecture/build-text-speakability-checklist.md` を参照してください。
 
@@ -87,7 +87,7 @@ bun run build-text -- \
 
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
-  --stage4-json projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json \
+  --stage4-json projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json \
   --prefill-query minimal
 
 # Build Text + Build Project を連続実行
@@ -102,7 +102,7 @@ bun run build-all -- \
 - `bun run prepare-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
 - `build-text` / `build-project` / `build-all` の `--run-dir` は任意です。
   - `build-text` / `build-all`: `--script` が `.../run-.../stage3/...` 配下なら自動推論
-  - `build-project`: `--stage4-json` が `.../run-.../stage4/...` 配下なら自動推論
+  - `build-project`: `--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
 
 ## Build Text 辞書CSVの確認観点
@@ -126,4 +126,4 @@ bun run build-all -- \
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
 
-再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/stage4/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `stage4_dict/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。
+再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/voicevox_text/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `dict_candidates/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。

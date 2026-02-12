@@ -23,7 +23,7 @@
 1. `bun run build-text -- --script <script> --run-dir <run-dir> --project-id introducing-rescript --run-id <run> --episode-id <expected>` を実行する（必要なスクリプトは `/tmp/nv-stage4-script/` に存在）。  
 2. 出力 JSON の `quality_checks.speakability` を確認し、上記の `score`/`ratio` が期待どおりであるか検証する。  
 3. `quality_checks.warnings` に該当の警告メッセージが含まれていることを確認する。  
-4. `stage4_dict/<episode>_dict_candidates.csv` を開いて `DictionaryCsvField` のヘッダー順（`surface,reading,priority,occurrences,source,note`）と quote ルールが守れているか確認。
+4. `dict_candidates/<episode>_dict_candidates.csv` を開いて `DictionaryCsvField` のヘッダー順（`surface,reading,priority,occurrences,source,note`）と quote ルールが守れているか確認。
 
 ### 実行例（CLI）
 
@@ -35,9 +35,9 @@
 
 ## 再現ログの活用
 
-- `projects/introducing-rescript/run-20260211-0000/stage4/E04_voicevox_text.json` には `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` と `quality_checks.warnings` の 3 件警告が記録されているため、Phase5 ではこの JSON を参照して「低スコア・長文率・終端句読点不足」がいずれも観察できる状況を再現します。
-- `projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json` および `E02_voicevox_text.json` では `terminal_punctuation_ratio=0.5` / `0.467` が記録されており、`quality_checks.warnings` には Terminal punctuation 警告のみが含まれているので、読点/句点追加の対策と `SpeakabilityWarningConfig.minTerminalPunctuationRatio=0.65` に関する説明を補強する材料になります。
-- `stage4_dict/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
+- `projects/introducing-rescript/run-20260211-0000/voicevox_text/E04_voicevox_text.json` には `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` と `quality_checks.warnings` の 3 件警告が記録されているため、Phase5 ではこの JSON を参照して「低スコア・長文率・終端句読点不足」がいずれも観察できる状況を再現します。
+- `projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json` および `E02_voicevox_text.json` では `terminal_punctuation_ratio=0.5` / `0.467` が記録されており、`quality_checks.warnings` には Terminal punctuation 警告のみが含まれているので、読点/句点追加の対策と `SpeakabilityWarningConfig.minTerminalPunctuationRatio=0.65` に関する説明を補強する材料になります。
+- `dict_candidates/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
 
 ## テストとの紐付け
 

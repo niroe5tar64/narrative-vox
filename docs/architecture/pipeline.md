@@ -20,14 +20,14 @@
 
 4. Stage 4: VOICEVOX Text
 - Input: script
-- Output: `stage4/E##_voicevox_text.json`
-- Output: `stage4/E##_voicevox.txt`
-- Output: `stage4_dict/E##_dict_candidates.csv`
+- Output: `voicevox_text/E##_voicevox_text.json`
+- Output: `voicevox_text/E##_voicevox.txt`
+- Output: `dict_candidates/E##_dict_candidates.csv`
 
 5. Stage 5: VOICEVOX Import
-- Input: `stage4/E##_voicevox_text.json` + voice profile
-- Output: `stage5/E##_voicevox_import.json`
-- Output: `stage5/E##.vvproj`
+- Input: `voicevox_text/E##_voicevox_text.json` + voice profile
+- Output: `voicevox_project/E##_voicevox_import.json`
+- Output: `voicevox_project/E##.vvproj`
 
 ## Data Layout
 

@@ -8,10 +8,10 @@
 
 ## 出力
 
-- `stage4/E##_voicevox_text.json`
+- `voicevox_text/E##_voicevox_text.json`
   - スキーマ: `schemas/stage4.voicevox-text.schema.json`
-- `stage4/E##_voicevox.txt`
-- `stage4_dict/E##_dict_candidates.csv`
+- `voicevox_text/E##_voicevox.txt`
+- `dict_candidates/E##_dict_candidates.csv`
 
 ## 変換ルール（最小）
 

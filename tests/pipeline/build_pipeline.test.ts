@@ -207,7 +207,7 @@ test("stage4 infers run-dir from --script path when run-dir is omitted", async (
     scriptPath
   });
 
-  assert.equal(path.dirname(stage4.voicevoxTextJsonPath), path.join(runDir, "stage4"));
+  assert.equal(path.dirname(stage4.voicevoxTextJsonPath), path.join(runDir, "voicevox_text"));
   const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.meta.run_id, "run-20260211-5555");
 });
@@ -230,7 +230,7 @@ test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", as
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
 
-  assert.equal(path.dirname(stage5.importJsonPath), path.join(runDir, "stage5"));
+  assert.equal(path.dirname(stage5.importJsonPath), path.join(runDir, "voicevox_project"));
 });
 
 test("stage4 rejects invalid --run-id format with expected pattern in message", async () => {

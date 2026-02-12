@@ -4,13 +4,13 @@
 
 ## 入力
 
-- `stage4/E##_voicevox_text.json`
+- `voicevox_text/E##_voicevox_text.json`
 - `configs/voicevox/default_profile.json`（ローカル）または `configs/voicevox/default_profile.example.json`
 
 ## 出力
 
-- `stage5/E##_voicevox_import.json`
-- `stage5/E##.vvproj`
+- `voicevox_project/E##_voicevox_import.json`
+- `voicevox_project/E##.vvproj`
   - スキーマ: `schemas/stage5.voicevox-import.schema.json`
 
 ## 変換ルール
@@ -25,8 +25,8 @@
 
 ```bash
 bun run build-project -- \
-  --stage4-json projects/<id>/run-YYYYMMDD-HHMM/stage4/E01_voicevox_text.json \
+  --stage4-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json \
   --prefill-query minimal
 ```
 
-- `--run-dir` は任意（`--stage4-json` が `.../run-.../stage4/...` 配下なら自動推論）。
+- `--run-dir` は任意（`--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論）。

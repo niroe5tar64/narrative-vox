@@ -56,8 +56,8 @@ function inferProjectAndRun(
 }
 
 function buildTextOutputPaths(runDir: string, episodeId: string): BuildTextOutputPaths {
-  const voicevoxTextDir = path.join(runDir, "stage4");
-  const dictionaryDir = path.join(runDir, "stage4_dict");
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  const dictionaryDir = path.join(runDir, "dict_candidates");
   return {
     voicevoxTextDir,
     dictionaryDir,

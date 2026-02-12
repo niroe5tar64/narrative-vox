@@ -27,14 +27,14 @@
 
 4. Stage 4 (script -> voicevox text)
 - 入力: `stage3/E##_script.md`
-- 出力: `stage4/E##_voicevox_text.json`
-- 出力: `stage4/E##_voicevox.txt`
-- 出力: `stage4_dict/E##_dict_candidates.csv`
+- 出力: `voicevox_text/E##_voicevox_text.json`
+- 出力: `voicevox_text/E##_voicevox.txt`
+- 出力: `dict_candidates/E##_dict_candidates.csv`
 
 5. Stage 5 (voicevox text -> import)
-- 入力: `stage4/E##_voicevox_text.json` + `configs/voicevox/default_profile.json`（ローカル）または `configs/voicevox/default_profile.example.json`
-- 出力: `stage5/E##_voicevox_import.json`
-- 出力: `stage5/E##.vvproj`
+- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/default_profile.json`（ローカル）または `configs/voicevox/default_profile.example.json`
+- 出力: `voicevox_project/E##_voicevox_import.json`
+- 出力: `voicevox_project/E##.vvproj`
 
 6. 品質確認
 - 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/reports/quality_gate_report.md`
@@ -62,7 +62,7 @@ Stage 2で回を切り替える場合は以下を追加します。
 - `BOOK_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
 
-## CLI 実行例（Stage4/5）
+## CLI 実行例（Build Text/Project）
 
 ```bash
 bun run build-all -- \

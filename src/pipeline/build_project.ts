@@ -90,7 +90,7 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
 
 function inferRunDirFromVoicevoxTextJsonPath(voicevoxTextJsonPath: string): string | undefined {
   const voicevoxTextDir = path.dirname(path.resolve(voicevoxTextJsonPath));
-  if (path.basename(voicevoxTextDir) !== "stage4") {
+  if (path.basename(voicevoxTextDir) !== "voicevox_text") {
     return undefined;
   }
   return path.dirname(voicevoxTextDir);
@@ -138,7 +138,7 @@ export async function buildProject({
     : inferRunDirFromVoicevoxTextJsonPath(resolvedVoicevoxTextPath);
   if (!inferredRunDir) {
     throw new Error(
-      "Could not infer run directory from --stage4-json path. Pass --run-dir explicitly."
+      "Could not infer run directory from --stage4-json path. Expected .../voicevox_text/... or pass --run-dir explicitly."
     );
   }
   const resolvedRunDir = inferredRunDir;
@@ -205,7 +205,7 @@ export async function buildProject({
 
   await validateAgainstSchema(vvproj, SchemaPaths.voicevoxProjectImport);
 
-  const projectDir = path.join(resolvedRunDir, "stage5");
+  const projectDir = path.join(resolvedRunDir, "voicevox_project");
   await mkdir(projectDir, { recursive: true });
 
   const episodeId = voicevoxTextData.meta.episode_id;
