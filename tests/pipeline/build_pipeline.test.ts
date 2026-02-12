@@ -4,8 +4,8 @@ import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { runStage4 } from "../../src/pipeline/stage4_voicevox_text.ts";
-import { runStage5 } from "../../src/pipeline/stage5_voicevox_import.ts";
+import { buildText } from "../../src/pipeline/build_text.ts";
+import { buildProject } from "../../src/pipeline/build_project.ts";
 
 interface Stage4JsonTest {
   meta: {
@@ -64,7 +64,7 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -78,7 +78,7 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
   assert.equal(stage4Json.quality_checks.speakability.score >= 0, true);
   assert.equal(stage4Json.quality_checks.speakability.score <= 100, true);
 
-  const stage5 = await runStage5({
+  const stage5 = await buildProject({
     stage4JsonPath: stage4.stage4JsonPath,
     runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
@@ -94,7 +94,7 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -102,7 +102,7 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
     runId: "run-20260211-1234"
   });
 
-  const stage5 = await runStage5({
+  const stage5 = await buildProject({
     stage4JsonPath: stage4.stage4JsonPath,
     runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
@@ -134,7 +134,7 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -144,7 +144,7 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
 
   await assert.rejects(
     () =>
-      runStage5({
+      buildProject({
         stage4JsonPath: stage4.stage4JsonPath,
         runDir,
         profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
@@ -159,7 +159,7 @@ test("stage4 uses run_id from run-dir path when --run-id is omitted", async () =
   const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-2222", "artifacts");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -175,7 +175,7 @@ test("stage4 auto-generates run_id when not found in --run-dir", async () => {
   const runDir = path.join(tempRoot, "introducing-rescript", "output");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -203,7 +203,7 @@ test("stage4 infers run-dir from --script path when run-dir is omitted", async (
     "utf-8"
   );
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath
   });
 
@@ -217,7 +217,7 @@ test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", as
   const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-6666");
   await mkdir(runDir, { recursive: true });
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath: sampleScriptPath,
     runDir,
     episodeId: "E01",
@@ -225,7 +225,7 @@ test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", as
     runId: "run-20260211-6666"
   });
 
-  const stage5 = await runStage5({
+  const stage5 = await buildProject({
     stage4JsonPath: stage4.stage4JsonPath,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
@@ -240,7 +240,7 @@ test("stage4 rejects invalid --run-id format with expected pattern in message", 
 
   await assert.rejects(
     () =>
-      runStage4({
+      buildText({
         scriptPath: sampleScriptPath,
         runDir,
         episodeId: "E01",
@@ -268,7 +268,7 @@ test("stage4 extracts dictionary candidates with readings from morphological ana
     "utf-8"
   );
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath,
     runDir,
     episodeId: "E99",
@@ -305,7 +305,7 @@ test("stage4 adds warning when speakability score is low", async () => {
     "utf-8"
   );
 
-  const stage4 = await runStage4({
+  const stage4 = await buildText({
     scriptPath,
     runDir,
     episodeId: "E98",

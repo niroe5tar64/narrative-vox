@@ -9,7 +9,7 @@ import {
   decidePauseLengthMs,
   evaluateSpeakability,
   normalizeScriptLine
-} from "./stage4/text_processing.ts";
+} from "./build_text/text_processing.ts";
 import {
   collectRubyCandidates,
   collectTermCandidates,
@@ -19,9 +19,9 @@ import {
   priorityForCandidate,
   toDictionaryCandidates,
   TermCandidateMap
-} from "./stage4/dictionary.ts";
-import { writeStage4Artifacts, Stage4Paths } from "./stage4/io.ts";
-import { resolveRunMetadata } from "./stage4/run_metadata.ts";
+} from "./build_text/dictionary.ts";
+import { writeStage4Artifacts, Stage4Paths } from "./build_text/io.ts";
+import { resolveRunMetadata } from "./build_text/run_metadata.ts";
 
 export {
   collectRubyCandidates,
@@ -30,14 +30,14 @@ export {
   inferReadingFromSurface,
   priorityForCandidate,
   toDictionaryCandidates
-} from "./stage4/dictionary.ts";
+} from "./build_text/dictionary.ts";
 
 export {
   splitIntoSentences,
   decidePauseLengthMs,
   evaluateSpeakability,
   normalizeScriptLine
-} from "./stage4/text_processing.ts";
+} from "./build_text/text_processing.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
 
@@ -51,7 +51,7 @@ const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 function formatPercentage(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
 }
-interface RunStage4Options {
+interface BuildTextOptions {
   scriptPath: string;
   runDir?: string;
   projectId?: string;
@@ -59,7 +59,7 @@ interface RunStage4Options {
   episodeId?: string;
 }
 
-interface RunStage4Result {
+interface BuildTextResult {
   stage4JsonPath: string;
   stage4TxtPath: string;
   dictCsvPath: string;
@@ -192,13 +192,13 @@ function buildStage4Data(params: {
   };
 }
 
-export async function runStage4({
+export async function buildText({
   scriptPath,
   runDir,
   projectId,
   runId,
   episodeId
-}: RunStage4Options): Promise<RunStage4Result> {
+}: BuildTextOptions): Promise<BuildTextResult> {
   const metadata = resolveRunMetadata({
     scriptPath,
     runDir,

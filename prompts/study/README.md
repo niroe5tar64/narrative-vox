@@ -7,8 +7,8 @@
 - `prompts/study/stage1_blueprint.md`
 - `prompts/study/stage2_episode_variables.md`
 - `prompts/study/stage3_script_common_frame.md`
-- `prompts/study/stage4_voicevox_text.md`
-- `prompts/study/stage5_voicevox_import.md`
+- `prompts/study/build_text.md`
+- `prompts/study/build_project.md`
 - `configs/books/<book-id>.json`
 
 ## 実行順

@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { validateStage123Run } from "../../src/quality/stage123_run_validator.ts";
+import { checkRun } from "../../src/quality/check_run.ts";
 
 const sampleRunDir = path.resolve("projects/introducing-rescript/run-20260211-0000");
 
@@ -73,8 +73,8 @@ async function prepareMinimalRun(
   return runDir;
 }
 
-test("validateStage123Run accepts current sample run", async () => {
-  const result = await validateStage123Run({
+test("checkRun accepts current sample run", async () => {
+  const result = await checkRun({
     runDir: sampleRunDir
   });
 
@@ -83,7 +83,7 @@ test("validateStage123Run accepts current sample run", async () => {
   assert.equal(result.validatedEpisodeIds[0], "E01");
 });
 
-test('validateStage123Run rejects stage3 script without "合計想定時間:"', async () => {
+test('checkRun rejects stage3 script without "合計想定時間:"', async () => {
   const invalidScript = buildValidScript()
     .split("\n")
     .filter((line) => !line.startsWith("合計想定時間:"))
@@ -91,19 +91,19 @@ test('validateStage123Run rejects stage3 script without "合計想定時間:"', 
   const runDir = await prepareMinimalRun(["E01"], { E01: invalidScript });
 
   await assert.rejects(
-    () => validateStage123Run({ runDir }),
+    () => checkRun({ runDir }),
     /missing "合計想定時間:" line/
   );
 });
 
-test("validateStage123Run rejects episode mismatch between stage2 and stage3", async () => {
+test("checkRun rejects episode mismatch between stage2 and stage3", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildValidScript(),
     E02: buildValidScript()
   });
 
   await assert.rejects(
-    () => validateStage123Run({ runDir }),
+    () => checkRun({ runDir }),
     /stage3 has episodes not in stage2 variables: E02/
   );
 });

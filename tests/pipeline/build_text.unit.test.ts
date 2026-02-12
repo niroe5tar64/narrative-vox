@@ -10,7 +10,7 @@ import {
   replaceRubyWithReading,
   splitIntoSentences,
   toDictionaryCandidates
-} from "../../src/pipeline/stage4_voicevox_text.ts";
+} from "../../src/pipeline/build_text.ts";
 
 test("splitIntoSentences splits by Japanese and ASCII sentence endings", () => {
   const actual = splitIntoSentences("導入です。 次に進む？Yes! 改行\n最後。");

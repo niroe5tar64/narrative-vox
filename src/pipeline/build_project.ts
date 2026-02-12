@@ -52,7 +52,7 @@ interface Stage5AudioItem {
 
 type QueryPrefillMode = "none" | "minimal";
 
-interface RunStage5Options {
+interface BuildProjectOptions {
   stage4JsonPath: string;
   runDir?: string;
   profilePath?: string;
@@ -63,7 +63,7 @@ interface RunStage5Options {
   prefillQuery?: string;
 }
 
-interface RunStage5Result {
+interface BuildProjectResult {
   importJsonPath: string;
   vvprojPath: string;
   audioItemCount: number;
@@ -122,7 +122,7 @@ function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
   };
 }
 
-export async function runStage5({
+export async function buildProject({
   stage4JsonPath,
   runDir,
   profilePath,
@@ -131,7 +131,7 @@ export async function runStage5({
   styleId,
   appVersion,
   prefillQuery
-}: RunStage5Options): Promise<RunStage5Result> {
+}: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedStage4Path = path.resolve(stage4JsonPath);
   const inferredRunDir = runDir
     ? path.resolve(runDir)

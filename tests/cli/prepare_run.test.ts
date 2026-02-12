@@ -8,7 +8,7 @@ import {
   findLatestRunDir,
   makeRunIdNow,
   validateRunId
-} from "../../src/cli/new_run.ts";
+} from "../../src/cli/prepare_run.ts";
 
 test("makeRunIdNow creates run-YYYYMMDD-HHMM format", () => {
   const runId = makeRunIdNow(new Date("2026-02-11T12:34:56.000Z"));

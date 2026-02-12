@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 import path from "node:path";
-import { runStage4 } from "../pipeline/stage4_voicevox_text.ts";
-import { runStage5 } from "../pipeline/stage5_voicevox_import.ts";
-import { validateStage123Run } from "../quality/stage123_run_validator.ts";
+import { buildText } from "../pipeline/build_text.ts";
+import { buildProject } from "../pipeline/build_project.ts";
+import { checkRun } from "../quality/check_run.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
 import type { CliOptions } from "../shared/cli_args.ts";
 
@@ -48,7 +48,7 @@ function buildStage5Options(options: CliOptions) {
 
 const commandHandlers: Record<CommandName, CommandHandler> = {
   "build-text": async (options) => {
-    const result = await runStage4({
+    const result = await buildText({
       scriptPath: ensureOption(options, "script", "build-text"),
       runDir: optionAsString(options, "run-dir"),
       projectId: optionAsString(options, "project-id"),
@@ -64,7 +64,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(`- ${path.relative(process.cwd(), result.dictCsvPath)}`);
   },
   "build-project": async (options) => {
-    const result = await runStage5({
+    const result = await buildProject({
       stage4JsonPath: ensureOption(options, "stage4-json", "build-project"),
       ...buildStage5Options(options)
     });
@@ -75,7 +75,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "build-all": async (options) => {
     const runDir = optionAsString(options, "run-dir");
-    const stage4Result = await runStage4({
+    const stage4Result = await buildText({
       scriptPath: ensureOption(options, "script", "build-all"),
       runDir,
       projectId: optionAsString(options, "project-id"),
@@ -83,7 +83,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       episodeId: optionAsString(options, "episode-id")
     });
 
-    const result = await runStage5({
+    const result = await buildProject({
       stage4JsonPath: stage4Result.stage4JsonPath,
       ...buildStage5Options(options),
       runDir
@@ -98,7 +98,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     );
   },
   "check-run": async (options) => {
-    const result = await validateStage123Run({
+    const result = await checkRun({
       runDir: ensureOption(options, "run-dir", "check-run")
     });
 

@@ -7,11 +7,11 @@ import { validateRequiredScriptStructure } from "../shared/script_structure.ts";
 const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 
-export interface ValidateRunOptions {
+export interface CheckRunOptions {
   runDir: string;
 }
 
-export interface ValidateRunResult {
+export interface CheckRunResult {
   runDir: string;
   stage2EpisodeCount: number;
   stage3EpisodeCount: number;
@@ -53,7 +53,7 @@ function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
   return baseIds.filter((id) => !compareSet.has(id));
 }
 
-export async function validateStage123Run({ runDir }: ValidateRunOptions): Promise<ValidateRunResult> {
+export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
 
   const stage1Path = path.join(resolvedRunDir, "stage1", "book_blueprint.json");
