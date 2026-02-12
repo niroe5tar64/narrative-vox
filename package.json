@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "prepare-run": "bun src/cli/main.ts prepare-run",
+    "check-run": "bun src/cli/main.ts check-run",
     "build-text": "bun src/cli/main.ts build-text",
     "build-project": "bun src/cli/main.ts build-project",
     "build-all": "bun src/cli/main.ts build-all",
-    "check-run": "bun src/cli/main.ts check-run",
-    "prepare-run": "bun src/cli/prepare_run.ts",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },

@@ -2,11 +2,12 @@
 import path from "node:path";
 import { buildText } from "../pipeline/build_text.ts";
 import { buildProject } from "../pipeline/build_project.ts";
+import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
 import type { CliOptions } from "../shared/cli_args.ts";
 
-type CommandName = "build-text" | "build-project" | "build-all" | "check-run";
+type CommandName = "build-text" | "build-project" | "build-all" | "check-run" | "prepare-run";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
@@ -17,7 +18,9 @@ const usageByCommand: Record<CommandName, string> = {
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
-    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>"
+    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>",
+  "prepare-run":
+    "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]"
 };
 
 function printUsage(command?: string) {
@@ -31,6 +34,7 @@ function printUsage(command?: string) {
   ${usageByCommand["build-project"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-all"].replace("Usage:\n  ", "")}
   ${usageByCommand["check-run"].replace("Usage:\n  ", "")}
+  ${usageByCommand["prepare-run"].replace("Usage:\n  ", "")}
 `);
 }
 
@@ -106,7 +110,10 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       `Check run done: episodes=${result.validatedEpisodeIds.length}, stage2=${result.stage2EpisodeCount}, stage3=${result.stage3EpisodeCount}`
     );
     console.log(`- run: ${path.relative(process.cwd(), result.runDir)}`);
-  }
+  },
+  "prepare-run": async (options) => {
+    await runPrepareRun(options);
+  },
 };
 
 async function main() {

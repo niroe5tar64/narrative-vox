@@ -4,6 +4,7 @@ import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
 import { parseCliArgs, optionAsString } from "../shared/cli_args.ts";
+import type { CliOptions } from "../shared/cli_args.ts";
 import { RUN_ID_RE, makeRunIdNow, validateRunId } from "../shared/run_id.ts";
 
 export { makeRunIdNow, validateRunId };
@@ -142,8 +143,7 @@ export async function cloneRunDirectories({
 	}
 }
 
-async function main() {
-	const options = parseCliArgs(process.argv.slice(2));
+export async function runPrepareRun(options: CliOptions) {
 	const showHelp = Boolean(options.help || options.h);
 	if (showHelp) {
 		printUsage();
@@ -254,6 +254,10 @@ async function main() {
 	} finally {
 		await rl?.close();
 	}
+}
+
+async function main() {
+	await runPrepareRun(parseCliArgs(process.argv.slice(2)));
 }
 
 if (import.meta.main) {
