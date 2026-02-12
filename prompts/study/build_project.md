@@ -19,7 +19,7 @@
 2. `audioKeys` は `E##_U###` 形式で連番化する。
 3. `voice.engineId/speakerId/styleId` は profile を適用する。
 4. `song` は空トラック構成で最小値を埋める。
-5. `--prefill-query minimal` 指定時は `talk.audioItems[*].query` を profile の `queryDefaults`（未指定時は組み込み既定値）で事前埋めする。
+5. `--prefill-query minimal` 指定時は `talk.audioItems[*].query` を profile の `queryDefaults`（未指定時は組み込み既定値）で事前埋めし、`postPhonemeLength` は Stage4 `pause_length_ms` を秒換算して反映する。
 
 ## 実行
 

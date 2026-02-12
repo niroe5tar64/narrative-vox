@@ -34,6 +34,15 @@ test("splitIntoSentences falls back to max-char split when no boundary exists", 
   assert.deepEqual(actual, ["abcdefghij", "klmnop"]);
 });
 
+test("splitIntoSentences avoids trailing tiny fragments when sentence barely exceeds limit", () => {
+  const text =
+    "PRレビューの最初に「型で防げる不具合を実装で受けていないか」「境界の責務が明確か」を確認します。";
+  const actual = splitIntoSentences(text, { maxCharsPerSentence: 48 });
+
+  assert.equal(actual.some((sentence) => sentence === "。" || sentence === "す。"), false);
+  assert.equal(actual.join(""), text);
+});
+
 test("decidePauseLengthMs uses punctuation strength and continuation context", () => {
   assert.equal(decidePauseLengthMs("終わり。"), 320);
   assert.equal(decidePauseLengthMs("ok!"), 360);

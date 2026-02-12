@@ -106,7 +106,19 @@ function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
   throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal`);
 }
 
-function buildMinimalQuery(profile: VoiceProfile): ProjectAudioQuery {
+function toPostPhonemeLength(
+  defaultPostPhonemeLength: number,
+  pauseLengthMs?: number
+): number {
+  if (typeof pauseLengthMs !== "number" || !Number.isFinite(pauseLengthMs)) {
+    return defaultPostPhonemeLength;
+  }
+
+  const fromPause = Math.max(0, Math.round(pauseLengthMs) / 1000);
+  return Math.max(defaultPostPhonemeLength, fromPause);
+}
+
+function buildMinimalQuery(profile: VoiceProfile, pauseLengthMs?: number): ProjectAudioQuery {
   const defaults = profile.queryDefaults;
   return {
     accentPhrases: [],
@@ -116,7 +128,7 @@ function buildMinimalQuery(profile: VoiceProfile): ProjectAudioQuery {
     volumeScale: defaults.volumeScale,
     pauseLengthScale: defaults.pauseLengthScale,
     prePhonemeLength: defaults.prePhonemeLength,
-    postPhonemeLength: defaults.postPhonemeLength,
+    postPhonemeLength: toPostPhonemeLength(defaults.postPhonemeLength, pauseLengthMs),
     outputSamplingRate: defaults.outputSamplingRate,
     outputStereo: defaults.outputStereo
   };
@@ -172,7 +184,7 @@ export async function buildProject({
       }
     };
     if (queryPrefillMode === "minimal") {
-      audioItem.query = buildMinimalQuery(profile);
+      audioItem.query = buildMinimalQuery(profile, utterance.pause_length_ms);
     }
     audioItems[key] = audioItem;
   }

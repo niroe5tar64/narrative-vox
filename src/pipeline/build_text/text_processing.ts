@@ -84,6 +84,10 @@ function chooseSplitPoint(text: string, maxCharsPerSentence: number): number {
 function splitLongSentence(text: string, maxCharsPerSentence: number): string[] {
   const chunks: string[] = [];
   let remaining = text.trim();
+  const minTailChars = Math.max(
+    2,
+    Math.min(MIN_SPLITTABLE_CHARS, Math.floor(maxCharsPerSentence / 2))
+  );
 
   while (remaining.length > maxCharsPerSentence) {
     const splitPoint = chooseSplitPoint(remaining, maxCharsPerSentence);
@@ -93,7 +97,9 @@ function splitLongSentence(text: string, maxCharsPerSentence: number): string[] 
 
     const head = remaining.slice(0, splitPoint).trim();
     const tail = remaining.slice(splitPoint).trim();
-    if (!head || !tail) {
+    // Avoid producing trailing fragments like "す。" or "。" when a sentence
+    // barely exceeds the max length. In that case we keep the sentence unsplit.
+    if (!head || !tail || tail.length < minTailChars) {
       break;
     }
 

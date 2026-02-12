@@ -51,7 +51,7 @@
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
   - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
-  - `--prefill-query minimal` を指定すると `talk.audioItems[*].query` を最小値で事前埋めできる
+  - `--prefill-query minimal` を指定すると `talk.audioItems[*].query` を最小値で事前埋めできる（`postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算して反映）
 
 ## サンプルデータ
 
@@ -126,4 +126,4 @@ bun run build-all -- \
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
 
-再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/voicevox_text/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `dict_candidates/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。
+2026-02-12 に再生成した `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は、`E01`〜`E12` すべてで `quality_checks.speakability` を含み、`quality_checks.warnings` は 0 件です。警告を再現して確認する場合は `docs/architecture/build-text-speakability-checklist.md` にある `/tmp/nv-stage4-script/*.md` を使用してください。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されています。

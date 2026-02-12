@@ -35,8 +35,8 @@
 
 ## 再現ログの活用
 
-- `projects/introducing-rescript/run-20260211-0000/voicevox_text/E04_voicevox_text.json` には `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` と `quality_checks.warnings` の 3 件警告が記録されているため、Phase5 ではこの JSON を参照して「低スコア・長文率・終端句読点不足」がいずれも観察できる状況を再現します。
-- `projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json` および `E02_voicevox_text.json` では `terminal_punctuation_ratio=0.5` / `0.467` が記録されており、`quality_checks.warnings` には Terminal punctuation 警告のみが含まれているので、読点/句点追加の対策と `SpeakabilityWarningConfig.minTerminalPunctuationRatio=0.65` に関する説明を補強する材料になります。
+- 警告再現の主データは `/tmp/nv-stage4-script/E01_script.md` `/tmp/nv-stage4-script/E02_script.md` `/tmp/nv-stage4-script/E04_script.md` から生成した run（例: `run-20260212-0300`）を使ってください。`E04` は `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` で 3 件警告、`E01` と `E02` は Terminal punctuation 警告を再現できます。
+- `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は 2026-02-12 再生成時点で `E01`〜`E12` の `quality_checks.warnings` が 0 件です。こちらは「通常サンプルの健全系確認」用途として扱ってください。
 - `dict_candidates/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
 
 ## テストとの紐付け

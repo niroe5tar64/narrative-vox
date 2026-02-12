@@ -12,7 +12,7 @@ interface VoicevoxTextJsonTest {
     episode_id: string;
     run_id: string;
   };
-  utterances: Array<{ utterance_id: string; text: string }>;
+  utterances: Array<{ utterance_id: string; text: string; pause_length_ms: number }>;
   dictionary_candidates: Array<{ surface: string; reading_or_empty: string }>;
   quality_checks: {
     speakability: {
@@ -86,7 +86,9 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
 
   const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
   assert.equal(stage5Json.talk.audioKeys.length, stage4Json.utterances.length);
-  assert.ok(stage5Json.talk.audioItems[stage5Json.talk.audioKeys[0]]);
+  const firstAudioItem = stage5Json.talk.audioItems[stage5Json.talk.audioKeys[0]];
+  assert.ok(firstAudioItem);
+  assert.equal(firstAudioItem.query, undefined);
 });
 
 test("stage5 prefill-query=minimal adds query defaults to every audio item", async () => {
@@ -109,13 +111,20 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
     prefillQuery: "minimal"
   });
 
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
   assert.equal(stage5Json.talk.audioKeys.length > 0, true);
+  const stage4UtteranceById = new Map(
+    stage4Json.utterances.map((utterance) => [utterance.utterance_id, utterance] as const)
+  );
 
   for (const audioKey of stage5Json.talk.audioKeys) {
     const audioItem = stage5Json.talk.audioItems[audioKey];
     assert.ok(audioItem);
     assert.ok(audioItem.query);
+    const utteranceId = audioKey.split("_").slice(1).join("_");
+    const sourceUtterance = stage4UtteranceById.get(utteranceId);
+    assert.ok(sourceUtterance);
     assert.deepEqual(audioItem.query?.accentPhrases, []);
     assert.equal(audioItem.query?.speedScale, 1);
     assert.equal(audioItem.query?.pitchScale, 0);
@@ -123,7 +132,7 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
     assert.equal(audioItem.query?.volumeScale, 1);
     assert.equal(audioItem.query?.pauseLengthScale, 1);
     assert.equal(audioItem.query?.prePhonemeLength, 0.1);
-    assert.equal(audioItem.query?.postPhonemeLength, 0.1);
+    assert.equal(audioItem.query?.postPhonemeLength, sourceUtterance.pause_length_ms / 1000);
     assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
     assert.equal(audioItem.query?.outputStereo, false);
   }
