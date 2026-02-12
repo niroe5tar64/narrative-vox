@@ -85,12 +85,12 @@ bun run build-text -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
   --run-id run-20260211-1234
 
-# 4) Stage4 JSON から VOICEVOX project を生成
+# 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
   --stage4-json projects/introducing-rescript/run-20260211-0000/stage4/E01_voicevox_text.json \
   --prefill-query minimal
 
-# Stage4 + Stage5 を連続実行
+# Build Text + Build Project を連続実行
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md
 ```
@@ -105,7 +105,7 @@ bun run build-all -- \
   - `build-project`: `--stage4-json` が `.../run-.../stage4/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
 
-## Stage4 辞書CSVの確認観点
+## Build Text 辞書CSVの確認観点
 
 - 重複確認: `surface` が同一の候補は `occurrences` に集約され、重複行を出さない。
 - 過検出確認: 単発かつ推定読み (`reading_inferred`) の語は `LOW` として扱い、優先度を上げすぎない。
@@ -114,7 +114,7 @@ bun run build-all -- \
   - `MEDIUM`: 形態素読みを持つ語、または2回以上出現、または信頼できる読みがある語
   - `LOW`: 上記に該当しない語（特に単発の推定読み候補）
 
-## Stage4 Speakability warning checklist
+## Build Text Speakability warning checklist
 
 警告が出た場合の期待動作、対策、テストセットは `docs/architecture/build-text-speakability-checklist.md` に一覧化してあり、QA/開発チームは以下の順で確認できます。
 

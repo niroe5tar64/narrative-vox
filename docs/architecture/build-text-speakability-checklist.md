@@ -1,6 +1,6 @@
-# Stage4 Speakability warning checklist
+# Build Text Speakability warning checklist
 
-このドキュメントは Phase5（軽微指摘対応）に向けて Stage4 の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。`SpeakabilityWarningConfig` の閾値は `src/pipeline/build_text.ts` に定義されており、目的に応じて `quality_checks.speakability` の結果を確認します。
+このドキュメントは Phase5（軽微指摘対応）に向けて Build Text の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。`SpeakabilityWarningConfig` の閾値は `src/pipeline/build_text.ts` に定義されており、目的に応じて `quality_checks.speakability` の結果を確認します。
 
 ## 警告条件と計測ポイント
 

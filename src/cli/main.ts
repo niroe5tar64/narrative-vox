@@ -34,7 +34,7 @@ function printUsage(command?: string) {
 `);
 }
 
-function buildStage5Options(options: CliOptions) {
+function buildProjectOptions(options: CliOptions) {
   return {
     runDir: optionAsString(options, "run-dir"),
     profilePath: optionAsString(options, "profile"),
@@ -66,7 +66,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   "build-project": async (options) => {
     const result = await buildProject({
       voicevoxTextJsonPath: ensureOption(options, "stage4-json", "build-project"),
-      ...buildStage5Options(options)
+      ...buildProjectOptions(options)
     });
 
     console.log(`Build project done: episode=${result.episodeId}, audioItems=${result.audioItemCount}`);
@@ -85,7 +85,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
 
     const result = await buildProject({
       voicevoxTextJsonPath: stage4Result.voicevoxTextJsonPath,
-      ...buildStage5Options(options),
+      ...buildProjectOptions(options),
       runDir
     });
 

@@ -205,12 +205,12 @@ export async function buildProject({
 
   await validateAgainstSchema(vvproj, SchemaPaths.voicevoxProjectImport);
 
-  const stage5Dir = path.join(resolvedRunDir, "stage5");
-  await mkdir(stage5Dir, { recursive: true });
+  const projectDir = path.join(resolvedRunDir, "stage5");
+  await mkdir(projectDir, { recursive: true });
 
   const episodeId = voicevoxTextData.meta.episode_id;
-  const importJsonPath = path.join(stage5Dir, `${episodeId}_voicevox_import.json`);
-  const vvprojPath = path.join(stage5Dir, `${episodeId}.vvproj`);
+  const importJsonPath = path.join(projectDir, `${episodeId}_voicevox_import.json`);
+  const vvprojPath = path.join(projectDir, `${episodeId}.vvproj`);
 
   const serialized = `${JSON.stringify(vvproj, null, 2)}\n`;
   await writeFile(importJsonPath, serialized, "utf-8");
