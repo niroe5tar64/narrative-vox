@@ -64,7 +64,7 @@
   - `projects/introducing-rescript/run-20260211-0000/stage4_dict/`
 - `projects/introducing-rescript/run-20260211-0000/stage5/`
 - `projects/introducing-rescript/run-20260211-0000/reports/`
-- Stage4 の Speakability 警告再現手順は `docs/architecture/stage4-speakability-checklist.md` を参照してください。
+- Stage4 の Speakability 警告再現手順は `docs/architecture/build-text-speakability-checklist.md` を参照してください。
 
 詳細フローは `docs/architecture/pipeline.md` を参照。
 TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migration.md` を参照。
@@ -116,7 +116,7 @@ bun run build-all -- \
 
 ## Stage4 Speakability warning checklist
 
-警告が出た場合の期待動作、対策、テストセットは `docs/architecture/stage4-speakability-checklist.md` に一覧化してあり、QA/開発チームは以下の順で確認できます。
+警告が出た場合の期待動作、対策、テストセットは `docs/architecture/build-text-speakability-checklist.md` に一覧化してあり、QA/開発チームは以下の順で確認できます。
 
 | 警告 | 期待値 | 対策例 | 再現テスト |
 | --- | --- | --- | --- |
@@ -126,4 +126,4 @@ bun run build-all -- \
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
 
-再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/stage4/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `stage4_dict/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/stage4_voicevox_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。
+再現ログを確認するには、`projects/introducing-rescript/run-20260211-0000/stage4/` 以下の `*_voicevox_text.json` を開いて `quality_checks.speakability` に記録された値（例: `E04` では `score=60`、`long_utterance_ratio=0.444`、`terminal_punctuation_ratio=0`）と `quality_checks.warnings` の警告メッセージをチェックします。また `stage4_dict/E04_dict_candidates.csv` では `DictionaryCsvField` に則ったヘッダーと `occurrences` の集約を確認できます。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されており、このドキュメント群と `docs/phase5-speakability-guidance.md` を併用することで Phase5 での報告と対策を相互補完できます。

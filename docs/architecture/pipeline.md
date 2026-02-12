@@ -44,7 +44,7 @@
 
 ## Stage4 Speakability warning guidance
 
-- `src/pipeline/stage4/text_processing.ts` と `src/pipeline/stage4_voicevox_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
+- `src/pipeline/build_text/text_processing.ts` と `src/pipeline/build_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
   - `scoreThreshold = 70`：平均文字数や長文率／終端句読点比率を組み合わせたスコアが 70 未満だと「Speakability score is low」警告が出ます。E04 スクリプト（`run-20260211-1111`）では `score=60` となり、この警告と併せて長文率警告も出ています。
   - `minTerminalPunctuationRatio = 0.65`：終端句読点付き utterance が全体の 65% 未満だと「Terminal punctuation is infrequent」警告が入りました（E01 と E02 では 0.5 / 0.467、E04 では 0%）。  
   - `maxLongUtteranceRatio = 0.25`：1 文あたり 49 文字超の utterance 数が 25% を超えると「Long utterance ratio is high」警告が出ます（E04 では 44.4%）。必要なら `splitIntoSentences` で 48 字以上の区切りを意図的に作るスクリプトを追加してこの警告を再現してください。
@@ -53,7 +53,7 @@
 
 ## Stage4 Speakability warning guidance
 
-- `src/pipeline/stage4/text_processing.ts` と `src/pipeline/stage4_voicevox_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
+- `src/pipeline/build_text/text_processing.ts` と `src/pipeline/build_text.ts` で定義した `SpeakabilityConfig`/`SpeakabilityWarningConfig` は、スクリプトの実行結果として `quality_checks.speakability` を計算し、あらかじめ定義したしきい値を超えた場合に `warnings` にメッセージを追加します。  
   - `scoreThreshold = 70`：平均文字数や長文率／終端句読点比率を組み合わせたスコアが 70 未満だと「Speakability score is low」警告が出ます。E04 スクリプト（`run-20260211-1111`）では `score=60` となり、この警告と併せて長文率警告も出ています。
   - `minTerminalPunctuationRatio = 0.65`：終端句読点付き utterance が全体の 65% 未満だと「Terminal punctuation is infrequent」警告が入りました（E01 と E02 では 0.5 / 0.467、E04 では 0%）。  
   - `maxLongUtteranceRatio = 0.25`：1 文あたり 49 文字超の utterance 数が 25% を超えると「Long utterance ratio is high」警告が出ます（E04 では 44.4%）。必要なら `splitIntoSentences` で 48 字以上の区切りを意図的に作るスクリプトを追加してこの警告を再現してください。

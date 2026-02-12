@@ -7,11 +7,11 @@
 主要ファイル:
 
 - `src/cli/main.ts`
-- `src/pipeline/stage4_voicevox_text.ts`
-- `src/pipeline/stage5_voicevox_import.ts`
+- `src/pipeline/build_text.ts`
+- `src/pipeline/build_project.ts`
 - `src/quality/schema_validator.ts`
-- `tests/pipeline/stage4_stage5.test.ts`
-- `tests/pipeline/stage4_unit.test.ts`
+- `tests/pipeline/build_pipeline.test.ts`
+- `tests/pipeline/build_text.unit.test.ts`
 
 ## 日常運用コマンド
 
