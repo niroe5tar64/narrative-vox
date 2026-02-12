@@ -1,15 +1,15 @@
 import path from "node:path";
 import { inferProjectIdFromRunDir, resolveRunId } from "../../shared/run_id.ts";
 
-type RunMetadataPaths = {
-  stage4Dir: string;
-  stage4DictDir: string;
-  stage4JsonPath: string;
-  stage4TxtPath: string;
-  dictCsvPath: string;
+type BuildTextOutputPaths = {
+  voicevoxTextDir: string;
+  dictionaryDir: string;
+  voicevoxTextJsonPath: string;
+  voicevoxTextPath: string;
+  dictionaryCsvPath: string;
 };
 
-export type RunMetadataOptions = {
+export type BuildTextPathOptions = {
   scriptPath: string;
   runDir?: string;
   projectId?: string;
@@ -17,7 +17,7 @@ export type RunMetadataOptions = {
   episodeId?: string;
 };
 
-export type RunMetadata = RunMetadataPaths & {
+export type BuildTextPathResolution = BuildTextOutputPaths & {
   resolvedScriptPath: string;
   runDir: string;
   projectId: string;
@@ -55,25 +55,25 @@ function inferProjectAndRun(
   return { projectId, runId };
 }
 
-function buildStage4Paths(runDir: string, episodeId: string): RunMetadataPaths {
-  const stage4Dir = path.join(runDir, "stage4");
-  const stage4DictDir = path.join(runDir, "stage4_dict");
+function buildTextOutputPaths(runDir: string, episodeId: string): BuildTextOutputPaths {
+  const voicevoxTextDir = path.join(runDir, "stage4");
+  const dictionaryDir = path.join(runDir, "stage4_dict");
   return {
-    stage4Dir,
-    stage4DictDir,
-    stage4JsonPath: path.join(stage4Dir, `${episodeId}_voicevox_text.json`),
-    stage4TxtPath: path.join(stage4Dir, `${episodeId}_voicevox.txt`),
-    dictCsvPath: path.join(stage4DictDir, `${episodeId}_dict_candidates.csv`)
+    voicevoxTextDir,
+    dictionaryDir,
+    voicevoxTextJsonPath: path.join(voicevoxTextDir, `${episodeId}_voicevox_text.json`),
+    voicevoxTextPath: path.join(voicevoxTextDir, `${episodeId}_voicevox.txt`),
+    dictionaryCsvPath: path.join(dictionaryDir, `${episodeId}_dict_candidates.csv`)
   };
 }
 
-export function resolveRunMetadata({
+export function resolveBuildTextOutputPaths({
   scriptPath,
   runDir,
   projectId,
   runId,
   episodeId
-}: RunMetadataOptions): RunMetadata {
+}: BuildTextPathOptions): BuildTextPathResolution {
   const resolvedScriptPath = path.resolve(scriptPath);
   const inferredRunDir = runDir ? path.resolve(runDir) : inferRunDirFromScriptPath(resolvedScriptPath);
   if (!inferredRunDir) {
@@ -84,7 +84,7 @@ export function resolveRunMetadata({
 
   const finalEpisodeId = inferEpisodeId(resolvedScriptPath, episodeId);
   const ids = inferProjectAndRun(inferredRunDir, projectId, runId);
-  const paths = buildStage4Paths(inferredRunDir, finalEpisodeId);
+  const paths = buildTextOutputPaths(inferredRunDir, finalEpisodeId);
 
   return {
     resolvedScriptPath,

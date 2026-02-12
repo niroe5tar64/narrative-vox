@@ -3,7 +3,7 @@ import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { parseSectionHeader, isTotalTimeLine } from "../shared/script_structure.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
-import type { Stage4Data, Stage4QualityChecks, Stage4Utterance } from "../shared/types.ts";
+import type { VoicevoxTextData, VoicevoxTextQualityChecks, VoicevoxTextUtterance } from "../shared/types.ts";
 import {
   splitIntoSentences,
   decidePauseLengthMs,
@@ -20,8 +20,8 @@ import {
   toDictionaryCandidates,
   TermCandidateMap
 } from "./build_text/dictionary.ts";
-import { writeStage4Artifacts, Stage4Paths } from "./build_text/io.ts";
-import { resolveRunMetadata } from "./build_text/run_metadata.ts";
+import { writeBuildTextArtifacts, BuildTextArtifactPaths } from "./build_text/artifact_writer.ts";
+import { resolveBuildTextOutputPaths } from "./build_text/output_paths.ts";
 
 export {
   collectRubyCandidates,
@@ -60,9 +60,9 @@ interface BuildTextOptions {
 }
 
 interface BuildTextResult {
-  stage4JsonPath: string;
-  stage4TxtPath: string;
-  dictCsvPath: string;
+  voicevoxTextJsonPath: string;
+  voicevoxTextPath: string;
+  dictionaryCsvPath: string;
   utteranceCount: number;
   dictionaryCount: number;
   episodeId: string;
@@ -79,10 +79,10 @@ export function replaceRubyWithReading(text: string): string {
 function buildUtterancesAndCandidates(
   source: string,
   morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>
-): { utterances: Stage4Utterance[]; dictionaryCandidates: ReturnType<typeof toDictionaryCandidates> } {
+): { utterances: VoicevoxTextUtterance[]; dictionaryCandidates: ReturnType<typeof toDictionaryCandidates> } {
   const lines = source.split(/\r?\n/);
   const termCandidates: TermCandidateMap = new Map();
-  const utterances: Stage4Utterance[] = [];
+  const utterances: VoicevoxTextUtterance[] = [];
   let currentSectionId = 0;
   let currentSectionTitle = "";
 
@@ -129,7 +129,7 @@ function buildUtterancesAndCandidates(
   };
 }
 
-function buildQualityChecks(source: string, utterances: Stage4Utterance[]): Stage4QualityChecks {
+function buildQualityChecks(source: string, utterances: VoicevoxTextUtterance[]): VoicevoxTextQualityChecks {
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
   const speakability = evaluateSpeakability(utterances);
@@ -167,15 +167,15 @@ function buildQualityChecks(source: string, utterances: Stage4Utterance[]): Stag
   };
 }
 
-function buildStage4Data(params: {
+function buildVoicevoxTextData(params: {
   finalProjectId: string;
   finalRunId: string;
   finalEpisodeId: string;
   resolvedScriptPath: string;
-  utterances: Stage4Utterance[];
+  utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
   source: string;
-}): Stage4Data {
+}): VoicevoxTextData {
   const qualityChecks = buildQualityChecks(params.source, params.utterances);
   return {
     schema_version: "1.0",
@@ -199,7 +199,7 @@ export async function buildText({
   runId,
   episodeId
 }: BuildTextOptions): Promise<BuildTextResult> {
-  const metadata = resolveRunMetadata({
+  const metadata = resolveBuildTextOutputPaths({
     scriptPath,
     runDir,
     projectId,
@@ -212,11 +212,11 @@ export async function buildText({
     projectId: finalProjectId,
     runId: finalRunId,
     episodeId: finalEpisodeId,
-    stage4Dir,
-    stage4DictDir,
-    stage4JsonPath,
-    stage4TxtPath,
-    dictCsvPath
+    voicevoxTextDir,
+    dictionaryDir,
+    voicevoxTextJsonPath,
+    voicevoxTextPath,
+    dictionaryCsvPath
   } = metadata;
 
   const source = await readFile(resolvedScriptPath, "utf-8");
@@ -227,7 +227,7 @@ export async function buildText({
     throw new Error("No utterances generated from script. Check script format.");
   }
 
-  const stage4Data = buildStage4Data({
+  const voicevoxTextData = buildVoicevoxTextData({
     finalProjectId,
     finalRunId,
     finalEpisodeId,
@@ -237,21 +237,21 @@ export async function buildText({
     source
   });
 
-  await validateAgainstSchema(stage4Data, SchemaPaths.stage4VoicevoxText);
+  await validateAgainstSchema(voicevoxTextData, SchemaPaths.voicevoxText);
 
-  const paths: Stage4Paths = {
-    stage4Dir,
-    stage4DictDir,
-    stage4JsonPath,
-    stage4TxtPath,
-    dictCsvPath
+  const paths: BuildTextArtifactPaths = {
+    voicevoxTextDir,
+    dictionaryDir,
+    voicevoxTextJsonPath,
+    voicevoxTextPath,
+    dictionaryCsvPath
   };
-  await writeStage4Artifacts(paths, stage4Data);
+  await writeBuildTextArtifacts(paths, voicevoxTextData);
 
   return {
-    stage4JsonPath,
-    stage4TxtPath,
-    dictCsvPath,
+    voicevoxTextJsonPath,
+    voicevoxTextPath,
+    dictionaryCsvPath,
     utteranceCount: utterances.length,
     dictionaryCount: dictionaryCandidates.length,
     episodeId: finalEpisodeId

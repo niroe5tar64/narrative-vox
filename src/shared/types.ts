@@ -2,7 +2,7 @@ export type CandidateSource = "ruby" | "token" | "morph";
 export type ReadingSource = "" | "ruby" | "morph" | "inferred";
 export type CandidatePriority = "HIGH" | "MEDIUM" | "LOW";
 
-export interface Stage4Utterance {
+export interface VoicevoxTextUtterance {
   utterance_id: string;
   section_id: number;
   section_title: string;
@@ -26,7 +26,7 @@ export interface SpeakabilityMetrics {
   terminal_punctuation_ratio: number;
 }
 
-export interface Stage4QualityChecks {
+export interface VoicevoxTextQualityChecks {
   utterance_count: number;
   max_chars_per_utterance: number;
   has_ruby_notation: boolean;
@@ -34,7 +34,7 @@ export interface Stage4QualityChecks {
   warnings: string[];
 }
 
-export interface Stage4Meta {
+export interface VoicevoxTextMeta {
   project_id: string;
   run_id: string;
   episode_id: string;
@@ -42,10 +42,10 @@ export interface Stage4Meta {
   generated_at: string;
 }
 
-export interface Stage4Data {
+export interface VoicevoxTextData {
   schema_version: "1.0";
-  meta: Stage4Meta;
-  utterances: Stage4Utterance[];
+  meta: VoicevoxTextMeta;
+  utterances: VoicevoxTextUtterance[];
   dictionary_candidates: DictionaryCandidate[];
-  quality_checks: Stage4QualityChecks;
+  quality_checks: VoicevoxTextQualityChecks;
 }

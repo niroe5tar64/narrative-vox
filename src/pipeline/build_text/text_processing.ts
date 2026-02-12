@@ -1,4 +1,4 @@
-import type { SpeakabilityMetrics, Stage4Utterance } from "../../shared/types.ts";
+import type { SpeakabilityMetrics, VoicevoxTextUtterance } from "../../shared/types.ts";
 
 const SENTENCE_ENDING_RE = /([。！？!?])/g;
 const CLAUSE_PUNCTUATION_RE = /[、，；;：:]/g;
@@ -171,7 +171,7 @@ function roundTo(value: number, digits: number): number {
 }
 
 export function evaluateSpeakability(
-  utterances: Array<Pick<Stage4Utterance, "text">>
+  utterances: Array<Pick<VoicevoxTextUtterance, "text">>
 ): SpeakabilityMetrics {
   if (utterances.length === 0) {
     return {

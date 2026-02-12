@@ -1,17 +1,17 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { DictionaryCsvField } from "./dictionary.ts";
-import type { DictionaryCandidate, Stage4Data } from "../../shared/types.ts";
+import type { DictionaryCandidate, VoicevoxTextData } from "../../shared/types.ts";
 
-export type Stage4Paths = {
-  stage4Dir: string;
-  stage4DictDir: string;
-  stage4JsonPath: string;
-  stage4TxtPath: string;
-  dictCsvPath: string;
+export type BuildTextArtifactPaths = {
+  voicevoxTextDir: string;
+  dictionaryDir: string;
+  voicevoxTextJsonPath: string;
+  voicevoxTextPath: string;
+  dictionaryCsvPath: string;
 };
 
 /**
- * Dictionary CSV layout and quoting rules for Stage4 artifacts.
+ * Dictionary CSV layout and quoting rules for build-text artifacts.
  */
 const DictionaryCsvConfig = {
   delimiter: ",",
@@ -60,19 +60,19 @@ function buildDictionaryCsv(candidates: DictionaryCandidate[]): string {
   return [headerRow, ...rows].join("\n");
 }
 
-export async function writeStage4Artifacts(paths: Stage4Paths, stage4Data: Stage4Data): Promise<void> {
-  await mkdir(paths.stage4Dir, { recursive: true });
-  await mkdir(paths.stage4DictDir, { recursive: true });
+export async function writeBuildTextArtifacts(paths: BuildTextArtifactPaths, voicevoxTextData: VoicevoxTextData): Promise<void> {
+  await mkdir(paths.voicevoxTextDir, { recursive: true });
+  await mkdir(paths.dictionaryDir, { recursive: true });
 
-  await writeFile(paths.stage4JsonPath, `${JSON.stringify(stage4Data, null, 2)}\n`, "utf-8");
+  await writeFile(paths.voicevoxTextJsonPath, `${JSON.stringify(voicevoxTextData, null, 2)}\n`, "utf-8");
   await writeFile(
-    paths.stage4TxtPath,
-    `${stage4Data.utterances.map((entry) => entry.text).join("\n")}\n`,
+    paths.voicevoxTextPath,
+    `${voicevoxTextData.utterances.map((entry) => entry.text).join("\n")}\n`,
     "utf-8"
   );
   await writeFile(
-    paths.dictCsvPath,
-    `${buildDictionaryCsv(stage4Data.dictionary_candidates)}\n`,
+    paths.dictionaryCsvPath,
+    `${buildDictionaryCsv(voicevoxTextData.dictionary_candidates)}\n`,
     "utf-8"
   );
 }
