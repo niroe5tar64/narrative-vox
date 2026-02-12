@@ -2,7 +2,7 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
-import type { Stage4Data } from "../shared/types.ts";
+import type { VoicevoxTextData } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
 import {
   RawVoiceProfile,
@@ -10,7 +10,7 @@ import {
   normalizeVoiceProfile
 } from "../shared/voice_profile.ts";
 
-interface Stage5Mora {
+interface ProjectMora {
   text: string;
   vowel: string;
   vowelLength: number;
@@ -19,15 +19,15 @@ interface Stage5Mora {
   consonantLength?: number;
 }
 
-interface Stage5AccentPhrase {
-  moras: Stage5Mora[];
+interface ProjectAccentPhrase {
+  moras: ProjectMora[];
   accent: number;
-  pauseMora?: Stage5Mora;
+  pauseMora?: ProjectMora;
   isInterrogative?: boolean;
 }
 
-interface Stage5AudioQuery {
-  accentPhrases: Stage5AccentPhrase[];
+interface ProjectAudioQuery {
+  accentPhrases: ProjectAccentPhrase[];
   speedScale: number;
   pitchScale: number;
   intonationScale: number;
@@ -40,20 +40,20 @@ interface Stage5AudioQuery {
   kana?: string;
 }
 
-interface Stage5AudioItem {
+interface ProjectAudioItem {
   text: string;
   voice: {
     engineId: string;
     speakerId: string;
     styleId: number;
   };
-  query?: Stage5AudioQuery;
+  query?: ProjectAudioQuery;
 }
 
 type QueryPrefillMode = "none" | "minimal";
 
 interface BuildProjectOptions {
-  stage4JsonPath: string;
+  voicevoxTextJsonPath: string;
   runDir?: string;
   profilePath?: string;
   engineId?: string;
@@ -88,12 +88,12 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
   }
 }
 
-function inferRunDirFromStage4JsonPath(stage4JsonPath: string): string | undefined {
-  const stage4Dir = path.dirname(path.resolve(stage4JsonPath));
-  if (path.basename(stage4Dir) !== "stage4") {
+function inferRunDirFromVoicevoxTextJsonPath(voicevoxTextJsonPath: string): string | undefined {
+  const voicevoxTextDir = path.dirname(path.resolve(voicevoxTextJsonPath));
+  if (path.basename(voicevoxTextDir) !== "stage4") {
     return undefined;
   }
-  return path.dirname(stage4Dir);
+  return path.dirname(voicevoxTextDir);
 }
 
 function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
@@ -106,7 +106,7 @@ function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
   throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal`);
 }
 
-function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
+function buildMinimalQuery(profile: VoiceProfile): ProjectAudioQuery {
   const defaults = profile.queryDefaults;
   return {
     accentPhrases: [],
@@ -123,7 +123,7 @@ function buildMinimalQuery(profile: VoiceProfile): Stage5AudioQuery {
 }
 
 export async function buildProject({
-  stage4JsonPath,
+  voicevoxTextJsonPath,
   runDir,
   profilePath,
   engineId,
@@ -132,10 +132,10 @@ export async function buildProject({
   appVersion,
   prefillQuery
 }: BuildProjectOptions): Promise<BuildProjectResult> {
-  const resolvedStage4Path = path.resolve(stage4JsonPath);
+  const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
     ? path.resolve(runDir)
-    : inferRunDirFromStage4JsonPath(resolvedStage4Path);
+    : inferRunDirFromVoicevoxTextJsonPath(resolvedVoicevoxTextPath);
   if (!inferredRunDir) {
     throw new Error(
       "Could not infer run directory from --stage4-json path. Pass --run-dir explicitly."
@@ -144,9 +144,9 @@ export async function buildProject({
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
 
-  const stage4Data = await loadJson<Stage4Data>(
-    resolvedStage4Path,
-    SchemaPaths.stage4VoicevoxText
+  const voicevoxTextData = await loadJson<VoicevoxTextData>(
+    resolvedVoicevoxTextPath,
+    SchemaPaths.voicevoxText
   );
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
@@ -158,12 +158,12 @@ export async function buildProject({
   const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
 
   const audioKeys: string[] = [];
-  const audioItems: Record<string, Stage5AudioItem> = {};
+  const audioItems: Record<string, ProjectAudioItem> = {};
 
-  for (const utterance of stage4Data.utterances) {
-    const key = toAudioKey(stage4Data.meta.episode_id, utterance.utterance_id);
+  for (const utterance of voicevoxTextData.utterances) {
+    const key = toAudioKey(voicevoxTextData.meta.episode_id, utterance.utterance_id);
     audioKeys.push(key);
-    const audioItem: Stage5AudioItem = {
+    const audioItem: ProjectAudioItem = {
       text: utterance.text,
       voice: {
         engineId: finalEngineId,
@@ -203,12 +203,12 @@ export async function buildProject({
     }
   };
 
-  await validateAgainstSchema(vvproj, SchemaPaths.stage5VoicevoxImport);
+  await validateAgainstSchema(vvproj, SchemaPaths.voicevoxProjectImport);
 
   const stage5Dir = path.join(resolvedRunDir, "stage5");
   await mkdir(stage5Dir, { recursive: true });
 
-  const episodeId = stage4Data.meta.episode_id;
+  const episodeId = voicevoxTextData.meta.episode_id;
   const importJsonPath = path.join(stage5Dir, `${episodeId}_voicevox_import.json`);
   const vvprojPath = path.join(stage5Dir, `${episodeId}.vvproj`);
 

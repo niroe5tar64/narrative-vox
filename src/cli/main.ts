@@ -59,13 +59,13 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(
       `Build text done: episode=${result.episodeId}, utterances=${result.utteranceCount}, dict=${result.dictionaryCount}`
     );
-    console.log(`- ${path.relative(process.cwd(), result.stage4JsonPath)}`);
-    console.log(`- ${path.relative(process.cwd(), result.stage4TxtPath)}`);
-    console.log(`- ${path.relative(process.cwd(), result.dictCsvPath)}`);
+    console.log(`- ${path.relative(process.cwd(), result.voicevoxTextJsonPath)}`);
+    console.log(`- ${path.relative(process.cwd(), result.voicevoxTextPath)}`);
+    console.log(`- ${path.relative(process.cwd(), result.dictionaryCsvPath)}`);
   },
   "build-project": async (options) => {
     const result = await buildProject({
-      stage4JsonPath: ensureOption(options, "stage4-json", "build-project"),
+      voicevoxTextJsonPath: ensureOption(options, "stage4-json", "build-project"),
       ...buildStage5Options(options)
     });
 
@@ -84,14 +84,14 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     });
 
     const result = await buildProject({
-      stage4JsonPath: stage4Result.stage4JsonPath,
+      voicevoxTextJsonPath: stage4Result.voicevoxTextJsonPath,
       ...buildStage5Options(options),
       runDir
     });
 
     console.log(`Build all done: episode=${result.episodeId}`);
     console.log(
-      `- stage4: ${path.relative(process.cwd(), stage4Result.stage4JsonPath)}, ${path.relative(process.cwd(), stage4Result.stage4TxtPath)}, ${path.relative(process.cwd(), stage4Result.dictCsvPath)}`
+      `- stage4: ${path.relative(process.cwd(), stage4Result.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), stage4Result.voicevoxTextPath)}, ${path.relative(process.cwd(), stage4Result.dictionaryCsvPath)}`
     );
     console.log(
       `- stage5: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}`

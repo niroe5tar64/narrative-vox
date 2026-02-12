@@ -7,7 +7,7 @@ import path from "node:path";
 import { buildText } from "../../src/pipeline/build_text.ts";
 import { buildProject } from "../../src/pipeline/build_project.ts";
 
-interface Stage4JsonTest {
+interface VoicevoxTextJsonTest {
   meta: {
     episode_id: string;
     run_id: string;
@@ -25,7 +25,7 @@ interface Stage4JsonTest {
   };
 }
 
-interface Stage5JsonTest {
+interface VoicevoxProjectJsonTest {
   talk: {
     audioKeys: string[];
     audioItems: Record<
@@ -72,19 +72,19 @@ test("stage4 -> stage5 pipeline works with sample script", async () => {
     runId: "run-20260211-1234"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.meta.episode_id, "E01");
   assert.ok(stage4Json.utterances.length > 0);
   assert.equal(stage4Json.quality_checks.speakability.score >= 0, true);
   assert.equal(stage4Json.quality_checks.speakability.score <= 100, true);
 
   const stage5 = await buildProject({
-    stage4JsonPath: stage4.stage4JsonPath,
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
     runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
 
-  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as Stage5JsonTest;
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
   assert.equal(stage5Json.talk.audioKeys.length, stage4Json.utterances.length);
   assert.ok(stage5Json.talk.audioItems[stage5Json.talk.audioKeys[0]]);
 });
@@ -103,13 +103,13 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
   });
 
   const stage5 = await buildProject({
-    stage4JsonPath: stage4.stage4JsonPath,
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
     runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
     prefillQuery: "minimal"
   });
 
-  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as Stage5JsonTest;
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
   assert.equal(stage5Json.talk.audioKeys.length > 0, true);
 
   for (const audioKey of stage5Json.talk.audioKeys) {
@@ -145,7 +145,7 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
   await assert.rejects(
     () =>
       buildProject({
-        stage4JsonPath: stage4.stage4JsonPath,
+        voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
         runDir,
         profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
         prefillQuery: "invalid" as "minimal"
@@ -166,7 +166,7 @@ test("stage4 uses run_id from run-dir path when --run-id is omitted", async () =
     projectId: "introducing-rescript"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.meta.run_id, "run-20260211-2222");
 });
 
@@ -182,7 +182,7 @@ test("stage4 auto-generates run_id when not found in --run-dir", async () => {
     projectId: "introducing-rescript"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.match(stage4Json.meta.run_id, /^run-\d{8}-\d{4}$/);
 });
 
@@ -207,8 +207,8 @@ test("stage4 infers run-dir from --script path when run-dir is omitted", async (
     scriptPath
   });
 
-  assert.equal(path.dirname(stage4.stage4JsonPath), path.join(runDir, "stage4"));
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  assert.equal(path.dirname(stage4.voicevoxTextJsonPath), path.join(runDir, "stage4"));
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.meta.run_id, "run-20260211-5555");
 });
 
@@ -226,7 +226,7 @@ test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", as
   });
 
   const stage5 = await buildProject({
-    stage4JsonPath: stage4.stage4JsonPath,
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json")
   });
 
@@ -276,7 +276,7 @@ test("stage4 extracts dictionary candidates with readings from morphological ana
     runId: "run-20260211-3333"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   const dictionary = stage4Json.dictionary_candidates;
 
   const kensho = dictionary.find((item: { surface: string; reading_or_empty: string }) => item.surface === "検証");
@@ -313,7 +313,7 @@ test("stage4 adds warning when speakability score is low", async () => {
     runId: "run-20260211-4444"
   });
 
-  const stage4Json = JSON.parse(await readFile(stage4.stage4JsonPath, "utf-8")) as Stage4JsonTest;
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.quality_checks.speakability.score < 70, true);
   assert.equal(
     stage4Json.quality_checks.warnings.some((message) => message.includes("Speakability score is low")),
