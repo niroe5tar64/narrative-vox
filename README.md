@@ -117,6 +117,7 @@ bun run build-all -- \
 - `--run-id` は任意です。
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
+- `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
 - `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルです（必須、未指定はエラー）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。

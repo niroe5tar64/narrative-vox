@@ -38,9 +38,11 @@ function inferEpisodeId(scriptPath: string, explicitEpisodeId?: string): string 
     return explicitEpisodeId;
   }
   const base = path.basename(scriptPath);
-  const match = base.match(/(E[0-9]{2})/);
+  const match = base.match(/^(E[0-9]{2})_script\.md$/);
   if (!match) {
-    throw new Error("Could not infer episode_id from script path. Pass --episode-id E##.");
+    throw new Error(
+      `Could not infer episode_id from script path basename "${base}". Expected file name: E##_script.md (e.g. E01_script.md). Pass --episode-id E##.`
+    );
   }
   return match[1];
 }
