@@ -1,0 +1,16 @@
+{
+  "BOOK_ID": "introducing-rescript",
+  "BOOK_TITLE": "Introducing ReScript: Functional Programming for Web Applications",
+  "SOURCE_MARKDOWN_PATHS": "inputs/books/introducing-rescript/source/*.md",
+  "AUDIENCE_BACKGROUND": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
+  "AUDIENCE_LEVEL": "ReScript初学者〜中級手前",
+  "AUDIENCE_INTEREST": "型安全、設計の見通し、保守性、実務での採用判断",
+  "BASELINE_CONTEXT_OR_EMPTY": "TypeScriptでの実装・設計パターン",
+  "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": "",
+  "BOOK_BLUEPRINT_JSON_PATH": "projects/introducing-rescript/run-YYYYMMDD-HHMM/stage1/book_blueprint.json",
+  "EPISODE_ID": "E01",
+  "OUTPUT_BLUEPRINT_JSON": "projects/introducing-rescript/run-YYYYMMDD-HHMM/stage1/book_blueprint.json",
+  "OUTPUT_EPISODE_VARIABLES_JSON_PATTERN": "projects/introducing-rescript/run-YYYYMMDD-HHMM/stage2/E##_variables.json",
+  "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": "projects/introducing-rescript/run-YYYYMMDD-HHMM/stage3/E##_script.md",
+  "NOTES": "Stage 2で回ごとにEPISODE_IDを切り替える。任意項目を使わない場合は空文字を指定する。"
+}

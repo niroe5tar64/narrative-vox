@@ -10,6 +10,7 @@
 - `prompts/study/build_text.md`
 - `prompts/study/build_project.md`
 - `configs/books/<book-id>.json`
+- `configs/books/<book-id>.example.json`
 
 ## 実行順
 
@@ -61,6 +62,8 @@ Stage 2で回を切り替える場合は以下を追加します。
 - `EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY`
 - `BOOK_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
+
+推奨: 初期作成は `configs/books/<book-id>.example.json` をコピーして `configs/books/<book-id>.json` を作る。
 
 ## CLI 実行例（Build Text/Project）
 

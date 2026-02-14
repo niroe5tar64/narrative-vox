@@ -14,11 +14,11 @@
 
 - Blueprint JSON: `{{BOOK_BLUEPRINT_JSON_PATH}}`
 - 対象エピソードID: `{{EPISODE_ID}}`
-- 参照Markdown（任意上書き）: `{{SOURCE_MARKDOWN_PATHS_OR_EMPTY}}`
-- 想定リスナー（任意上書き）:
-  - 背景: `{{AUDIENCE_BACKGROUND_OR_EMPTY}}`
-  - 習熟度: `{{AUDIENCE_LEVEL_OR_EMPTY}}`
-  - 関心: `{{AUDIENCE_INTEREST_OR_EMPTY}}`
+- 参照Markdown（任意上書き・空文字なら未指定扱い）: `{{SOURCE_MARKDOWN_PATHS}}`
+- 想定リスナー（任意上書き・空文字なら未指定扱い）:
+  - 背景: `{{AUDIENCE_BACKGROUND}}`
+  - 習熟度: `{{AUDIENCE_LEVEL}}`
+  - 関心: `{{AUDIENCE_INTEREST}}`
 - 比較対象（任意上書き）: `{{BASELINE_CONTEXT_OR_EMPTY}}`
 - 既存audio-scriptディレクトリ（任意）: `{{EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}}`
 
@@ -30,7 +30,7 @@
 ### タスク
 
 1. Blueprintから `{{EPISODE_ID}}` を特定し、対象テーマ・学習目標・参照範囲を取得する。  
-2. `SOURCE_MARKDOWN_PATHS_OR_EMPTY` が指定されていればそれを優先し、未指定ならBlueprintの `source_refs` を使う。  
+2. `SOURCE_MARKDOWN_PATHS` が空でなければそれを優先し、空ならBlueprintの `source_refs` を使う。  
 3. エピソード範囲内で、音声で伝えるべき核心を3〜5点に要約する。  
 4. 固定フレーム1〜8に必要な可変項目を埋める。  
 5. 情報不足の項目は `MISSING` とし、推測で埋めない。  
