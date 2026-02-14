@@ -10,6 +10,7 @@ import {
   evaluateSpeakability,
   normalizeScriptLine
 } from "./build_text/text_processing.ts";
+import { loadStage4TextConfig, type Stage4TextConfig } from "./build_text/stage4_text_config.ts";
 import {
   collectRubyCandidates,
   collectTermCandidates,
@@ -40,12 +41,6 @@ export {
 } from "./build_text/text_processing.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
-
-const SpeakabilityWarningConfig = {
-  scoreThreshold: 70,
-  minTerminalPunctuationRatio: 0.65,
-  maxLongUtteranceRatio: 0.25
-} as const;
 const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 
 function formatPercentage(value: number): string {
@@ -57,6 +52,7 @@ interface BuildTextOptions {
   projectId?: string;
   runId?: string;
   episodeId?: string;
+  stage4ConfigPath?: string;
 }
 
 interface BuildTextResult {
@@ -78,7 +74,8 @@ export function replaceRubyWithReading(text: string): string {
 
 function buildUtterancesAndCandidates(
   source: string,
-  morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>
+  morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>,
+  stage4TextConfig: Stage4TextConfig
 ): { utterances: VoicevoxTextUtterance[]; dictionaryCandidates: ReturnType<typeof toDictionaryCandidates> } {
   const lines = source.split(/\r?\n/);
   const termCandidates: TermCandidateMap = new Map();
@@ -118,7 +115,7 @@ function buildUtterancesAndCandidates(
         text: sentence,
         pause_length_ms: decidePauseLengthMs(sentence, {
           isTerminalInSourceLine: sentenceIndex === sentences.length - 1
-        })
+        }, stage4TextConfig.pause)
       });
     }
   }
@@ -129,32 +126,37 @@ function buildUtterancesAndCandidates(
   };
 }
 
-function buildQualityChecks(source: string, utterances: VoicevoxTextUtterance[]): VoicevoxTextQualityChecks {
+function buildQualityChecks(
+  source: string,
+  utterances: VoicevoxTextUtterance[],
+  stage4TextConfig: Stage4TextConfig
+): VoicevoxTextQualityChecks {
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
-  const speakability = evaluateSpeakability(utterances);
+  const speakability = evaluateSpeakability(utterances, stage4TextConfig.speakability.scoring);
+  const warningThresholds = stage4TextConfig.speakability.warningThresholds;
   const warnings: string[] = [];
 
   if (maxChars > 80) {
     warnings.push("Some utterances exceed 80 chars. Consider additional sentence split.");
   }
-  if (speakability.score < SpeakabilityWarningConfig.scoreThreshold) {
+  if (speakability.score < warningThresholds.scoreThreshold) {
     warnings.push(
-      `Speakability score is low (score=${speakability.score}/100, threshold=${SpeakabilityWarningConfig.scoreThreshold}). Refer to ${phase5GuidanceRelativePath} to correlate with SpeakabilityWarningConfig.scoreThreshold guidance.`
+      `Speakability score is low (score=${speakability.score}/100, threshold=${warningThresholds.scoreThreshold}). Refer to ${phase5GuidanceRelativePath} to correlate with SpeakabilityWarningConfig.scoreThreshold guidance.`
     );
   }
-  if (speakability.terminal_punctuation_ratio < SpeakabilityWarningConfig.minTerminalPunctuationRatio) {
+  if (speakability.terminal_punctuation_ratio < warningThresholds.minTerminalPunctuationRatio) {
     warnings.push(
       `Terminal punctuation is infrequent (${formatPercentage(
         speakability.terminal_punctuation_ratio
-      )}, threshold=${SpeakabilityWarningConfig.minTerminalPunctuationRatio}). Add clearer sentence endings and see ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio context.`
+      )}, threshold=${warningThresholds.minTerminalPunctuationRatio}). Add clearer sentence endings and see ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio context.`
     );
   }
-  if (speakability.long_utterance_ratio > SpeakabilityWarningConfig.maxLongUtteranceRatio) {
+  if (speakability.long_utterance_ratio > warningThresholds.maxLongUtteranceRatio) {
     warnings.push(
       `Long utterance ratio is high (${formatPercentage(
         speakability.long_utterance_ratio
-      )}, threshold=${SpeakabilityWarningConfig.maxLongUtteranceRatio}). Split longer lines and consult ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
+      )}, threshold=${warningThresholds.maxLongUtteranceRatio}). Split longer lines and consult ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
     );
   }
 
@@ -175,8 +177,9 @@ function buildVoicevoxTextData(params: {
   utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
   source: string;
+  stage4TextConfig: Stage4TextConfig;
 }): VoicevoxTextData {
-  const qualityChecks = buildQualityChecks(params.source, params.utterances);
+  const qualityChecks = buildQualityChecks(params.source, params.utterances, params.stage4TextConfig);
   return {
     schema_version: "1.0",
     meta: {
@@ -197,7 +200,8 @@ export async function buildText({
   runDir,
   projectId,
   runId,
-  episodeId
+  episodeId,
+  stage4ConfigPath
 }: BuildTextOptions): Promise<BuildTextResult> {
   const metadata = resolveBuildTextOutputPaths({
     scriptPath,
@@ -221,7 +225,12 @@ export async function buildText({
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const morphTokenizer = await getJapaneseMorphTokenizer();
-  const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(source, morphTokenizer);
+  const stage4TextConfig = await loadStage4TextConfig(stage4ConfigPath);
+  const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(
+    source,
+    morphTokenizer,
+    stage4TextConfig
+  );
 
   if (utterances.length === 0) {
     throw new Error("No utterances generated from script. Check script format.");
@@ -234,7 +243,8 @@ export async function buildText({
     resolvedScriptPath,
     utterances,
     dictionaryCandidates,
-    source
+    source,
+    stage4TextConfig
   });
 
   await validateAgainstSchema(voicevoxTextData, SchemaPaths.voicevoxText);

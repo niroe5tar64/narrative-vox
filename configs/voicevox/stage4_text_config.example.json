@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "speakability": {
+    "warningThresholds": {
+      "scoreThreshold": 70,
+      "minTerminalPunctuationRatio": 0.65,
+      "maxLongUtteranceRatio": 0.25
+    },
+    "scoring": {
+      "targetAverageChars": 32,
+      "averagePenaltyFactor": 1.2,
+      "averagePenaltyMax": 35,
+      "longRatioWeight": 45,
+      "punctuationWeight": 20
+    }
+  },
+  "pause": {
+    "minMs": 120,
+    "maxMs": 520,
+    "bases": {
+      "default": 190,
+      "strongEnding": 360,
+      "fullStop": 320,
+      "clauseEnd": 240
+    },
+    "lengthBonus": {
+      "step": 10,
+      "increment": 20,
+      "max": 120
+    },
+    "penalties": {
+      "conjunction": 40,
+      "continuation": 50
+    }
+  }
+}

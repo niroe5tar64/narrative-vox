@@ -94,7 +94,8 @@ bun run check-run -- \
 # 3) script.md から VOICEVOX text を生成（run_id を明示する場合）
 bun run build-text -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --run-id run-20260211-1234
+  --run-id run-20260211-1234 \
+  --stage4-config configs/voicevox/stage4_text_config.json
 
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
@@ -116,6 +117,7 @@ bun run build-all -- \
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
+- `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルを指定します（未指定時は `configs/voicevox/stage4_text_config.json`、なければ `configs/voicevox/stage4_text_config.example.json`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `--prefill-query engine`（`build-project`）と `build-audio` の両方で同じ URL 解決ロジックを使います。
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
@@ -172,4 +174,4 @@ bun run voicevox:down
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。Phase5 では `docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
 
-2026-02-12 に再生成した `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は、`E01`〜`E12` すべてで `quality_checks.speakability` を含み、`quality_checks.warnings` は 0 件です。警告を再現して確認する場合は `docs/architecture/build-text-speakability-checklist.md` にある `/tmp/nv-stage4-script/*.md` を使用してください。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `src/pipeline/build_text.ts` に定義されています。
+2026-02-12 に再生成した `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は、`E01`〜`E12` すべてで `quality_checks.speakability` を含み、`quality_checks.warnings` は 0 件です。警告を再現して確認する場合は `docs/architecture/build-text-speakability-checklist.md` にある `/tmp/nv-stage4-script/*.md` を使用してください。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `configs/voicevox/stage4_text_config.json`（または `--stage4-config` 指定ファイル）で管理されています。

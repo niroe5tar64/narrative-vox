@@ -13,7 +13,27 @@ const DEFAULT_MAX_CHARS_PER_SENTENCE = 48;
 const MIN_SPLITTABLE_CHARS = 8;
 const SPLIT_POINT_TOLERANCE = 6;
 
-export const PauseConfig = {
+export interface PauseConfigValues {
+  minMs: number;
+  maxMs: number;
+  bases: {
+    default: number;
+    strongEnding: number;
+    fullStop: number;
+    clauseEnd: number;
+  };
+  lengthBonus: {
+    step: number;
+    increment: number;
+    max: number;
+  };
+  penalties: {
+    conjunction: number;
+    continuation: number;
+  };
+}
+
+export const PauseConfig: PauseConfigValues = {
   minMs: 120,
   maxMs: 520,
   bases: {
@@ -31,15 +51,23 @@ export const PauseConfig = {
     conjunction: 40,
     continuation: 50
   }
-} as const;
+};
 
-export const SpeakabilityConfig = {
+export interface SpeakabilityScoringConfig {
+  targetAverageChars: number;
+  averagePenaltyFactor: number;
+  averagePenaltyMax: number;
+  longRatioWeight: number;
+  punctuationWeight: number;
+}
+
+export const SpeakabilityConfig: SpeakabilityScoringConfig = {
   targetAverageChars: 32,
   averagePenaltyFactor: 1.2,
   averagePenaltyMax: 35,
   longRatioWeight: 45,
   punctuationWeight: 20
-} as const;
+};
 function collectPreferredSplitPoints(text: string): number[] {
   const points = new Set<number>();
 
@@ -137,38 +165,39 @@ function clampNumber(value: number, min: number, max: number): number {
 
 export function decidePauseLengthMs(
   sentence: string,
-  options: { isTerminalInSourceLine?: boolean } = {}
+  options: { isTerminalInSourceLine?: boolean } = {},
+  pauseConfig: PauseConfigValues = PauseConfig
 ): number {
   const trimmed = sentence.trim();
   if (!trimmed) {
-    return PauseConfig.minMs;
+    return pauseConfig.minMs;
   }
 
   const length = trimmed.length;
   const isTerminalInSourceLine = options.isTerminalInSourceLine !== false;
 
-  let base: number = PauseConfig.bases.default;
+  let base: number = pauseConfig.bases.default;
   if (STRONG_END_PUNCTUATION_RE.test(trimmed)) {
-    base = PauseConfig.bases.strongEnding;
+    base = pauseConfig.bases.strongEnding;
   } else if (FULL_STOP_END_RE.test(trimmed)) {
-    base = PauseConfig.bases.fullStop;
+    base = pauseConfig.bases.fullStop;
   } else if (CLAUSE_END_RE.test(trimmed)) {
-    base = PauseConfig.bases.clauseEnd;
+    base = pauseConfig.bases.clauseEnd;
   }
 
   const lengthBonus = clampNumber(
-    Math.floor((length - 18) / PauseConfig.lengthBonus.step) * PauseConfig.lengthBonus.increment,
+    Math.floor((length - 18) / pauseConfig.lengthBonus.step) * pauseConfig.lengthBonus.increment,
     0,
-    PauseConfig.lengthBonus.max
+    pauseConfig.lengthBonus.max
   );
   const conjunctionPenalty = CONJUNCTION_PLAIN_RE.test(trimmed)
-    ? PauseConfig.penalties.conjunction
+    ? pauseConfig.penalties.conjunction
     : 0;
-  const continuationPenalty = isTerminalInSourceLine ? 0 : PauseConfig.penalties.continuation;
+  const continuationPenalty = isTerminalInSourceLine ? 0 : pauseConfig.penalties.continuation;
 
   const rawPause = base + lengthBonus - conjunctionPenalty - continuationPenalty;
   const normalized = Math.round(rawPause / 10) * 10;
-  return clampNumber(normalized, PauseConfig.minMs, PauseConfig.maxMs);
+  return clampNumber(normalized, pauseConfig.minMs, pauseConfig.maxMs);
 }
 
 function roundTo(value: number, digits: number): number {
@@ -177,7 +206,8 @@ function roundTo(value: number, digits: number): number {
 }
 
 export function evaluateSpeakability(
-  utterances: Array<Pick<VoicevoxTextUtterance, "text">>
+  utterances: Array<Pick<VoicevoxTextUtterance, "text">>,
+  scoringConfig: SpeakabilityScoringConfig = SpeakabilityConfig
 ): SpeakabilityMetrics {
   if (utterances.length === 0) {
     return {
@@ -200,13 +230,13 @@ export function evaluateSpeakability(
   const terminalRatio = terminalCount / utterances.length;
 
   const avgPenalty = clampNumber(
-    Math.max(averageChars - SpeakabilityConfig.targetAverageChars, 0) *
-      SpeakabilityConfig.averagePenaltyFactor,
+    Math.max(averageChars - scoringConfig.targetAverageChars, 0) *
+      scoringConfig.averagePenaltyFactor,
     0,
-    SpeakabilityConfig.averagePenaltyMax
+    scoringConfig.averagePenaltyMax
   );
-  const longPenalty = longRatio * SpeakabilityConfig.longRatioWeight;
-  const punctuationPenalty = (1 - terminalRatio) * SpeakabilityConfig.punctuationWeight;
+  const longPenalty = longRatio * scoringConfig.longRatioWeight;
+  const punctuationPenalty = (1 - terminalRatio) * scoringConfig.punctuationWeight;
   const score = Math.round(clampNumber(100 - avgPenalty - longPenalty - punctuationPenalty, 0, 100));
 
   return {

@@ -616,3 +616,73 @@ test("stage4 adds warning when speakability score is low", async () => {
     true
   );
 });
+
+test("stage4 applies stage4 text config values to pause and warning thresholds", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const baseRunDir = path.join(tempRoot, "introducing-rescript", "run-20260211-4445");
+  const customRunDir = path.join(tempRoot, "introducing-rescript", "run-20260211-4446");
+  await mkdir(baseRunDir, { recursive: true });
+  await mkdir(customRunDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E97_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "終わり。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const baseStage4 = await buildText({
+    scriptPath,
+    runDir: baseRunDir,
+    episodeId: "E97",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-4445"
+  });
+  const baseJson = JSON.parse(await readFile(baseStage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+  assert.equal(baseJson.utterances[0]?.pause_length_ms, 320);
+  assert.equal(
+    baseJson.quality_checks.warnings.some((message) => message.includes("Speakability score is low")),
+    false
+  );
+
+  const customConfigPath = path.join(tempRoot, "stage4_text_config.custom.json");
+  await writeFile(
+    customConfigPath,
+    JSON.stringify(
+      {
+        speakability: {
+          warningThresholds: {
+            scoreThreshold: 101
+          }
+        },
+        pause: {
+          bases: {
+            fullStop: 410
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const customStage4 = await buildText({
+    scriptPath,
+    runDir: customRunDir,
+    episodeId: "E97",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-4446",
+    stage4ConfigPath: customConfigPath
+  });
+  const customJson = JSON.parse(await readFile(customStage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+  assert.equal(customJson.utterances[0]?.pause_length_ms, 410);
+  assert.equal(
+    customJson.quality_checks.warnings.some((message) => message.includes("Speakability score is low")),
+    true
+  );
+});
