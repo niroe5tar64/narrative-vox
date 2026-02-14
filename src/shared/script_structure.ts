@@ -9,11 +9,15 @@ export interface SectionHeader {
 
 export interface ScriptStructureSummary {
   sectionIds: number[];
+  sectionOrder: number[];
+  duplicateSectionIds: number[];
   hasTotalTimeLine: boolean;
 }
 
 export interface RequiredStructureValidation {
   missingSectionIds: number[];
+  sectionOrder: number[];
+  duplicateSectionIds: number[];
   hasTotalTimeLine: boolean;
 }
 
@@ -34,11 +38,17 @@ export function isTotalTimeLine(line: string): boolean {
 
 export function analyzeScriptStructure(scriptText: string): ScriptStructureSummary {
   const sectionIds = new Set<number>();
+  const sectionOrder: number[] = [];
+  const duplicateSectionIds = new Set<number>();
   let hasTotalTimeLine = false;
 
   for (const line of scriptText.split(/\r?\n/)) {
     const sectionHeader = parseSectionHeader(line);
     if (sectionHeader) {
+      sectionOrder.push(sectionHeader.id);
+      if (sectionIds.has(sectionHeader.id)) {
+        duplicateSectionIds.add(sectionHeader.id);
+      }
       sectionIds.add(sectionHeader.id);
       continue;
     }
@@ -49,6 +59,8 @@ export function analyzeScriptStructure(scriptText: string): ScriptStructureSumma
 
   return {
     sectionIds: [...sectionIds].sort((a, b) => a - b),
+    sectionOrder,
+    duplicateSectionIds: [...duplicateSectionIds].sort((a, b) => a - b),
     hasTotalTimeLine
   };
 }
@@ -57,6 +69,8 @@ export function validateRequiredScriptStructure(scriptText: string): RequiredStr
   const summary = analyzeScriptStructure(scriptText);
   return {
     hasTotalTimeLine: summary.hasTotalTimeLine,
-    missingSectionIds: REQUIRED_SECTION_IDS.filter((id) => !summary.sectionIds.includes(id))
+    missingSectionIds: REQUIRED_SECTION_IDS.filter((id) => !summary.sectionIds.includes(id)),
+    sectionOrder: summary.sectionOrder,
+    duplicateSectionIds: summary.duplicateSectionIds
   };
 }

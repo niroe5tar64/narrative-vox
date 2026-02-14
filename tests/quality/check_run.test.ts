@@ -7,26 +7,29 @@ import { checkRun } from "../../src/quality/check_run.ts";
 
 const sampleRunDir = path.resolve("tests/fixtures/sample-run");
 
+function buildScriptFromSectionOrder(sectionOrder: number[]): string {
+  const sectionTitles: Record<number, string> = {
+    1: "オープニング",
+    2: "前提を呼び起こす",
+    3: "結論を先に提示",
+    4: "概念の最小モデル説明",
+    5: "構造の捉え方",
+    6: "思考を促す問いかけ",
+    7: "実務への接続",
+    8: "まとめ"
+  };
+  const lines: string[] = [];
+  for (const sectionId of sectionOrder) {
+    const title = sectionTitles[sectionId] ?? `セクション${sectionId}`;
+    lines.push(`${sectionId}. ${title}`);
+    lines.push(`${title}です。`);
+  }
+  lines.push("合計想定時間: 10分");
+  return lines.join("\n");
+}
+
 function buildValidScript(): string {
-  return [
-    "1. オープニング",
-    "導入です。",
-    "2. 前提を呼び起こす",
-    "前提です。",
-    "3. 結論を先に提示",
-    "結論です。",
-    "4. 概念の最小モデル説明",
-    "説明です。",
-    "5. 構造の捉え方",
-    "整理します。",
-    "6. 思考を促す問いかけ",
-    "問いです。",
-    "7. 実務への接続",
-    "接続です。",
-    "8. まとめ",
-    "まとめです。",
-    "合計想定時間: 10分"
-  ].join("\n");
+  return buildScriptFromSectionOrder([1, 2, 3, 4, 5, 6, 7, 8]);
 }
 
 function buildValidScriptWithMarkdownHeadings(): string {
@@ -127,6 +130,28 @@ test("checkRun rejects episode mismatch between stage2 and stage3", async () => 
   await assert.rejects(
     () => checkRun({ runDir }),
     /stage3 has episodes not in stage2 variables: E02/
+  );
+});
+
+test("checkRun rejects stage3 script with section order violation", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildScriptFromSectionOrder([1, 2, 4, 3, 5, 6, 7, 8])
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /episode: E01[\s\S]*section order violation[\s\S]*1, 2, 4, 3, 5, 6, 7, 8/
+  );
+});
+
+test("checkRun rejects stage3 script with duplicate section ID", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildScriptFromSectionOrder([1, 2, 2, 3, 4, 5, 6, 7, 8])
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /episode: E01[\s\S]*duplicate section IDs: 2/
   );
 });
 

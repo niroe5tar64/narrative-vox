@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
-import { validateRequiredScriptStructure } from "../shared/script_structure.ts";
+import { REQUIRED_SECTION_IDS, validateRequiredScriptStructure } from "../shared/script_structure.ts";
 
 const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
@@ -22,17 +22,31 @@ function toRelativePath(filePath: string): string {
   return path.relative(process.cwd(), filePath) || ".";
 }
 
-function ensureHasAllSections(scriptText: string, scriptPath: string): void {
+function ensureHasAllSections(scriptText: string, scriptPath: string, episodeId: string): void {
   const validation = validateRequiredScriptStructure(scriptText);
+  const scriptRef = `${toRelativePath(scriptPath)} (episode: ${episodeId})`;
   const missingSections = validation.missingSectionIds;
   if (missingSections.length > 0) {
+    throw new Error(`${scriptRef} is missing required sections: ${missingSections.join(", ")}`);
+  }
+
+  if (validation.duplicateSectionIds.length > 0) {
     throw new Error(
-      `${toRelativePath(scriptPath)} is missing required sections: ${missingSections.join(", ")}`
+      `${scriptRef} has duplicate section IDs: ${validation.duplicateSectionIds.join(", ")}`
+    );
+  }
+
+  const hasOrderViolation =
+    validation.sectionOrder.length !== REQUIRED_SECTION_IDS.length ||
+    validation.sectionOrder.some((id, index) => id !== REQUIRED_SECTION_IDS[index]);
+  if (hasOrderViolation) {
+    throw new Error(
+      `${scriptRef} has section order violation: found [${validation.sectionOrder.join(", ")}], expected [${REQUIRED_SECTION_IDS.join(", ")}]`
     );
   }
 
   if (!validation.hasTotalTimeLine) {
-    throw new Error(`${toRelativePath(scriptPath)} is missing "合計想定時間:" line`);
+    throw new Error(`${scriptRef} is missing "合計想定時間:" line`);
   }
 }
 
@@ -78,9 +92,14 @@ export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunRes
   }
   const stage3EpisodeIds = collectEpisodeIds(stage3Files, STAGE3_FILE_RE);
   for (const fileName of stage3Files) {
+    const match = fileName.match(STAGE3_FILE_RE);
+    const episodeId = match?.[1];
+    if (!episodeId) {
+      continue;
+    }
     const filePath = path.join(stage3Dir, fileName);
     const scriptText = await readFile(filePath, "utf-8");
-    ensureHasAllSections(scriptText, filePath);
+    ensureHasAllSections(scriptText, filePath, episodeId);
   }
 
   const missingInStage3 = diffEpisodes(stage2EpisodeIds, stage3EpisodeIds);
