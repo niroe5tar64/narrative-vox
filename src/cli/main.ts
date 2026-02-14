@@ -13,13 +13,13 @@ type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "build-text":
-    "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> --stage4-config <configs/voicevox/stage4_text_config.json> [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+    "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> [--stage4-config <configs/voicevox/stage4_text_config.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
     "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --stage5-vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-all":
-    "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> --stage4-config <configs/voicevox/stage4_text_config.json> [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
+    "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> [--stage4-config <configs/voicevox/stage4_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
     "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>",
   "prepare-run":
@@ -63,7 +63,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      stage4ConfigPath: ensureOption(options, "stage4-config", "build-text")
+      stage4ConfigPath: optionAsString(options, "stage4-config")
     });
 
     console.log(
@@ -119,7 +119,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      stage4ConfigPath: ensureOption(options, "stage4-config", "build-all")
+      stage4ConfigPath: optionAsString(options, "stage4-config")
     });
 
     const result = await buildProject({

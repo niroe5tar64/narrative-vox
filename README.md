@@ -94,8 +94,7 @@ bun run check-run -- \
 # 3) script.md から VOICEVOX text を生成（run_id を明示する場合）
 bun run build-text -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --run-id run-20260211-1234 \
-  --stage4-config configs/voicevox/stage4_text_config.json
+  --run-id run-20260211-1234
 
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
@@ -110,8 +109,7 @@ bun run build-audio -- \
 
 # Build Text + Build Project を連続実行
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
-  --stage4-config configs/voicevox/stage4_text_config.json
+  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md
 ```
 
 - `--run-id` は任意です。
@@ -119,7 +117,7 @@ bun run build-all -- \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
-- `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルです（必須、未指定はエラー）。
+- `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `stage3/E01_script.md`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `--prefill-query engine`（`build-project`）と `build-audio` の両方で同じ URL 解決ロジックを使います。

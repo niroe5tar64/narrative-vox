@@ -10,7 +10,11 @@ import {
   evaluateSpeakability,
   normalizeScriptLine
 } from "./build_text/text_processing.ts";
-import { loadStage4TextConfig, type Stage4TextConfig } from "./build_text/stage4_text_config.ts";
+import {
+  loadStage4TextConfig,
+  normalizeStage4TextConfig,
+  type Stage4TextConfig
+} from "./build_text/stage4_text_config.ts";
 import {
   collectRubyCandidates,
   collectTermCandidates,
@@ -52,7 +56,7 @@ interface BuildTextOptions {
   projectId?: string;
   runId?: string;
   episodeId?: string;
-  stage4ConfigPath: string;
+  stage4ConfigPath?: string;
 }
 
 interface BuildTextResult {
@@ -209,12 +213,6 @@ export async function buildText({
   episodeId,
   stage4ConfigPath
 }: BuildTextOptions): Promise<BuildTextResult> {
-  if (!stage4ConfigPath) {
-    throw new Error(
-      "Missing required option --stage4-config for build-text/build-all. Specify configs/voicevox/stage4_text_config.json."
-    );
-  }
-
   const metadata = resolveBuildTextOutputPaths({
     scriptPath,
     runDir,
@@ -237,7 +235,9 @@ export async function buildText({
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const morphTokenizer = await getJapaneseMorphTokenizer();
-  const stage4TextConfig = await loadStage4TextConfig(stage4ConfigPath);
+  const stage4TextConfig = stage4ConfigPath
+    ? await loadStage4TextConfig(stage4ConfigPath)
+    : normalizeStage4TextConfig();
   const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(
     source,
     morphTokenizer,

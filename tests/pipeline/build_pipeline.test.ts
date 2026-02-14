@@ -590,23 +590,23 @@ test("stage4 rejects invalid --run-id format with expected pattern in message", 
   );
 });
 
-test("stage4 requires non-empty stage4 text config path", async () => {
+test("stage4 falls back to built-in defaults when stage4 text config path is omitted", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7777");
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7778");
   await mkdir(runDir, { recursive: true });
 
-  await assert.rejects(
-    () =>
-      buildTextBase({
-        scriptPath: sampleScriptPath,
-        runDir,
-        episodeId: "E01",
-        projectId: "introducing-rescript",
-        runId: "run-20260211-7777",
-        stage4ConfigPath: ""
-      }),
-    /--stage4-config/
-  );
+  const stage4 = await buildTextBase({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-7778"
+  });
+
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+  assert.equal(stage4Json.utterances.length > 0, true);
+  assert.equal(stage4Json.quality_checks.speakability.score >= 0, true);
+  assert.equal(stage4Json.quality_checks.speakability.score <= 100, true);
 });
 
 test("stage4 extracts dictionary candidates with readings from morphological analysis", async () => {
