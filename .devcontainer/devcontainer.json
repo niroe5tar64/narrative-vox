@@ -2,24 +2,6 @@
   "$comment": "NarrativeVox development container configuration",
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    },
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "installOhMyZsh": true,
-      "upgradePackages": true,
-      "timezone": "Asia/Tokyo",
-      "username": "dev-user"
-    }
-  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -50,14 +32,18 @@
   },
   "containerEnv": {
     "CLAUDE_SETTINGS_PATH": "${containerWorkspaceFolder}/.claude/settings.json",
+    "GIT_CONFIG_GLOBAL": "/home/dev-user/.config/git/config",
     "TZ": "Asia/Tokyo"
   },
   "remoteEnv": {
     "PATH": "/home/dev-user/.local/bin:/home/dev-user/.bun/bin:${containerEnv:PATH}"
   },
   "initializeCommand": "bash .devcontainer/initialize.sh",
+  "runArgs": [
+    "--network=narrative-vox-net"
+  ],
   "mounts": [
-    "source=${localEnv:HOME}/.gitconfig,target=/home/dev-user/.gitconfig,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/dev-user/.gitconfig-host,type=bind,consistency=cached,readonly",
     "source=${localEnv:HOME}/.ssh,target=/home/dev-user/.ssh,type=bind,consistency=cached,readonly",
     "source=${localEnv:HOME}/.npmrc,target=/home/dev-user/.npmrc,type=bind,consistency=cached,readonly",
     "source=${localEnv:HOME}/.claude/rules,target=/home/dev-user/.claude/rules,type=bind",
@@ -66,6 +52,25 @@
     "source=${localEnv:HOME}/.claude/todos,target=/home/dev-user/.claude/todos,type=bind",
     "source=${localEnv:HOME}/.codex,target=/home/dev-user/.codex,type=bind"
   ],
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "timezone": "Asia/Tokyo",
+      "username": "dev-user"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "remoteUser": "dev-user",
   "name": "narrative-vox"

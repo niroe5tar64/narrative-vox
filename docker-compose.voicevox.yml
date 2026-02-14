@@ -1,0 +1,14 @@
+services:
+  voicevox-engine:
+    image: voicevox/voicevox_engine:cpu-latest
+    container_name: narrative-vox-voicevox-engine
+    restart: unless-stopped
+    ports:
+      - "50021:50021"
+    networks:
+      - narrative-vox-net
+
+networks:
+  narrative-vox-net:
+    external: true
+    name: narrative-vox-net

@@ -39,4 +39,16 @@ touch ~/.claude/settings.json
 # Codex 設定ディレクトリ
 mkdir -p ~/.codex
 
+# DevContainer と VOICEVOX Engine の共有ネットワーク
+if command -v docker >/dev/null 2>&1; then
+  if ! docker network inspect narrative-vox-net >/dev/null 2>&1; then
+    echo "Creating docker network: narrative-vox-net"
+    docker network create narrative-vox-net >/dev/null
+  else
+    echo "✅ docker network narrative-vox-net exists"
+  fi
+else
+  echo "⚠️  docker command not found on host. Create network manually: docker network create narrative-vox-net"
+fi
+
 echo "✅ Host directories initialized successfully."

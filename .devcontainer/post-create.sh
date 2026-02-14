@@ -26,9 +26,22 @@ append_line_once() {
 # Add bun to PATH for bash and zsh
 append_line_once 'export PATH="$HOME/.bun/bin:$PATH"' ~/.bashrc
 append_line_once 'export PATH="$HOME/.bun/bin:$PATH"' ~/.zshrc
+append_line_once 'export GIT_CONFIG_GLOBAL="$HOME/.config/git/config"' ~/.bashrc
+append_line_once 'export GIT_CONFIG_GLOBAL="$HOME/.config/git/config"' ~/.zshrc
 
 # Update PATH for current session
 export PATH="$HOME/.bun/bin:$PATH"
+export GIT_CONFIG_GLOBAL="$HOME/.config/git/config"
+
+# Keep global git config writable inside container.
+mkdir -p ~/.config/git
+if [ ! -f "${GIT_CONFIG_GLOBAL}" ]; then
+    if [ -f ~/.gitconfig-host ]; then
+        cp ~/.gitconfig-host "${GIT_CONFIG_GLOBAL}"
+    else
+        touch "${GIT_CONFIG_GLOBAL}"
+    fi
+fi
 
 # Install CLI tools (npm) - check if npm packages are installed (not just command exists)
 if ! npm list -g @anthropic-ai/claude-code @openai/codex &> /dev/null; then
