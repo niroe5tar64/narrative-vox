@@ -31,6 +31,7 @@
 │       ├── voicevox_text/
 │       ├── dict_candidates/
 │       ├── voicevox_project/
+│       ├── audio/
 │       ├── reports/
 │       └── logs/
 ├── schemas/
@@ -53,6 +54,9 @@
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
   - `--prefill-query minimal` を指定すると `talk.audioItems[*].query` を最小値で事前埋めできる（`postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算して反映）
   - `--prefill-query engine` を指定すると VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を生成し、profile 既定値を重ねて出力する
+- Stage 6: Stage 5 `.vvproj` から VOICEVOX Engine API で WAV を自動生成
+  - `audio/E##.wav` を出力（utteranceを連結した単一ファイル）
+  - `audio/manifest.json` に voice 設定・出力先・実行結果を保存
 
 ## サンプルデータ
 
@@ -98,6 +102,11 @@ bun run build-project -- \
   --prefill-query engine \
   --voicevox-url http://voicevox-engine:50021
 
+# 5) Stage5 `.vvproj` から VOICEVOX audio を生成（GUI操作不要）
+bun run build-audio -- \
+  --stage5-vvproj projects/introducing-rescript/run-20260211-0000/voicevox_project/E01.vvproj \
+  --voicevox-url http://voicevox-engine:50021
+
 # Build Text + Build Project を連続実行
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md
@@ -107,11 +116,16 @@ bun run build-all -- \
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
-- `--prefill-query engine` 利用時は `--voicevox-url`（既定: `http://127.0.0.1:50021`）で VOICEVOX Engine の API エンドポイントを指定できます。
+- `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
+- `--prefill-query engine`（`build-project`）と `build-audio` の両方で同じ URL 解決ロジックを使います。
+- 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
+- `build-audio` は `stage5` の `query`（手調整済み含む）を優先して `synthesis` を呼びます。`query` 未設定項目のみ `audio_query` で補完します。
+- `build-audio` は途中失敗があっても成功分を保持して `audio/manifest.json` に要約します。
 - `bun run prepare-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
-- `build-text` / `build-project` / `build-all` の `--run-dir` は任意です。
+- `build-text` / `build-project` / `build-audio` / `build-all` の `--run-dir` は任意です。
   - `build-text` / `build-all`: `--script` が `.../run-.../stage3/...` 配下なら自動推論
   - `build-project`: `--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
+  - `build-audio`: `--stage5-vvproj` が `.../run-.../voicevox_project/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
 
 ## DevContainer + VOICEVOX Engine

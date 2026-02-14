@@ -33,6 +33,7 @@
   "containerEnv": {
     "CLAUDE_SETTINGS_PATH": "${containerWorkspaceFolder}/.claude/settings.json",
     "GIT_CONFIG_GLOBAL": "/home/dev-user/.config/git/config",
+    "VOICEVOX_URL": "http://voicevox-engine:50021",
     "TZ": "Asia/Tokyo"
   },
   "remoteEnv": {

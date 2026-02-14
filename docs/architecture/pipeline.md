@@ -29,6 +29,11 @@
 - Output: `voicevox_project/E##_voicevox_import.json`
 - Output: `voicevox_project/E##.vvproj`
 
+6. Stage 6: VOICEVOX Audio Build
+- Input: `voicevox_project/E##.vvproj` + VOICEVOX Engine API
+- Output: `audio/E##.wav` (utterance を連結した単一 wav)
+- Output: `audio/manifest.json`
+
 ## Data Layout
 
 - Sources: `inputs/books/*/source/*`
@@ -37,10 +42,10 @@
 - Config: `configs/*`
 - Schemas: `schemas/*`
 
-## Current status (2026-02-11)
+## Current status (2026-02-14)
 
 - Stage 1-3 prompt/サンプルは配置済み
-- Build Text / Build Project は最小実装済み（CLI: `src/cli/main.ts`）
+- Build Text / Build Project / Build Audio は CLI 実装済み（`src/cli/main.ts`）
 
 ## Build Text Speakability warning guidance
 
