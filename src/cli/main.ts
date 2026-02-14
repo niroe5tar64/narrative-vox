@@ -2,12 +2,13 @@
 import path from "node:path";
 import { buildText } from "../pipeline/build_text.ts";
 import { buildProject } from "../pipeline/build_project.ts";
+import { buildAudio } from "../pipeline/build_audio.ts";
 import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
 import type { CliOptions } from "../shared/cli_args.ts";
 
-type CommandName = "build-text" | "build-project" | "build-all" | "check-run" | "prepare-run";
+type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
@@ -15,6 +16,8 @@ const usageByCommand: Record<CommandName, string> = {
     "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
     "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
+  "build-audio":
+    "Usage:\n  bun src/cli/main.ts build-audio --stage5-vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
@@ -32,6 +35,7 @@ function printUsage(command?: string) {
   console.log(`Usage:
   ${usageByCommand["build-text"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-project"].replace("Usage:\n  ", "")}
+  ${usageByCommand["build-audio"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-all"].replace("Usage:\n  ", "")}
   ${usageByCommand["check-run"].replace("Usage:\n  ", "")}
   ${usageByCommand["prepare-run"].replace("Usage:\n  ", "")}
@@ -77,6 +81,34 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(`Build project done: episode=${result.episodeId}, audioItems=${result.audioItemCount}`);
     console.log(`- ${path.relative(process.cwd(), result.importJsonPath)}`);
     console.log(`- ${path.relative(process.cwd(), result.vvprojPath)}`);
+  },
+  "build-audio": async (options) => {
+    const result = await buildAudio({
+      stage5VvprojPath: ensureOption(options, "stage5-vvproj", "build-audio"),
+      runDir: optionAsString(options, "run-dir"),
+      voicevoxApiUrl: optionAsString(options, "voicevox-url")
+    });
+
+    console.log(
+      `Build audio done: episode=${result.episodeId}, utterances=${result.utteranceCount}, succeeded=${result.successCount}, failed=${result.failureCount}`
+    );
+    if (result.mergedWavPath) {
+      console.log(`- ${path.relative(process.cwd(), result.mergedWavPath)}`);
+    }
+    console.log(`- ${path.relative(process.cwd(), result.audioDir)}`);
+    console.log(`- ${path.relative(process.cwd(), result.manifestPath)}`);
+
+    if (result.failureCount > 0) {
+      console.log("Failed utterances:");
+      for (const failure of result.failures) {
+        console.log(
+          `- ${failure.audioKey} [${failure.stage}] attempts=${failure.attempts}${
+            typeof failure.statusCode === "number" ? ` status=${failure.statusCode}` : ""
+          } ${failure.message}`
+        );
+      }
+      throw new Error(`build-audio failed for ${result.failureCount} utterance(s).`);
+    }
   },
   "build-all": async (options) => {
     const runDir = optionAsString(options, "run-dir");

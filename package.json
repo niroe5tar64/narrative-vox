@@ -8,6 +8,7 @@
     "check-run": "bun src/cli/main.ts check-run",
     "build-text": "bun src/cli/main.ts build-text",
     "build-project": "bun src/cli/main.ts build-project",
+    "build-audio": "bun src/cli/main.ts build-audio",
     "build-all": "bun src/cli/main.ts build-all",
     "voicevox:up": "bash scripts/voicevox-up.sh",
     "voicevox:down": "bash scripts/voicevox-down.sh",
