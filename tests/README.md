@@ -16,3 +16,9 @@ pipeline / quality / voicevox のテストを配置する。
 - `tests/quality/stage1_stage2_schema.test.ts`
 - `tests/quality/stage4_stage5_schema.test.ts`
 - `tests/cli/prepare_run.test.ts`
+
+fixture 運用:
+
+- 共有前提データは `projects/*/run-*` ではなく `tests/fixtures/sample-run` を使う。
+- fixture 更新時は stage1〜stage5 の整合を保ち、変更後に `bun run test` を実行して `ENOENT` が出ないことを確認する。
+- fixture の内容・方針は `tests/fixtures/README.md` を参照する。
