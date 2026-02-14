@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { test } from "node:test";
+import { test } from "bun:test";
 import { validateAgainstSchema } from "../../src/quality/schema_validator.ts";
 
 const sampleRunDir = path.resolve("tests/fixtures/sample-run");

@@ -70,6 +70,12 @@
 詳細フローは `docs/architecture/pipeline.md` を参照。
 TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migration.md` を参照。
 
+## テスト実行方針
+
+- テスト実行コマンドは `bun run test`（=`bun test`）を標準とする。
+- テストファイルは `bun:test` を import して Bun ランナーに統一する。
+- CI（`.github/workflows/ci.yml`）も `bun test` を実行し、ローカルと同じ実行方式に揃える。
+
 ## 実行コマンド（最小）
 
 ```bash
