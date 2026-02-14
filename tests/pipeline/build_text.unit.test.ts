@@ -7,6 +7,7 @@ import {
   decidePauseLengthMs,
   evaluateSpeakability,
   inferReadingFromSurface,
+  normalizeScriptLine,
   replaceRubyWithReading,
   splitIntoSentences,
   toDictionaryCandidates
@@ -68,6 +69,19 @@ test("evaluateSpeakability gives higher score to easy-to-read utterances", () =>
   assert.equal(easy.score > hard.score, true);
   assert.equal(easy.score >= 80, true);
   assert.equal(hard.score <= 40, true);
+});
+
+test("normalizeScriptLine keeps regular lines unchanged", () => {
+  const actual = normalizeScriptLine("型の整合性を確認します。");
+  assert.equal(actual, "型の整合性を確認します。");
+});
+
+test("normalizeScriptLine ignores legacy section duration notes", () => {
+  assert.equal(normalizeScriptLine("(想定: 1分)"), "");
+  assert.equal(
+    normalizeScriptLine("型の整合性を確認します。(想定: 1分)"),
+    "型の整合性を確認します。"
+  );
 });
 
 test("replaceRubyWithReading replaces ruby notation with reading", () => {

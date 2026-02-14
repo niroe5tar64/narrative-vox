@@ -54,6 +54,24 @@ function buildValidScriptWithMarkdownHeadings(): string {
   ].join("\n");
 }
 
+function buildValidScriptWithDurationSuffixes(): string {
+  const base = buildValidScript();
+  const lines = base.split("\n");
+  const withDurationLines: string[] = [];
+
+  for (const line of lines) {
+    withDurationLines.push(line);
+    if (/^\d\.\s+/.test(line)) {
+      continue;
+    }
+    if (/です。$/.test(line)) {
+      withDurationLines.push("(想定: 1分)");
+    }
+  }
+
+  return withDurationLines.join("\n");
+}
+
 async function prepareMinimalRun(
   stage2EpisodeIds: string[],
   stage3Scripts: Record<string, string>
@@ -158,6 +176,15 @@ test("checkRun rejects stage3 script with duplicate section ID", async () => {
 test("checkRun accepts markdown heading style section lines", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildValidScriptWithMarkdownHeadings()
+  });
+
+  const result = await checkRun({ runDir });
+  assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
+});
+
+test("checkRun accepts scripts that still include legacy section duration notes", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScriptWithDurationSuffixes()
   });
 
   const result = await checkRun({ runDir });
