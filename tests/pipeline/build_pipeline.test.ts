@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { createServer } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { buildText } from "../../src/pipeline/build_text.ts";
 import { buildProject } from "../../src/pipeline/build_project.ts";
@@ -26,6 +28,7 @@ interface VoicevoxTextJsonTest {
 }
 
 interface VoicevoxProjectJsonTest {
+  appVersion?: string;
   talk: {
     audioKeys: string[];
     audioItems: Record<
@@ -58,6 +61,35 @@ interface VoicevoxProjectJsonTest {
 const sampleScriptPath = path.resolve(
   "tests/fixtures/sample-run/stage3/E01_script.md"
 );
+
+async function withMockVoicevoxServer(
+  handler: (req: IncomingMessage, res: ServerResponse) => void,
+  run: (baseUrl: string) => Promise<void>
+): Promise<void> {
+  const server = createServer(handler);
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+
+  try {
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Failed to resolve mock VOICEVOX server address");
+    }
+    await run(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+}
 
 test("stage4 -> stage5 pipeline works with sample script", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
@@ -138,6 +170,45 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
   }
 });
 
+test("stage5 normalizes too-old appVersion to supported vvproj format version", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const oldProfilePath = path.join(tempRoot, "old-profile.json");
+  await writeFile(
+    oldProfilePath,
+    JSON.stringify(
+      {
+        appVersion: "0.14.7",
+        engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+        speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+        styleId: 67
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  const stage5 = await buildProject({
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+    runDir,
+    profilePath: oldProfilePath
+  });
+
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+  assert.equal(stage5Json.appVersion, "0.25.0");
+});
+
 test("stage5 rejects unsupported prefill-query mode", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
@@ -159,8 +230,224 @@ test("stage5 rejects unsupported prefill-query mode", async () => {
         profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
         prefillQuery: "invalid" as "minimal"
       }),
-    /Expected one of: none, minimal/
+    /Expected one of: none, minimal, engine/
   );
+});
+
+test("stage5 prefill-query=engine fills accentPhrases via VOICEVOX audio_query", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const stage4 = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  const requestedTexts: string[] = [];
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    const text = requestUrl.searchParams.get("text") ?? "";
+    requestedTexts.push(text);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const stage5 = await buildProject({
+      voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      prefillQuery: "engine",
+      voicevoxApiUrl
+    });
+    const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+    assert.equal(stage5Json.talk.audioKeys.length, stage4Json.utterances.length);
+    assert.equal(requestedTexts.length, stage4Json.utterances.length);
+    const stage4UtteranceById = new Map(
+      stage4Json.utterances.map((utterance) => [utterance.utterance_id, utterance] as const)
+    );
+
+    for (const audioKey of stage5Json.talk.audioKeys) {
+      const audioItem = stage5Json.talk.audioItems[audioKey];
+      assert.ok(audioItem.query);
+      assert.equal((audioItem.query?.accentPhrases.length ?? 0) > 0, true);
+      assert.equal(audioItem.query?.speedScale, 1);
+      assert.equal(audioItem.query?.pitchScale, 0);
+      assert.equal(audioItem.query?.intonationScale, 1);
+      assert.equal(audioItem.query?.volumeScale, 1);
+      assert.equal(audioItem.query?.pauseLengthScale, 1);
+      assert.equal(audioItem.query?.prePhonemeLength, 0.1);
+      assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
+      assert.equal(audioItem.query?.outputStereo, false);
+
+      const utteranceId = audioKey.split("_").slice(1).join("_");
+      const sourceUtterance = stage4UtteranceById.get(utteranceId);
+      assert.ok(sourceUtterance);
+      assert.equal(audioItem.query?.postPhonemeLength, sourceUtterance.pause_length_ms / 1000);
+    }
+  });
+});
+
+test("stage5 prefill-query=engine supports snake_case audio_query response", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const stage4 = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accent_phrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonant_length: 0.05,
+                vowel: "e",
+                vowel_length: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            pause_mora: null,
+            is_interrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const stage5 = await buildProject({
+      voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      prefillQuery: "engine",
+      voicevoxApiUrl
+    });
+    const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+    for (const audioKey of stage5Json.talk.audioKeys) {
+      const audioItem = stage5Json.talk.audioItems[audioKey];
+      assert.ok(audioItem.query);
+      assert.equal((audioItem.query?.accentPhrases.length ?? 0) > 0, true);
+      assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
+      assert.equal(audioItem.query?.outputStereo, false);
+    }
+  });
+});
+
+test("stage5 prefill-query=engine rejects empty accentPhrases from VOICEVOX audio_query", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const stage4 = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [],
+        speedScale: 1,
+        pitchScale: 0,
+        intonationScale: 1,
+        volumeScale: 1,
+        pauseLengthScale: 1,
+        prePhonemeLength: 0.1,
+        postPhonemeLength: 0.1,
+        outputSamplingRate: "engineDefault",
+        outputStereo: false
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    await assert.rejects(
+      () =>
+        buildProject({
+          voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+          runDir,
+          profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+          prefillQuery: "engine",
+          voicevoxApiUrl
+        }),
+      /empty accentPhrases/
+    );
+  });
 });
 
 test("stage4 uses run_id from run-dir path when --run-id is omitted", async () => {

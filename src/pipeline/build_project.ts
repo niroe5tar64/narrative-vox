@@ -50,7 +50,43 @@ interface ProjectAudioItem {
   query?: ProjectAudioQuery;
 }
 
-type QueryPrefillMode = "none" | "minimal";
+interface EngineMoraLike {
+  text?: unknown;
+  vowel?: unknown;
+  vowelLength?: unknown;
+  vowel_length?: unknown;
+  pitch?: unknown;
+  consonant?: unknown;
+  consonantLength?: unknown;
+  consonant_length?: unknown;
+}
+
+interface EngineAccentPhraseLike {
+  moras?: unknown;
+  accent?: unknown;
+  pauseMora?: unknown;
+  pause_mora?: unknown;
+  isInterrogative?: unknown;
+  is_interrogative?: unknown;
+}
+
+interface EngineAudioQueryLike {
+  accentPhrases?: unknown;
+  accent_phrases?: unknown;
+  speedScale?: unknown;
+  pitchScale?: unknown;
+  intonationScale?: unknown;
+  volumeScale?: unknown;
+  pauseLengthScale?: unknown;
+  prePhonemeLength?: unknown;
+  postPhonemeLength?: unknown;
+  outputSamplingRate?: unknown;
+  outputStereo?: unknown;
+  kana?: unknown;
+}
+
+type QueryPrefillMode = "none" | "minimal" | "engine";
+const DEFAULT_VOICEVOX_API_URL = "http://127.0.0.1:50021";
 
 interface BuildProjectOptions {
   voicevoxTextJsonPath: string;
@@ -61,6 +97,7 @@ interface BuildProjectOptions {
   styleId?: number;
   appVersion?: string;
   prefillQuery?: string;
+  voicevoxApiUrl?: string;
 }
 
 interface BuildProjectResult {
@@ -69,6 +106,8 @@ interface BuildProjectResult {
   audioItemCount: number;
   episodeId: string;
 }
+
+const MIN_VOICEVOX_PROJECT_APP_VERSION = "0.25.0";
 
 function toAudioKey(episodeId: string, utteranceId: string): string {
   return `${episodeId}_${utteranceId}`;
@@ -103,7 +142,51 @@ function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
   if (mode === "minimal") {
     return "minimal";
   }
-  throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal`);
+  if (mode === "engine") {
+    return "engine";
+  }
+  throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal, engine`);
+}
+
+function normalizeVoicevoxApiUrl(value?: string): string {
+  const url = (value || DEFAULT_VOICEVOX_API_URL).trim();
+  if (!url) {
+    return DEFAULT_VOICEVOX_API_URL;
+  }
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function parseSemver(value: string): [number, number, number] | undefined {
+  const match = value.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) {
+    return undefined;
+  }
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function compareSemver(a: string, b: string): number {
+  const parsedA = parseSemver(a);
+  const parsedB = parseSemver(b);
+  if (!parsedA || !parsedB) {
+    return 0;
+  }
+
+  for (let i = 0; i < 3; i += 1) {
+    if (parsedA[i] !== parsedB[i]) {
+      return parsedA[i] - parsedB[i];
+    }
+  }
+  return 0;
+}
+
+function normalizeProjectAppVersion(value?: string): string {
+  if (!value) {
+    return MIN_VOICEVOX_PROJECT_APP_VERSION;
+  }
+  if (compareSemver(value, MIN_VOICEVOX_PROJECT_APP_VERSION) < 0) {
+    return MIN_VOICEVOX_PROJECT_APP_VERSION;
+  }
+  return value;
 }
 
 function toPostPhonemeLength(
@@ -134,6 +217,118 @@ function buildMinimalQuery(profile: VoiceProfile, pauseLengthMs?: number): Proje
   };
 }
 
+function applyQueryDefaults(
+  query: ProjectAudioQuery,
+  profile: VoiceProfile,
+  pauseLengthMs?: number
+): ProjectAudioQuery {
+  const defaults = profile.queryDefaults;
+  return {
+    ...query,
+    speedScale: defaults.speedScale,
+    pitchScale: defaults.pitchScale,
+    intonationScale: defaults.intonationScale,
+    volumeScale: defaults.volumeScale,
+    pauseLengthScale: defaults.pauseLengthScale,
+    prePhonemeLength: defaults.prePhonemeLength,
+    postPhonemeLength: toPostPhonemeLength(defaults.postPhonemeLength, pauseLengthMs),
+    outputSamplingRate: defaults.outputSamplingRate,
+    outputStereo: defaults.outputStereo
+  };
+}
+
+function normalizeEngineMora(raw: EngineMoraLike): ProjectMora {
+  const vowelLength = raw.vowelLength ?? raw.vowel_length;
+  const consonantLength = raw.consonantLength ?? raw.consonant_length;
+  return {
+    text: String(raw.text ?? ""),
+    vowel: String(raw.vowel ?? ""),
+    vowelLength: typeof vowelLength === "number" ? vowelLength : 0,
+    pitch: typeof raw.pitch === "number" ? raw.pitch : 0,
+    ...(typeof raw.consonant === "string" ? { consonant: raw.consonant } : {}),
+    ...(typeof consonantLength === "number" ? { consonantLength } : {})
+  };
+}
+
+function normalizeEngineAccentPhrase(raw: EngineAccentPhraseLike): ProjectAccentPhrase {
+  const pauseMora = raw.pauseMora ?? raw.pause_mora;
+  const mapped: ProjectAccentPhrase = {
+    moras: Array.isArray(raw.moras)
+      ? raw.moras.map((mora) => normalizeEngineMora((mora ?? {}) as EngineMoraLike))
+      : [],
+    accent: typeof raw.accent === "number" ? raw.accent : 1,
+    ...(typeof raw.isInterrogative === "boolean"
+      ? { isInterrogative: raw.isInterrogative }
+      : typeof raw.is_interrogative === "boolean"
+        ? { isInterrogative: raw.is_interrogative }
+        : {})
+  };
+  if (pauseMora && typeof pauseMora === "object") {
+    mapped.pauseMora = normalizeEngineMora(pauseMora as EngineMoraLike);
+  }
+  return mapped;
+}
+
+function normalizeAudioQueryResponse(raw: EngineAudioQueryLike): ProjectAudioQuery {
+  const accentSource = raw.accentPhrases ?? raw.accent_phrases;
+  const accentPhrases = Array.isArray(accentSource)
+    ? accentSource.map((phrase) =>
+        normalizeEngineAccentPhrase((phrase ?? {}) as EngineAccentPhraseLike)
+      )
+    : [];
+  return {
+    accentPhrases,
+    speedScale: typeof raw.speedScale === "number" ? raw.speedScale : 1,
+    pitchScale: typeof raw.pitchScale === "number" ? raw.pitchScale : 0,
+    intonationScale: typeof raw.intonationScale === "number" ? raw.intonationScale : 1,
+    volumeScale: typeof raw.volumeScale === "number" ? raw.volumeScale : 1,
+    pauseLengthScale: typeof raw.pauseLengthScale === "number" ? raw.pauseLengthScale : 1,
+    prePhonemeLength: typeof raw.prePhonemeLength === "number" ? raw.prePhonemeLength : 0.1,
+    postPhonemeLength: typeof raw.postPhonemeLength === "number" ? raw.postPhonemeLength : 0.1,
+    outputSamplingRate:
+      typeof raw.outputSamplingRate === "number" || raw.outputSamplingRate === "engineDefault"
+        ? raw.outputSamplingRate
+        : "engineDefault",
+    outputStereo: typeof raw.outputStereo === "boolean" ? raw.outputStereo : false,
+    ...(typeof raw.kana === "string" ? { kana: raw.kana } : {})
+  };
+}
+
+async function fetchAudioQueryFromEngine(
+  voicevoxApiUrl: string,
+  text: string,
+  styleId: number,
+  audioKey: string
+): Promise<ProjectAudioQuery> {
+  const endpoint = new URL("/audio_query", normalizeVoicevoxApiUrl(voicevoxApiUrl));
+  endpoint.searchParams.set("text", text);
+  endpoint.searchParams.set("speaker", String(styleId));
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, { method: "POST" });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to call VOICEVOX audio_query for ${audioKey} at ${endpoint.toString()}: ${reason}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `VOICEVOX audio_query returned ${response.status} ${response.statusText} for ${audioKey} at ${endpoint.toString()}`
+    );
+  }
+
+  const raw = (await response.json()) as EngineAudioQueryLike;
+  const query = normalizeAudioQueryResponse(raw);
+  if (!Array.isArray(query.accentPhrases) || query.accentPhrases.length === 0) {
+    throw new Error(`VOICEVOX audio_query produced empty accentPhrases for ${audioKey}`);
+  }
+
+  return query;
+}
+
 export async function buildProject({
   voicevoxTextJsonPath,
   runDir,
@@ -142,7 +337,8 @@ export async function buildProject({
   speakerId,
   styleId,
   appVersion,
-  prefillQuery
+  prefillQuery,
+  voicevoxApiUrl
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
@@ -166,8 +362,9 @@ export async function buildProject({
   const finalEngineId = engineId || profile.engineId;
   const finalSpeakerId = speakerId || profile.speakerId;
   const finalStyleId = styleId ?? profile.styleId;
-  const finalAppVersion = appVersion || profile.appVersion || "0.0.0";
+  const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
   const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
+  const resolvedVoicevoxApiUrl = normalizeVoicevoxApiUrl(voicevoxApiUrl);
 
   const audioKeys: string[] = [];
   const audioItems: Record<string, ProjectAudioItem> = {};
@@ -185,6 +382,15 @@ export async function buildProject({
     };
     if (queryPrefillMode === "minimal") {
       audioItem.query = buildMinimalQuery(profile, utterance.pause_length_ms);
+    }
+    if (queryPrefillMode === "engine") {
+      const engineQuery = await fetchAudioQueryFromEngine(
+        resolvedVoicevoxApiUrl,
+        utterance.text,
+        finalStyleId,
+        key
+      );
+      audioItem.query = applyQueryDefaults(engineQuery, profile, utterance.pause_length_ms);
     }
     audioItems[key] = audioItem;
   }

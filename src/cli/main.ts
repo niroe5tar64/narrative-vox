@@ -14,7 +14,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-text":
     "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal]",
+    "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
@@ -46,7 +46,8 @@ function buildProjectOptions(options: CliOptions) {
     speakerId: optionAsString(options, "speaker-id"),
     styleId: optionAsNumber(options, "style-id"),
     appVersion: optionAsString(options, "app-version"),
-    prefillQuery: optionAsString(options, "prefill-query")
+    prefillQuery: optionAsString(options, "prefill-query"),
+    voicevoxApiUrl: optionAsString(options, "voicevox-url")
   };
 }
 

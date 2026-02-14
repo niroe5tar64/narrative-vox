@@ -52,6 +52,7 @@
   - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Stage 5: Stage 4 JSON から VOICEVOX import (`.vvproj`) 生成
   - `--prefill-query minimal` を指定すると `talk.audioItems[*].query` を最小値で事前埋めできる（`postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算して反映）
+  - `--prefill-query engine` を指定すると VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を生成し、profile 既定値を重ねて出力する
 
 ## サンプルデータ
 
@@ -88,7 +89,8 @@ bun run build-text -- \
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
   --stage4-json projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json \
-  --prefill-query minimal
+  --prefill-query engine \
+  --voicevox-url http://voicevox-engine:50021
 
 # Build Text + Build Project を連続実行
 bun run build-all -- \
@@ -98,12 +100,36 @@ bun run build-all -- \
 - `--run-id` は任意です。
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
-- `--prefill-query` は `none`（既定）または `minimal` を指定できます。
+- `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
+- `--prefill-query engine` 利用時は `--voicevox-url`（既定: `http://127.0.0.1:50021`）で VOICEVOX Engine の API エンドポイントを指定できます。
 - `bun run prepare-run` は `stage1` / `stage2` / `stage3` を新 run に複製します。
 - `build-text` / `build-project` / `build-all` の `--run-dir` は任意です。
   - `build-text` / `build-all`: `--script` が `.../run-.../stage3/...` 配下なら自動推論
   - `build-project`: `--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
+
+## DevContainer + VOICEVOX Engine
+
+DevContainer から `--prefill-query engine` を使う場合は、同一 Docker ネットワーク上に `VOICEVOX Engine` コンテナを起動します。
+
+```bash
+# DevContainer 再作成（runArgs/features 変更反映）
+# VS Code: "Dev Containers: Rebuild Container"
+
+# Engine 起動
+bun run voicevox:up
+
+# 疎通確認（DevContainer 内サービス名）
+bun run voicevox:check
+
+# 停止
+bun run voicevox:down
+```
+
+- 共有ネットワーク名: `narrative-vox-net`
+- Compose ファイル: `docker-compose.voicevox.yml`
+- DevContainer からの URL: `http://voicevox-engine:50021`
+- ホストOS からの URL: `http://127.0.0.1:50021`
 
 ## Build Text 辞書CSVの確認観点
 
