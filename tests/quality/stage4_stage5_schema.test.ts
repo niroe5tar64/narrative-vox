@@ -4,7 +4,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { validateAgainstSchema } from "../../src/quality/schema_validator.ts";
 
-const sampleRunDir = path.resolve("projects/introducing-rescript/run-20260211-0000");
+const sampleRunDir = path.resolve("tests/fixtures/sample-run");
 
 async function loadJson<T>(filePath: string): Promise<T> {
   const raw = await readFile(filePath, "utf-8");

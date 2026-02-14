@@ -5,7 +5,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { checkRun } from "../../src/quality/check_run.ts";
 
-const sampleRunDir = path.resolve("projects/introducing-rescript/run-20260211-0000");
+const sampleRunDir = path.resolve("tests/fixtures/sample-run");
 
 function buildValidScript(): string {
   return [
@@ -24,6 +24,28 @@ function buildValidScript(): string {
     "7. 実務への接続",
     "接続です。",
     "8. まとめ",
+    "まとめです。",
+    "合計想定時間: 10分"
+  ].join("\n");
+}
+
+function buildValidScriptWithMarkdownHeadings(): string {
+  return [
+    "## 1. オープニング",
+    "導入です。",
+    "## 2. 前提を呼び起こす",
+    "前提です。",
+    "## 3. 結論を先に提示",
+    "結論です。",
+    "## 4. 概念の最小モデル説明",
+    "説明です。",
+    "## 5. 構造の捉え方",
+    "整理します。",
+    "## 6. 思考を促す問いかけ",
+    "問いです。",
+    "## 7. 実務への接続",
+    "接続です。",
+    "## 8. まとめ",
     "まとめです。",
     "合計想定時間: 10分"
   ].join("\n");
@@ -106,4 +128,13 @@ test("checkRun rejects episode mismatch between stage2 and stage3", async () => 
     () => checkRun({ runDir }),
     /stage3 has episodes not in stage2 variables: E02/
   );
+});
+
+test("checkRun accepts markdown heading style section lines", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScriptWithMarkdownHeadings()
+  });
+
+  const result = await checkRun({ runDir });
+  assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
 });

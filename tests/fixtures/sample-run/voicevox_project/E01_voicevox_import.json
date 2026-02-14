@@ -1,0 +1,1161 @@
+{
+  "appVersion": "0.14.7",
+  "talk": {
+    "audioKeys": [
+      "E01_U001",
+      "E01_U002",
+      "E01_U003",
+      "E01_U004",
+      "E01_U005",
+      "E01_U006",
+      "E01_U007",
+      "E01_U008",
+      "E01_U009",
+      "E01_U010",
+      "E01_U011",
+      "E01_U012",
+      "E01_U013",
+      "E01_U014",
+      "E01_U015",
+      "E01_U016",
+      "E01_U017",
+      "E01_U018",
+      "E01_U019",
+      "E01_U020",
+      "E01_U021",
+      "E01_U022",
+      "E01_U023",
+      "E01_U024",
+      "E01_U025",
+      "E01_U026",
+      "E01_U027",
+      "E01_U028",
+      "E01_U029",
+      "E01_U030",
+      "E01_U031",
+      "E01_U032",
+      "E01_U033",
+      "E01_U034",
+      "E01_U035",
+      "E01_U036",
+      "E01_U037",
+      "E01_U038",
+      "E01_U039",
+      "E01_U040",
+      "E01_U041",
+      "E01_U042",
+      "E01_U043",
+      "E01_U044",
+      "E01_U045",
+      "E01_U046",
+      "E01_U047",
+      "E01_U048",
+      "E01_U049",
+      "E01_U050",
+      "E01_U051",
+      "E01_U052",
+      "E01_U053",
+      "E01_U054"
+    ],
+    "audioItems": {
+      "E01_U001": {
+        "text": "今日は、TypeScriptやJavaScriptで開発しているエンジニアが、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U002": {
+        "text": "なぜ今ReScriptを検討する価値があるのかを整理します。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U003": {
+        "text": "ゴールは、ReScriptの導入価値を、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U004": {
+        "text": "既存のTypeScript/JavaScript運用の課題と対応づけて説明できる状態になることで",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U005": {
+        "text": "す。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U006": {
+        "text": "ここで扱うのは導入判断の軸であり、文法の細部やAPI暗記ではありません。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U007": {
+        "text": "比較対象は、TypeScriptでの実装・設計パターンです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U008": {
+        "text": "TypeScriptは実務適用しやすく、巨大なJavaScript資産とも接続しやすい一方で、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U009": {
+        "text": "境界ではanyや型アサーションが混ざり、実行時まで壊れ方が見えない設計が残ることがあります。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U010": {
+        "text": "よく起きる問題は2つです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U011": {
+        "text": "1つ目は、型が通っても分岐漏れや仕様抜けがレビュー後半で発覚すること。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U012": {
+        "text": "2つ目は、コードベース拡大とともに変更影響の見通しが落ち、保守コストが増えることです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U013": {
+        "text": "つまり、型があることと、設計の安全性が運用で担保されることは同じではありません。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U014": {
+        "text": "結論は明確です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U015": {
+        "text": "ReScriptは、型制約とデータモデルを先に固定し、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U016": {
+        "text": "JavaScriptへコンパイルして運用することで、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U017": {
+        "text": "不具合検知を実行時からコンパイル時へ前倒しできます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U018": {
+        "text": "全面置換を前提にしなくても、境界から段階導入するだけで、レビュー品質と変更耐性を改善できます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U019": {
+        "text": "最小モデルは3層で理解します。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U020": {
+        "text": "1つ目は、式中心の言語モデルです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U021": {
+        "text": "ReScriptでは評価単位が明確で、値と副作用の扱いを整理しやすい。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U022": {
+        "text": "2つ目は、コンパイル時検証です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U023": {
+        "text": "型不一致、分岐漏れ、曖昧な値表現を、実行前に明示的に扱えます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U024": {
+        "text": "3つ目は、実行時モデルです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U025": {
+        "text": "最終的にはJavaScriptとして動くため、Webエコシステムとの接続を維持できます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U026": {
+        "text": "ここで重要なのは、実行基盤を変えずに、設計時点の厳密さを上げられる点です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U027": {
+        "text": "逆に、この回ではReact実装詳細や高度なFFI、全章のAPI解説は扱いません。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U028": {
+        "text": "TypeScriptの基本モデルは、JavaScript互換性を重視した柔軟な型付けです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U029": {
+        "text": "現場適用が速い反面、境界の扱い次第で型の保証が薄くなる場面があります。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U030": {
+        "text": "ReScriptのモデルは、より厳密な型システムと型推論で、実装前に制約を固定しやすい構造です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U031": {
+        "text": "この違いが、判断タイミングを変えます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U032": {
+        "text": "TypeScript中心だと「実装してから破綻を見つける」寄りになりやすい。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U033": {
+        "text": "ReScriptを導入すると「設計時点で破綻を潰す」寄りに移せます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U034": {
+        "text": "つまり、品質活動の重心がテスト後半から設計初期へ移動します。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U035": {
+        "text": "ここで問いです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U036": {
+        "text": "あなたのプロダクトでは、最近の不具合や手戻りのうち、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U037": {
+        "text": "何割が「境界の曖昧さ」と「分岐の想定漏れ」に起因しているでしょうか。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U038": {
+        "text": "もしこの割合が高いなら、導入判断の軸は新機能速度だけでなく、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U039": {
+        "text": "設計時点で壊れ方を減らせるかに置くべきです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U040": {
+        "text": "実務上の効果は3点です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U041": {
+        "text": "1つ目はバグの早期検知。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U042": {
+        "text": "2つ目はレビュー観点の統一。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U043": {
+        "text": "3つ目は長期変更に対する見通し向上です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U044": {
+        "text": "プロセスとしては、",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U045": {
+        "text": "PRレビューの最初に「型で防げる不具合を実装で受けていないか」「境界の責務が明確か」を確認します",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U046": {
+        "text": "。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U047": {
+        "text": "これにより、仕様変更時の影響追跡がしやすくなり、回帰リスクを下げられます。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U048": {
+        "text": "特に中規模以上のWebアプリや複数人開発では、この差が運用コストに直結します。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U049": {
+        "text": "最初に決めるべきは3つです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U050": {
+        "text": "導入境界、ビルド統合、そしてTS/JSとReScript間のデータ受け渡しルールです。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U051": {
+        "text": "適用範囲は、型安全と保守性を重視する中規模以上のプロダクトで特に有効です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U052": {
+        "text": "一方で、この回の範囲外は、具体文法の深掘り実装と高度な連携実装です。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U053": {
+        "text": "次回以降で、式評価・不変性・制御フローに進み、導入判断を実装判断へ接続します。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      },
+      "E01_U054": {
+        "text": "今回の内容は、導入価値の判断に限定し、文法詳細やReact実装手順には踏み込みません。",
+        "voice": {
+          "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
+          "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+          "styleId": 67
+        },
+        "query": {
+          "accentPhrases": [],
+          "speedScale": 1,
+          "pitchScale": 0,
+          "intonationScale": 1,
+          "volumeScale": 1,
+          "pauseLengthScale": 1,
+          "prePhonemeLength": 0.1,
+          "postPhonemeLength": 0.1,
+          "outputSamplingRate": "engineDefault",
+          "outputStereo": false
+        }
+      }
+    }
+  },
+  "song": {
+    "tpqn": 480,
+    "tempos": [
+      {
+        "position": 0,
+        "bpm": 120
+      }
+    ],
+    "timeSignatures": [
+      {
+        "measureNumber": 1,
+        "beats": 4,
+        "beatType": 4
+      }
+    ],
+    "tracks": {},
+    "trackOrder": []
+  }
+}

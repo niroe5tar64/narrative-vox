@@ -1,0 +1,1724 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "project_id": "introducing-rescript",
+    "run_id": "run-20260212-0101",
+    "episode_id": "E01",
+    "source_script_path": ".tmp/projects/introducing-rescript/run-20260212-0101/stage3/E01_script.md",
+    "generated_at": "2026-02-11T15:48:51.875Z"
+  },
+  "utterances": [
+    {
+      "utterance_id": "U001",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "今日は、TypeScriptやJavaScriptで開発しているエンジニアが、",
+      "pause_length_ms": 230
+    },
+    {
+      "utterance_id": "U002",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "なぜ今ReScriptを検討する価値があるのかを整理します。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U003",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "ゴールは、ReScriptの導入価値を、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U004",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "既存のTypeScript/JavaScript運用の課題と対応づけて説明できる状態になることで",
+      "pause_length_ms": 200
+    },
+    {
+      "utterance_id": "U005",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "す。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U006",
+      "section_id": 1,
+      "section_title": "オープニング",
+      "text": "ここで扱うのは導入判断の軸であり、文法の細部やAPI暗記ではありません。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U007",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "比較対象は、TypeScriptでの実装・設計パターンです。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U008",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "TypeScriptは実務適用しやすく、巨大なJavaScript資産とも接続しやすい一方で、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U009",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "境界ではanyや型アサーションが混ざり、実行時まで壊れ方が見えない設計が残ることがあります。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U010",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "よく起きる問題は2つです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U011",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "1つ目は、型が通っても分岐漏れや仕様抜けがレビュー後半で発覚すること。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U012",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "2つ目は、コードベース拡大とともに変更影響の見通しが落ち、保守コストが増えることです。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U013",
+      "section_id": 2,
+      "section_title": "前提を呼び起こす",
+      "text": "つまり、型があることと、設計の安全性が運用で担保されることは同じではありません。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U014",
+      "section_id": 3,
+      "section_title": "結論を先に提示",
+      "text": "結論は明確です。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U015",
+      "section_id": 3,
+      "section_title": "結論を先に提示",
+      "text": "ReScriptは、型制約とデータモデルを先に固定し、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U016",
+      "section_id": 3,
+      "section_title": "結論を先に提示",
+      "text": "JavaScriptへコンパイルして運用することで、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U017",
+      "section_id": 3,
+      "section_title": "結論を先に提示",
+      "text": "不具合検知を実行時からコンパイル時へ前倒しできます。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U018",
+      "section_id": 3,
+      "section_title": "結論を先に提示",
+      "text": "全面置換を前提にしなくても、境界から段階導入するだけで、レビュー品質と変更耐性を改善できます。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U019",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "最小モデルは3層で理解します。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U020",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "1つ目は、式中心の言語モデルです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U021",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "ReScriptでは評価単位が明確で、値と副作用の扱いを整理しやすい。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U022",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "2つ目は、コンパイル時検証です。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U023",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "型不一致、分岐漏れ、曖昧な値表現を、実行前に明示的に扱えます。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U024",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "3つ目は、実行時モデルです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U025",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "最終的にはJavaScriptとして動くため、Webエコシステムとの接続を維持できます。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U026",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "ここで重要なのは、実行基盤を変えずに、設計時点の厳密さを上げられる点です。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U027",
+      "section_id": 4,
+      "section_title": "概念の最小モデル説明",
+      "text": "逆に、この回ではReact実装詳細や高度なFFI、全章のAPI解説は扱いません。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U028",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "TypeScriptの基本モデルは、JavaScript互換性を重視した柔軟な型付けです。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U029",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "現場適用が速い反面、境界の扱い次第で型の保証が薄くなる場面があります。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U030",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "ReScriptのモデルは、より厳密な型システムと型推論で、実装前に制約を固定しやすい構造です。",
+      "pause_length_ms": 380
+    },
+    {
+      "utterance_id": "U031",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "この違いが、判断タイミングを変えます。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U032",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "TypeScript中心だと「実装してから破綻を見つける」寄りになりやすい。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U033",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "ReScriptを導入すると「設計時点で破綻を潰す」寄りに移せます。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U034",
+      "section_id": 5,
+      "section_title": "構造の捉え方",
+      "text": "つまり、品質活動の重心がテスト後半から設計初期へ移動します。",
+      "pause_length_ms": 300
+    },
+    {
+      "utterance_id": "U035",
+      "section_id": 6,
+      "section_title": "思考を促す問いかけ",
+      "text": "ここで問いです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U036",
+      "section_id": 6,
+      "section_title": "思考を促す問いかけ",
+      "text": "あなたのプロダクトでは、最近の不具合や手戻りのうち、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U037",
+      "section_id": 6,
+      "section_title": "思考を促す問いかけ",
+      "text": "何割が「境界の曖昧さ」と「分岐の想定漏れ」に起因しているでしょうか。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U038",
+      "section_id": 6,
+      "section_title": "思考を促す問いかけ",
+      "text": "もしこの割合が高いなら、導入判断の軸は新機能速度だけでなく、",
+      "pause_length_ms": 210
+    },
+    {
+      "utterance_id": "U039",
+      "section_id": 6,
+      "section_title": "思考を促す問いかけ",
+      "text": "設計時点で壊れ方を減らせるかに置くべきです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U040",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "実務上の効果は3点です。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U041",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "1つ目はバグの早期検知。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U042",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "2つ目はレビュー観点の統一。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U043",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "3つ目は長期変更に対する見通し向上です。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U044",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "プロセスとしては、",
+      "pause_length_ms": 190
+    },
+    {
+      "utterance_id": "U045",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "PRレビューの最初に「型で防げる不具合を実装で受けていないか」「境界の責務が明確か」を確認します",
+      "pause_length_ms": 200
+    },
+    {
+      "utterance_id": "U046",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U047",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "これにより、仕様変更時の影響追跡がしやすくなり、回帰リスクを下げられます。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U048",
+      "section_id": 7,
+      "section_title": "実務への接続",
+      "text": "特に中規模以上のWebアプリや複数人開発では、この差が運用コストに直結します。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U049",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "最初に決めるべきは3つです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U050",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "導入境界、ビルド統合、そしてTS/JSとReScript間のデータ受け渡しルールです。",
+      "pause_length_ms": 320
+    },
+    {
+      "utterance_id": "U051",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "適用範囲は、型安全と保守性を重視する中規模以上のプロダクトで特に有効です。",
+      "pause_length_ms": 340
+    },
+    {
+      "utterance_id": "U052",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "一方で、この回の範囲外は、具体文法の深掘り実装と高度な連携実装です。",
+      "pause_length_ms": 300
+    },
+    {
+      "utterance_id": "U053",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "次回以降で、式評価・不変性・制御フローに進み、導入判断を実装判断へ接続します。",
+      "pause_length_ms": 360
+    },
+    {
+      "utterance_id": "U054",
+      "section_id": 8,
+      "section_title": "まとめ",
+      "text": "今回の内容は、導入価値の判断に限定し、文法詳細やReact実装手順には踏み込みません。",
+      "pause_length_ms": 360
+    }
+  ],
+  "dictionary_candidates": [
+    {
+      "surface": "実装",
+      "reading_or_empty": "ジッソウ",
+      "priority": "HIGH",
+      "occurrences": 9,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "導入",
+      "reading_or_empty": "ドウニュウ",
+      "priority": "HIGH",
+      "occurrences": 8,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "ReScript",
+      "reading_or_empty": "",
+      "priority": "HIGH",
+      "occurrences": 7,
+      "source": "morph",
+      "note": "auto_detected"
+    },
+    {
+      "surface": "設計",
+      "reading_or_empty": "セッケイ",
+      "priority": "HIGH",
+      "occurrences": 7,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "JavaScript",
+      "reading_or_empty": "",
+      "priority": "HIGH",
+      "occurrences": 6,
+      "source": "morph",
+      "note": "auto_detected"
+    },
+    {
+      "surface": "TypeScript",
+      "reading_or_empty": "",
+      "priority": "HIGH",
+      "occurrences": 6,
+      "source": "morph",
+      "note": "auto_detected"
+    },
+    {
+      "surface": "境界",
+      "reading_or_empty": "キョウカイ",
+      "priority": "HIGH",
+      "occurrences": 6,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "判断",
+      "reading_or_empty": "ハンダン",
+      "priority": "HIGH",
+      "occurrences": 6,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "モデル",
+      "reading_or_empty": "モデル",
+      "priority": "HIGH",
+      "occurrences": 5,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "実行",
+      "reading_or_empty": "ジッコウ",
+      "priority": "HIGH",
+      "occurrences": 5,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "レビュー",
+      "reading_or_empty": "レビュー",
+      "priority": "HIGH",
+      "occurrences": 4,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "運用",
+      "reading_or_empty": "ウンヨウ",
+      "priority": "HIGH",
+      "occurrences": 4,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "変更",
+      "reading_or_empty": "ヘンコウ",
+      "priority": "HIGH",
+      "occurrences": 4,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "コンパイル",
+      "reading_or_empty": "コンパイル",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "価値",
+      "reading_or_empty": "カチ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "時点",
+      "reading_or_empty": "ジテン",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "接続",
+      "reading_or_empty": "セツゾク",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "適用",
+      "reading_or_empty": "テキヨウ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "不具合",
+      "reading_or_empty": "フグアイ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "分岐",
+      "reading_or_empty": "ブンキ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "文法",
+      "reading_or_empty": "ブンポウ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "明確",
+      "reading_or_empty": "メイカク",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "漏れ",
+      "reading_or_empty": "モレ",
+      "priority": "HIGH",
+      "occurrences": 3,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "API",
+      "reading_or_empty": "エーピーアイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "React",
+      "reading_or_empty": "",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "auto_detected"
+    },
+    {
+      "surface": "Web",
+      "reading_or_empty": "",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "auto_detected"
+    },
+    {
+      "surface": "コスト",
+      "reading_or_empty": "コスト",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "システム",
+      "reading_or_empty": "システム",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "プロダクト",
+      "reading_or_empty": "プロダクト",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "扱い",
+      "reading_or_empty": "アツカイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "安全",
+      "reading_or_empty": "アンゼン",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "影響",
+      "reading_or_empty": "エイキョウ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "開発",
+      "reading_or_empty": "カイハツ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "寄り",
+      "reading_or_empty": "ヨリ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "検知",
+      "reading_or_empty": "ケンチ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "見通し",
+      "reading_or_empty": "ミトオシ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "厳密",
+      "reading_or_empty": "ゲンミツ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "固定",
+      "reading_or_empty": "コテイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "後半",
+      "reading_or_empty": "コウハン",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "高度",
+      "reading_or_empty": "コウド",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "最初",
+      "reading_or_empty": "サイショ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "仕様",
+      "reading_or_empty": "シヨウ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "実務",
+      "reading_or_empty": "ジツム",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "重視",
+      "reading_or_empty": "ジュウシ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "詳細",
+      "reading_or_empty": "ショウサイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "制約",
+      "reading_or_empty": "セイヤク",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "整理",
+      "reading_or_empty": "セイリ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "中規模",
+      "reading_or_empty": "チュウキボ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "中心",
+      "reading_or_empty": "チュウシン",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "破綻",
+      "reading_or_empty": "ハタン",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "範囲",
+      "reading_or_empty": "ハンイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "評価",
+      "reading_or_empty": "ヒョウカ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "品質",
+      "reading_or_empty": "ヒンシツ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "保守",
+      "reading_or_empty": "ホシュ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "曖昧",
+      "reading_or_empty": "アイマイ",
+      "priority": "HIGH",
+      "occurrences": 2,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "FFI",
+      "reading_or_empty": "エフエフアイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "JS",
+      "reading_or_empty": "ジェーエス",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "PR",
+      "reading_or_empty": "ピーアール",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "TS",
+      "reading_or_empty": "ティーエス",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "アサーション",
+      "reading_or_empty": "アサーション",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "アプリ",
+      "reading_or_empty": "アプリ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "エコ",
+      "reading_or_empty": "エコ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "エンジニア",
+      "reading_or_empty": "エンジニア",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "コード",
+      "reading_or_empty": "コード",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "ゴール",
+      "reading_or_empty": "ゴール",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "タイミング",
+      "reading_or_empty": "タイミング",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "データ",
+      "reading_or_empty": "データ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "データモデル",
+      "reading_or_empty": "データモデル",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "テスト",
+      "reading_or_empty": "テスト",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "バグ",
+      "reading_or_empty": "バグ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "パターン",
+      "reading_or_empty": "パターン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "ビルド",
+      "reading_or_empty": "ビルド",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_inferred"
+    },
+    {
+      "surface": "フロー",
+      "reading_or_empty": "フロー",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "プロセス",
+      "reading_or_empty": "プロセス",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "ベース",
+      "reading_or_empty": "ベース",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "リスク",
+      "reading_or_empty": "リスク",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "ルール",
+      "reading_or_empty": "ルール",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "暗記",
+      "reading_or_empty": "アンキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "以降",
+      "reading_or_empty": "イコウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "移動",
+      "reading_or_empty": "イドウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "維持",
+      "reading_or_empty": "イジ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "違い",
+      "reading_or_empty": "チガイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "課題",
+      "reading_or_empty": "カダイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "解説",
+      "reading_or_empty": "カイセツ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "回帰",
+      "reading_or_empty": "カイキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "改善",
+      "reading_or_empty": "カイゼン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "拡大",
+      "reading_or_empty": "カクダイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "確認",
+      "reading_or_empty": "カクニン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "割合",
+      "reading_or_empty": "ワリアイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "活動",
+      "reading_or_empty": "カツドウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "観点",
+      "reading_or_empty": "カンテン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "基盤",
+      "reading_or_empty": "キバン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "基本",
+      "reading_or_empty": "キホン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "既存",
+      "reading_or_empty": "キソン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "機能",
+      "reading_or_empty": "キノウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "起因",
+      "reading_or_empty": "キイン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "巨大",
+      "reading_or_empty": "キョダイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "具体",
+      "reading_or_empty": "グタイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "掘り",
+      "reading_or_empty": "ホリ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "型付け",
+      "reading_or_empty": "カタツケ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "結論",
+      "reading_or_empty": "ケツロン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "検証",
+      "reading_or_empty": "ケンショウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "検討",
+      "reading_or_empty": "ケントウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "現場",
+      "reading_or_empty": "ゲンバ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "言語",
+      "reading_or_empty": "ゲンゴ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "限定",
+      "reading_or_empty": "ゲンテイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "互換",
+      "reading_or_empty": "ゴカン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "効果",
+      "reading_or_empty": "コウカ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "向上",
+      "reading_or_empty": "コウジョウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "構造",
+      "reading_or_empty": "コウゾウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "今回",
+      "reading_or_empty": "コンカイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "今日",
+      "reading_or_empty": "キョウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "最近",
+      "reading_or_empty": "サイキン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "最終",
+      "reading_or_empty": "サイシュウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "最小",
+      "reading_or_empty": "サイショウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "細部",
+      "reading_or_empty": "サイブ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "資産",
+      "reading_or_empty": "シサン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "次回",
+      "reading_or_empty": "ジカイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "次第",
+      "reading_or_empty": "シダイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "手順",
+      "reading_or_empty": "テジュン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "受け渡し",
+      "reading_or_empty": "ウケワタシ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "柔軟",
+      "reading_or_empty": "ジュウナン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "重心",
+      "reading_or_empty": "ジュウシン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "重要",
+      "reading_or_empty": "ジュウヨウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "初期",
+      "reading_or_empty": "ショキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "場面",
+      "reading_or_empty": "バメン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "状態",
+      "reading_or_empty": "ジョウタイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "推論",
+      "reading_or_empty": "スイロン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "制御",
+      "reading_or_empty": "セイギョ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "責務",
+      "reading_or_empty": "セキム",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "説明",
+      "reading_or_empty": "セツメイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "前提",
+      "reading_or_empty": "ゼンテイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "前倒し",
+      "reading_or_empty": "マエダオシ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "全面",
+      "reading_or_empty": "ゼンメン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "想定",
+      "reading_or_empty": "ソウテイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "早期",
+      "reading_or_empty": "ソウキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "速度",
+      "reading_or_empty": "ソクド",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "対応",
+      "reading_or_empty": "タイオウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "対象",
+      "reading_or_empty": "タイショウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "耐性",
+      "reading_or_empty": "タイセイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "単位",
+      "reading_or_empty": "タンイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "担保",
+      "reading_or_empty": "タンポ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "段階",
+      "reading_or_empty": "ダンカイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "置換",
+      "reading_or_empty": "チカン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "長期",
+      "reading_or_empty": "チョウキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "直結",
+      "reading_or_empty": "チョッケツ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "追跡",
+      "reading_or_empty": "ツイセキ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "統一",
+      "reading_or_empty": "トウイツ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "統合",
+      "reading_or_empty": "トウゴウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "内容",
+      "reading_or_empty": "ナイヨウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "発覚",
+      "reading_or_empty": "ハッカク",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "比較",
+      "reading_or_empty": "ヒカク",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "表現",
+      "reading_or_empty": "ヒョウゲン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "不一致",
+      "reading_or_empty": "フイッチ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "不変",
+      "reading_or_empty": "フヘン",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "副作用",
+      "reading_or_empty": "フクサヨウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "複数",
+      "reading_or_empty": "フクスウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "保証",
+      "reading_or_empty": "ホショウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "明示",
+      "reading_or_empty": "メイジ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "戻り",
+      "reading_or_empty": "モドリ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "問い",
+      "reading_or_empty": "トイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "問題",
+      "reading_or_empty": "モンダイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "有効",
+      "reading_or_empty": "ユウコウ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "理解",
+      "reading_or_empty": "リカイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    },
+    {
+      "surface": "連携",
+      "reading_or_empty": "レンケイ",
+      "priority": "MEDIUM",
+      "occurrences": 1,
+      "source": "morph",
+      "note": "reading_from_morphology"
+    }
+  ],
+  "quality_checks": {
+    "utterance_count": 54,
+    "max_chars_per_utterance": 48,
+    "has_ruby_notation": false,
+    "speakability": {
+      "score": 96,
+      "average_chars_per_utterance": 29.3,
+      "long_utterance_ratio": 0,
+      "terminal_punctuation_ratio": 0.815
+    },
+    "warnings": []
+  }
+}

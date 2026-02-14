@@ -56,7 +56,7 @@ interface VoicevoxProjectJsonTest {
 }
 
 const sampleScriptPath = path.resolve(
-  "projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md"
+  "tests/fixtures/sample-run/stage3/E01_script.md"
 );
 
 test("stage4 -> stage5 pipeline works with sample script", async () => {

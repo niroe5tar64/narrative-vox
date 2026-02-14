@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "book_title": "Introducing ReScript: Functional Programming for Web Applications",
+    "episode_id": "E01",
+    "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
+    "chapter_theme": "ReScript基礎意味論と型安全",
+    "audience_background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
+    "audience_level": "ReScript初学者〜中級手前",
+    "audience_interest": "型安全、設計の見通し、保守性、実務での採用判断",
+    "baseline_context_or_empty": "TypeScriptでの実装・設計パターン",
+    "existing_audio_script_dir_or_empty": "",
+    "comparison_mode": "with_baseline"
+  },
+  "episode_constraints": {
+    "target_theme_ids": [
+      "T01"
+    ],
+    "source_refs": [
+      "inputs/books/introducing-rescript/source/00_Introduction_IntroducingReScriptFunctionalProgramming.md",
+      "inputs/books/introducing-rescript/source/01_Chapter-1_IntroducingReScriptFunctionalProgramming.md"
+    ],
+    "scope_guardrails": [
+      "実装演習や環境構築手順の詳細には入らない",
+      "Chapter 2以降の高度な関数合成は扱わない"
+    ],
+    "learning_goal": "ReScriptの式中心モデルと静的型検査の価値を、TypeScriptとの違いで説明できる。"
+  },
+  "core_points": [
+    "ReScriptはstatementではなくexpression中心で、評価結果として必ず値を返すモデルを採用している。",
+    "compile timeで型整合性を検査し、runtime前に不整合を検出できることが設計上の安全性に直結する。",
+    "型注釈は必須ではなく、type inferenceにより簡潔さを保ちつつ必要箇所で明示して可読性を上げる運用ができる。",
+    "number単一のJavaScriptと異なり、ReScriptはint/floatを区別し演算子も分離されるため数値バグを予防しやすい。",
+    "bool条件の厳格性や同型比較制約により、truthy/falsyや暗黙変換に起因する分岐バグを抑制できる。"
+  ],
+  "variables": {
+    "prerequisite_context": "TypeScript/JavaScriptでの基本的な型、関数、条件分岐の理解。",
+    "baseline_context_or_empty": "TypeScriptでの実装・設計パターン",
+    "baseline_pattern": "JavaScript/TypeScriptでは式と文が混在し、number単一型やtruthy/falsy判定を前提に実装することが多い。",
+    "common_problem_1": "実行時まで型不整合や暗黙変換由来のバグが見つからない。",
+    "common_problem_2": "数値型の区別不足や条件式の曖昧さで、意図しない演算・分岐が混入する。",
+    "target_approach": "式中心モデルと静的型検査を前提に、型推論を活用しつつ必要箇所で型注釈を加える。",
+    "what_it_models": "値評価、型整合性、数値演算と条件分岐の安全な基礎ルール。",
+    "can_handle_explicitly": "int/floatの使い分け、boolのみを条件に使う制約、同型比較の強制、compile timeでの不整合検出。",
+    "intentionally_out_of_scope": "関数合成、再帰、モジュール、FFI、実装演習の詳細。",
+    "base_model": "TypeScript/JavaScriptの実装慣習（柔軟だが実行時依存の検出が残るモデル）。",
+    "target_model": "ReScriptの式中心・厳格型・推論併用モデル（早期検出と設計明確化を重視）。",
+    "decision_scenario": "既存TSコードベースで、バグ予防と設計見通しを優先して言語導入を検討する初期判断。",
+    "practical_benefit": "レビュー時点で型由来の不具合候補を減らし、実行前に安全性を担保しやすくなる。",
+    "review_or_process_change": "コードレビューで型注釈の必須箇所と推論任せの箇所を明確に分ける運用に変更する。",
+    "maintainability_or_risk_impact": "暗黙変換・曖昧条件に起因する保守リスクを低減し、変更時の影響把握を容易にする。",
+    "what_to_decide_early": "数値型の扱い方針、型注釈ポリシー、条件式の記述規約。",
+    "applicability_scope": "Webアプリのドメインロジックと変換処理の基礎部分。",
+    "out_of_scope_summary": "具体的な関数型設計テクニックと実務移行手順の詳細は次回以降で扱う。"
+  },
+  "quality_checks": {
+    "blueprint_alignment": "OK",
+    "source_coverage": "OK",
+    "audio_suitability": "OK",
+    "missing_fields": []
+  },
+  "continuity_checks": {
+    "existing_audio_script_dir": "",
+    "existing_topics": [],
+    "overlap_risk": "N/A",
+    "differentiation_points": []
+  }
+}
