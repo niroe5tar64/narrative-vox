@@ -13,6 +13,7 @@ interface VoicevoxTextJsonTest {
   meta: {
     episode_id: string;
     run_id: string;
+    source_script_path: string;
   };
   utterances: Array<{ utterance_id: string; text: string; pause_length_ms: number }>;
   dictionary_candidates: Array<{ surface: string; reading_or_empty: string }>;
@@ -518,6 +519,36 @@ test("stage4 infers run-dir from --script path when run-dir is omitted", async (
   assert.equal(path.dirname(stage4.voicevoxTextJsonPath), path.join(runDir, "voicevox_text"));
   const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
   assert.equal(stage4Json.meta.run_id, "run-20260211-5555");
+});
+
+test("stage4 stores source_script_path as run-dir relative path", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-5556");
+  const stage3Dir = path.join(runDir, "stage3");
+  await mkdir(stage3Dir, { recursive: true });
+
+  const scriptPath = path.join(stage3Dir, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "これは source_script_path の検証です。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-5556"
+  });
+
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+  assert.equal(stage4Json.meta.source_script_path, "stage3/E01_script.md");
+  assert.notEqual(stage4Json.meta.source_script_path, path.relative(process.cwd(), scriptPath));
 });
 
 test("stage5 infers run-dir from --stage4-json path when run-dir is omitted", async () => {

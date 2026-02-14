@@ -41,7 +41,8 @@
         },
         "source_script_path": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Path to the source script relative to run directory (`--run-dir`, explicit or inferred). Uses `/` separators."
         },
         "generated_at": {
           "type": "string",

@@ -68,6 +68,11 @@ function toUtteranceId(index: number): string {
   return `U${String(index + 1).padStart(3, "0")}`;
 }
 
+function toRunRelativePath(runDir: string, targetPath: string): string {
+  const relativePath = path.relative(runDir, targetPath);
+  return relativePath.split(path.sep).join("/");
+}
+
 export function replaceRubyWithReading(text: string): string {
   return text.replace(RUBY_RE, (_matched, _surface, reading: string) => reading);
 }
@@ -173,6 +178,7 @@ function buildVoicevoxTextData(params: {
   finalProjectId: string;
   finalRunId: string;
   finalEpisodeId: string;
+  resolvedRunDir: string;
   resolvedScriptPath: string;
   utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
@@ -186,7 +192,7 @@ function buildVoicevoxTextData(params: {
       project_id: params.finalProjectId,
       run_id: params.finalRunId,
       episode_id: params.finalEpisodeId,
-      source_script_path: path.relative(process.cwd(), params.resolvedScriptPath),
+      source_script_path: toRunRelativePath(params.resolvedRunDir, params.resolvedScriptPath),
       generated_at: new Date().toISOString()
     },
     utterances: params.utterances,
@@ -246,6 +252,7 @@ export async function buildText({
     finalProjectId,
     finalRunId,
     finalEpisodeId,
+    resolvedRunDir,
     resolvedScriptPath,
     utterances,
     dictionaryCandidates,
