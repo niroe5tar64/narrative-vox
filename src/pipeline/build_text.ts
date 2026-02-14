@@ -52,7 +52,7 @@ interface BuildTextOptions {
   projectId?: string;
   runId?: string;
   episodeId?: string;
-  stage4ConfigPath?: string;
+  stage4ConfigPath: string;
 }
 
 interface BuildTextResult {
@@ -203,6 +203,12 @@ export async function buildText({
   episodeId,
   stage4ConfigPath
 }: BuildTextOptions): Promise<BuildTextResult> {
+  if (!stage4ConfigPath) {
+    throw new Error(
+      "Missing required option --stage4-config for build-text/build-all. Specify configs/voicevox/stage4_text_config.json."
+    );
+  }
+
   const metadata = resolveBuildTextOutputPaths({
     scriptPath,
     runDir,

@@ -1,4 +1,3 @@
-import { access } from "node:fs/promises";
 import path from "node:path";
 import { readJson } from "../../shared/json.ts";
 import {
@@ -63,11 +62,6 @@ const DEFAULT_WARNING_THRESHOLDS: SpeakabilityWarningConfig = {
   minTerminalPunctuationRatio: 0.65,
   maxLongUtteranceRatio: 0.25
 };
-
-const DEFAULT_STAGE4_TEXT_CONFIG_PATH = path.resolve("configs/voicevox/stage4_text_config.json");
-const DEFAULT_STAGE4_TEXT_CONFIG_EXAMPLE_PATH = path.resolve(
-  "configs/voicevox/stage4_text_config.example.json"
-);
 
 export const DEFAULT_STAGE4_TEXT_CONFIG: Stage4TextConfig = {
   speakability: {
@@ -165,21 +159,8 @@ export function normalizeStage4TextConfig(raw?: RawStage4TextConfig): Stage4Text
   };
 }
 
-export async function resolveStage4TextConfigPath(stage4ConfigPath?: string): Promise<string> {
-  if (stage4ConfigPath) {
-    return path.resolve(stage4ConfigPath);
-  }
-
-  try {
-    await access(DEFAULT_STAGE4_TEXT_CONFIG_PATH);
-    return DEFAULT_STAGE4_TEXT_CONFIG_PATH;
-  } catch {
-    return DEFAULT_STAGE4_TEXT_CONFIG_EXAMPLE_PATH;
-  }
-}
-
-export async function loadStage4TextConfig(stage4ConfigPath?: string): Promise<Stage4TextConfig> {
-  const resolvedPath = await resolveStage4TextConfigPath(stage4ConfigPath);
+export async function loadStage4TextConfig(stage4ConfigPath: string): Promise<Stage4TextConfig> {
+  const resolvedPath = path.resolve(stage4ConfigPath);
   try {
     const raw = (await readJson(resolvedPath)) as RawStage4TextConfig;
     return normalizeStage4TextConfig(raw);

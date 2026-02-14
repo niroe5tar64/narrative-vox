@@ -110,14 +110,15 @@ bun run build-audio -- \
 
 # Build Text + Build Project を連続実行
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md
+  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
+  --stage4-config configs/voicevox/stage4_text_config.json
 ```
 
 - `--run-id` は任意です。
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
-- `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルを指定します（未指定時は `configs/voicevox/stage4_text_config.json`、なければ `configs/voicevox/stage4_text_config.example.json`）。
+- `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルです（必須、未指定はエラー）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `--prefill-query engine`（`build-project`）と `build-audio` の両方で同じ URL 解決ロジックを使います。
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。

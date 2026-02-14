@@ -6,7 +6,7 @@ import path from "node:path";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { buildText } from "../../src/pipeline/build_text.ts";
+import { buildText as buildTextBase } from "../../src/pipeline/build_text.ts";
 import { buildProject } from "../../src/pipeline/build_project.ts";
 
 interface VoicevoxTextJsonTest {
@@ -61,6 +61,18 @@ interface VoicevoxProjectJsonTest {
 const sampleScriptPath = path.resolve(
   "tests/fixtures/sample-run/stage3/E01_script.md"
 );
+const defaultStage4ConfigPath = path.resolve("configs/voicevox/stage4_text_config.json");
+
+type BuildTextInput = Omit<Parameters<typeof buildTextBase>[0], "stage4ConfigPath"> & {
+  stage4ConfigPath?: string;
+};
+
+function buildText(options: BuildTextInput) {
+  return buildTextBase({
+    ...options,
+    stage4ConfigPath: options.stage4ConfigPath ?? defaultStage4ConfigPath
+  });
+}
 
 async function withMockVoicevoxServer(
   handler: (req: IncomingMessage, res: ServerResponse) => void,
@@ -544,6 +556,25 @@ test("stage4 rejects invalid --run-id format with expected pattern in message", 
         runId: "run-2026-02-11-1234"
       }),
     /run-YYYYMMDD-HHMM/
+  );
+});
+
+test("stage4 requires non-empty stage4 text config path", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7777");
+  await mkdir(runDir, { recursive: true });
+
+  await assert.rejects(
+    () =>
+      buildTextBase({
+        scriptPath: sampleScriptPath,
+        runDir,
+        episodeId: "E01",
+        projectId: "introducing-rescript",
+        runId: "run-20260211-7777",
+        stage4ConfigPath: ""
+      }),
+    /--stage4-config/
   );
 });
 
