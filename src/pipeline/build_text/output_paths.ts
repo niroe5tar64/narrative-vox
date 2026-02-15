@@ -27,7 +27,7 @@ export type BuildTextPathResolution = BuildTextOutputPaths & {
 
 function inferRunDirFromScriptPath(scriptPath: string): string | undefined {
   const stageDir = path.dirname(path.resolve(scriptPath));
-  if (path.basename(stageDir) !== "stage3") {
+  if (path.basename(stageDir) !== "script") {
     return undefined;
   }
   return path.dirname(stageDir);

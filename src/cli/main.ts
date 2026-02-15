@@ -13,13 +13,13 @@ type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "build-text":
-    "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> [--stage4-config <configs/voicevox/stage4_text_config.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+    "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--speaker-map configs/voicevox/default_speaker_map.json|default_speaker_map.example.json] [--speaker-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
+    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-audio":
-    "Usage:\n  bun src/cli/main.ts build-audio --stage5-vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
+    "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-all":
-    "Usage:\n  bun src/cli/main.ts build-all --script <stage3/E##_script.md> [--stage4-config <configs/voicevox/stage4_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
+    "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
     "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>",
   "prepare-run":
@@ -46,8 +46,8 @@ function buildProjectOptions(options: CliOptions) {
   return {
     runDir: optionAsString(options, "run-dir"),
     profilePath: optionAsString(options, "profile"),
-    speakerMapPath: optionAsString(options, "speaker-map"),
-    speakerKey: optionAsString(options, "speaker-key"),
+    characterMapPath: optionAsString(options, "character-map"),
+    characterKey: optionAsString(options, "character-key"),
     engineId: optionAsString(options, "engine-id"),
     speakerId: optionAsString(options, "speaker-id"),
     styleId: optionAsNumber(options, "style-id"),
@@ -65,7 +65,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      stage4ConfigPath: optionAsString(options, "stage4-config")
+      buildTextConfigPath: optionAsString(options, "build-text-config")
     });
 
     console.log(
@@ -77,7 +77,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "build-project": async (options) => {
     const result = await buildProject({
-      voicevoxTextJsonPath: ensureOption(options, "stage4-json", "build-project"),
+      voicevoxTextJsonPath: ensureOption(options, "voicevox-text-json", "build-project"),
       ...buildProjectOptions(options)
     });
 
@@ -87,7 +87,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "build-audio": async (options) => {
     const result = await buildAudio({
-      stage5VvprojPath: ensureOption(options, "stage5-vvproj", "build-audio"),
+      stage5VvprojPath: ensureOption(options, "vvproj", "build-audio"),
       runDir: optionAsString(options, "run-dir"),
       voicevoxApiUrl: optionAsString(options, "voicevox-url")
     });
@@ -115,27 +115,27 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "build-all": async (options) => {
     const runDir = optionAsString(options, "run-dir");
-    const stage4Result = await buildText({
+    const buildTextResult = await buildText({
       scriptPath: ensureOption(options, "script", "build-all"),
       runDir,
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      stage4ConfigPath: optionAsString(options, "stage4-config")
+      buildTextConfigPath: optionAsString(options, "build-text-config")
     });
 
     const result = await buildProject({
-      voicevoxTextJsonPath: stage4Result.voicevoxTextJsonPath,
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       ...buildProjectOptions(options),
       runDir
     });
 
     console.log(`Build all done: episode=${result.episodeId}`);
     console.log(
-      `- stage4: ${path.relative(process.cwd(), stage4Result.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), stage4Result.voicevoxTextPath)}, ${path.relative(process.cwd(), stage4Result.dictionaryCsvPath)}`
+      `- build-text: ${path.relative(process.cwd(), buildTextResult.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), buildTextResult.voicevoxTextPath)}, ${path.relative(process.cwd(), buildTextResult.dictionaryCsvPath)}`
     );
     console.log(
-      `- stage5: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}`
+      `- build-project: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}`
     );
   },
   "check-run": async (options) => {
@@ -144,7 +144,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     });
 
     console.log(
-      `Check run done: episodes=${result.validatedEpisodeIds.length}, stage2=${result.stage2EpisodeCount}, stage3=${result.stage3EpisodeCount}`
+      `Check run done: episodes=${result.validatedEpisodeIds.length}, variables=${result.variablesEpisodeCount}, script=${result.scriptEpisodeCount}`
     );
     console.log(`- run: ${path.relative(process.cwd(), result.runDir)}`);
   },

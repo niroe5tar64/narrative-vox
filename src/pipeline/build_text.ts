@@ -11,10 +11,10 @@ import {
   normalizeScriptLine
 } from "./build_text/text_processing.ts";
 import {
-  loadStage4TextConfig,
-  normalizeStage4TextConfig,
-  type Stage4TextConfig
-} from "./build_text/stage4_text_config.ts";
+  loadBuildTextConfig,
+  normalizeBuildTextConfig,
+  type BuildTextConfig
+} from "./build_text/build_text_config.ts";
 import {
   collectRubyCandidates,
   collectTermCandidates,
@@ -58,7 +58,7 @@ interface BuildTextOptions {
   projectId?: string;
   runId?: string;
   episodeId?: string;
-  stage4ConfigPath?: string;
+  buildTextConfigPath?: string;
 }
 
 interface BuildTextResult {
@@ -123,7 +123,7 @@ function formatLineNumberSummary(lineNumbers: number[]): string {
 function buildUtterancesAndCandidates(
   source: string,
   morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>,
-  stage4TextConfig: Stage4TextConfig
+  buildTextConfig: BuildTextConfig
 ): {
   utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
@@ -184,7 +184,7 @@ function buildUtterancesAndCandidates(
         text: sentence,
         pause_length_ms: decidePauseLengthMs(sentence, {
           isTerminalInSourceLine: sentenceIndex === sentences.length - 1
-        }, stage4TextConfig.pause)
+        }, buildTextConfig.pause)
       });
     }
   }
@@ -204,13 +204,13 @@ function buildUtterancesAndCandidates(
 function buildQualityChecks(
   source: string,
   utterances: VoicevoxTextUtterance[],
-  stage4TextConfig: Stage4TextConfig,
+  buildTextConfig: BuildTextConfig,
   speakerTagStats: SpeakerTagStats
 ): VoicevoxTextQualityChecks {
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
-  const speakability = evaluateSpeakability(utterances, stage4TextConfig.speakability.scoring);
-  const warningThresholds = stage4TextConfig.speakability.warningThresholds;
+  const speakability = evaluateSpeakability(utterances, buildTextConfig.speakability.scoring);
+  const warningThresholds = buildTextConfig.speakability.warningThresholds;
   const warnings: string[] = [];
 
   if (maxChars > 80) {
@@ -238,7 +238,7 @@ function buildQualityChecks(
   if (speakerTagStats.untaggedSourceLineCount > 0) {
     const lineSummary = formatLineNumberSummary(speakerTagStats.sampleUntaggedLineNumbers);
     warnings.push(
-      `speaker_key is omitted for ${speakerTagStats.untaggedUtteranceCount} utterances across ${speakerTagStats.untaggedSourceLineCount} source lines (e.g. lines: ${lineSummary}). Stage5 will fallback to default speaker resolution.`
+      `speaker_key is omitted for ${speakerTagStats.untaggedUtteranceCount} utterances across ${speakerTagStats.untaggedSourceLineCount} source lines (e.g. lines: ${lineSummary}). build-project will fallback to default speaker resolution.`
     );
   }
 
@@ -260,13 +260,13 @@ function buildVoicevoxTextData(params: {
   utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
   source: string;
-  stage4TextConfig: Stage4TextConfig;
+  buildTextConfig: BuildTextConfig;
   speakerTagStats: SpeakerTagStats;
 }): VoicevoxTextData {
   const qualityChecks = buildQualityChecks(
     params.source,
     params.utterances,
-    params.stage4TextConfig,
+    params.buildTextConfig,
     params.speakerTagStats
   );
   return {
@@ -290,7 +290,7 @@ export async function buildText({
   projectId,
   runId,
   episodeId,
-  stage4ConfigPath
+  buildTextConfigPath
 }: BuildTextOptions): Promise<BuildTextResult> {
   const metadata = resolveBuildTextOutputPaths({
     scriptPath,
@@ -314,13 +314,13 @@ export async function buildText({
 
   const source = await readFile(resolvedScriptPath, "utf-8");
   const morphTokenizer = await getJapaneseMorphTokenizer();
-  const stage4TextConfig = stage4ConfigPath
-    ? await loadStage4TextConfig(stage4ConfigPath)
-    : normalizeStage4TextConfig();
+  const buildTextConfig = buildTextConfigPath
+    ? await loadBuildTextConfig(buildTextConfigPath)
+    : normalizeBuildTextConfig();
   const { utterances, dictionaryCandidates, speakerTagStats } = buildUtterancesAndCandidates(
     source,
     morphTokenizer,
-    stage4TextConfig
+    buildTextConfig
   );
 
   if (utterances.length === 0) {
@@ -336,7 +336,7 @@ export async function buildText({
     utterances,
     dictionaryCandidates,
     source,
-    stage4TextConfig,
+    buildTextConfig,
     speakerTagStats
   });
 

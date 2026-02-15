@@ -326,7 +326,7 @@ export async function buildAudio({
     : inferRunDirFromVvprojPath(resolvedStage5VvprojPath);
   if (!inferredRunDir) {
     throw new Error(
-      "Could not infer run directory from --stage5-vvproj path. Expected .../voicevox_project/... or pass --run-dir explicitly."
+      "Could not infer run directory from --vvproj path. Expected .../voicevox_project/... or pass --run-dir explicitly."
     );
   }
   const resolvedRunDir = inferredRunDir;

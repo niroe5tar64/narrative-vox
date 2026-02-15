@@ -4,7 +4,7 @@ import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import type { VoicevoxTextData } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
-import { normalizeSpeakerMap, type SpeakerMap } from "../shared/speaker_map.ts";
+import { normalizeCharacterMap, type CharacterMap } from "../shared/characters.ts";
 import {
   RawVoiceProfile,
   VoiceProfile,
@@ -38,8 +38,8 @@ interface BuildProjectOptions {
   voicevoxTextJsonPath: string;
   runDir?: string;
   profilePath?: string;
-  speakerMapPath?: string;
-  speakerKey?: string;
+  characterMapPath?: string;
+  characterKey?: string;
   engineId?: string;
   speakerId?: string;
   styleId?: number;
@@ -75,12 +75,12 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
   }
 }
 
-async function resolveSpeakerMapPath(speakerMapPath?: string): Promise<string | undefined> {
-  if (speakerMapPath) {
-    return path.resolve(speakerMapPath);
+async function resolveCharacterMapPath(characterMapPath?: string): Promise<string | undefined> {
+  if (characterMapPath) {
+    return path.resolve(characterMapPath);
   }
 
-  const localDefault = path.resolve("configs/voicevox/default_speaker_map.json");
+  const localDefault = path.resolve("configs/voicevox/default_character_map.json");
   try {
     await access(localDefault);
     return localDefault;
@@ -193,8 +193,8 @@ function applyQueryDefaults(
 
 function resolveUtteranceVoice(params: {
   utteranceSpeakerKey?: string;
-  forcedSpeakerKey?: string;
-  speakerMap?: SpeakerMap;
+  forcedCharacterKey?: string;
+  characterMap?: CharacterMap;
   profileVoice: ProjectVoice;
   cliOverrides: {
     engineId?: string;
@@ -202,22 +202,22 @@ function resolveUtteranceVoice(params: {
     styleId?: number;
   };
 }): ProjectVoice {
-  const selectedSpeakerKey =
-    params.forcedSpeakerKey ||
+  const selectedCharacterKey =
+    params.forcedCharacterKey ||
     params.utteranceSpeakerKey ||
-    params.speakerMap?.defaultSpeakerKey;
+    params.characterMap?.defaultCharacterKey;
 
   let baseVoice: ProjectVoice = params.profileVoice;
-  if (selectedSpeakerKey) {
-    if (!params.speakerMap) {
+  if (selectedCharacterKey) {
+    if (!params.characterMap) {
       throw new Error(
-        `speaker_key "${selectedSpeakerKey}" was requested but no speaker map is configured. Set --speaker-map or add configs/voicevox/default_speaker_map.json`
+        `character_key "${selectedCharacterKey}" was requested but no character map is configured. Set --character-map or add configs/voicevox/default_character_map.json`
       );
     }
-    const mapped = params.speakerMap.speakers[selectedSpeakerKey];
+    const mapped = params.characterMap.characters[selectedCharacterKey];
     if (!mapped) {
       throw new Error(
-        `Unknown speaker_key "${selectedSpeakerKey}". Define it in the speaker map.`
+        `Unknown character_key "${selectedCharacterKey}". Define it in the character map.`
       );
     }
     baseVoice = mapped;
@@ -234,8 +234,8 @@ export async function buildProject({
   voicevoxTextJsonPath,
   runDir,
   profilePath,
-  speakerMapPath,
-  speakerKey,
+  characterMapPath,
+  characterKey,
   engineId,
   speakerId,
   styleId,
@@ -249,12 +249,12 @@ export async function buildProject({
     : inferRunDirFromVoicevoxTextJsonPath(resolvedVoicevoxTextPath);
   if (!inferredRunDir) {
     throw new Error(
-      "Could not infer run directory from --stage4-json path. Expected .../voicevox_text/... or pass --run-dir explicitly."
+      "Could not infer run directory from --voicevox-text-json path. Expected .../voicevox_text/... or pass --run-dir explicitly."
     );
   }
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
-  const resolvedSpeakerMapPath = await resolveSpeakerMapPath(speakerMapPath);
+  const resolvedCharacterMapPath = await resolveCharacterMapPath(characterMapPath);
 
   const voicevoxTextData = await loadJson<VoicevoxTextData>(
     resolvedVoicevoxTextPath,
@@ -262,8 +262,8 @@ export async function buildProject({
   );
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
-  const speakerMap = resolvedSpeakerMapPath
-    ? normalizeSpeakerMap(await loadJson<unknown>(resolvedSpeakerMapPath))
+  const characterMap = resolvedCharacterMapPath
+    ? normalizeCharacterMap(await loadJson<unknown>(resolvedCharacterMapPath))
     : undefined;
 
   const profileVoice: ProjectVoice = {
@@ -283,8 +283,8 @@ export async function buildProject({
     audioKeys.push(key);
     const resolvedVoice = resolveUtteranceVoice({
       utteranceSpeakerKey: utterance.speaker_key,
-      forcedSpeakerKey: speakerKey,
-      speakerMap,
+      forcedCharacterKey: characterKey,
+      characterMap,
       profileVoice,
       cliOverrides: { engineId, speakerId, styleId }
     });

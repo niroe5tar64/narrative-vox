@@ -4,8 +4,8 @@ import { loadJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import { REQUIRED_SECTION_IDS, validateRequiredScriptStructure } from "../shared/script_structure.ts";
 
-const STAGE2_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
-const STAGE3_FILE_RE = /^(E[0-9]{2})_script\.md$/;
+const VARIABLES_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
+const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 
 export interface CheckRunOptions {
   runDir: string;
@@ -13,8 +13,8 @@ export interface CheckRunOptions {
 
 export interface CheckRunResult {
   runDir: string;
-  stage2EpisodeCount: number;
-  stage3EpisodeCount: number;
+  variablesEpisodeCount: number;
+  scriptEpisodeCount: number;
   validatedEpisodeIds: string[];
 }
 
@@ -70,52 +70,52 @@ function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
 export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
 
-  const stage1Path = path.join(resolvedRunDir, "stage1", "book_blueprint.json");
-  const stage2Dir = path.join(resolvedRunDir, "stage2");
-  const stage3Dir = path.join(resolvedRunDir, "stage3");
+  const blueprintPath = path.join(resolvedRunDir, "blueprint", "book_blueprint.json");
+  const variablesDir = path.join(resolvedRunDir, "variables");
+  const scriptDir = path.join(resolvedRunDir, "script");
 
-  await loadJson<unknown>(stage1Path, SchemaPaths.stage1BookBlueprint);
+  await loadJson<unknown>(blueprintPath, SchemaPaths.blueprint);
 
-  const stage2Files = (await readdir(stage2Dir)).filter((name) => STAGE2_FILE_RE.test(name)).sort();
-  if (stage2Files.length === 0) {
-    throw new Error(`${toRelativePath(stage2Dir)} has no E##_variables.json files`);
+  const variablesFiles = (await readdir(variablesDir)).filter((name) => VARIABLES_FILE_RE.test(name)).sort();
+  if (variablesFiles.length === 0) {
+    throw new Error(`${toRelativePath(variablesDir)} has no E##_variables.json files`);
   }
-  const stage2EpisodeIds = collectEpisodeIds(stage2Files, STAGE2_FILE_RE);
-  for (const fileName of stage2Files) {
-    const filePath = path.join(stage2Dir, fileName);
-    await loadJson<unknown>(filePath, SchemaPaths.stage2EpisodeVariables);
+  const variablesEpisodeIds = collectEpisodeIds(variablesFiles, VARIABLES_FILE_RE);
+  for (const fileName of variablesFiles) {
+    const filePath = path.join(variablesDir, fileName);
+    await loadJson<unknown>(filePath, SchemaPaths.episodeVariables);
   }
 
-  const stage3Files = (await readdir(stage3Dir)).filter((name) => STAGE3_FILE_RE.test(name)).sort();
-  if (stage3Files.length === 0) {
-    throw new Error(`${toRelativePath(stage3Dir)} has no E##_script.md files`);
+  const scriptFiles = (await readdir(scriptDir)).filter((name) => SCRIPT_FILE_RE.test(name)).sort();
+  if (scriptFiles.length === 0) {
+    throw new Error(`${toRelativePath(scriptDir)} has no E##_script.md files`);
   }
-  const stage3EpisodeIds = collectEpisodeIds(stage3Files, STAGE3_FILE_RE);
-  for (const fileName of stage3Files) {
-    const match = fileName.match(STAGE3_FILE_RE);
+  const scriptEpisodeIds = collectEpisodeIds(scriptFiles, SCRIPT_FILE_RE);
+  for (const fileName of scriptFiles) {
+    const match = fileName.match(SCRIPT_FILE_RE);
     const episodeId = match?.[1];
     if (!episodeId) {
       continue;
     }
-    const filePath = path.join(stage3Dir, fileName);
+    const filePath = path.join(scriptDir, fileName);
     const scriptText = await readFile(filePath, "utf-8");
     ensureHasAllSections(scriptText, filePath, episodeId);
   }
 
-  const missingInStage3 = diffEpisodes(stage2EpisodeIds, stage3EpisodeIds);
-  if (missingInStage3.length > 0) {
-    throw new Error(`stage3 is missing scripts for episodes: ${missingInStage3.join(", ")}`);
+  const missingInScript = diffEpisodes(variablesEpisodeIds, scriptEpisodeIds);
+  if (missingInScript.length > 0) {
+    throw new Error(`script is missing scripts for episodes: ${missingInScript.join(", ")}`);
   }
 
-  const extraInStage3 = diffEpisodes(stage3EpisodeIds, stage2EpisodeIds);
-  if (extraInStage3.length > 0) {
-    throw new Error(`stage3 has episodes not in stage2 variables: ${extraInStage3.join(", ")}`);
+  const extraInScript = diffEpisodes(scriptEpisodeIds, variablesEpisodeIds);
+  if (extraInScript.length > 0) {
+    throw new Error(`script has episodes not in variables: ${extraInScript.join(", ")}`);
   }
 
   return {
     runDir: resolvedRunDir,
-    stage2EpisodeCount: stage2EpisodeIds.length,
-    stage3EpisodeCount: stage3EpisodeIds.length,
-    validatedEpisodeIds: stage2EpisodeIds
+    variablesEpisodeCount: variablesEpisodeIds.length,
+    scriptEpisodeCount: scriptEpisodeIds.length,
+    validatedEpisodeIds: variablesEpisodeIds
   };
 }

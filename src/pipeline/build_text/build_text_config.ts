@@ -13,7 +13,7 @@ export interface SpeakabilityWarningConfig {
   maxLongUtteranceRatio: number;
 }
 
-export interface Stage4TextConfig {
+export interface BuildTextConfig {
   speakability: {
     warningThresholds: SpeakabilityWarningConfig;
     scoring: SpeakabilityScoringConfig;
@@ -21,7 +21,7 @@ export interface Stage4TextConfig {
   pause: PauseConfigValues;
 }
 
-interface RawStage4TextConfig {
+interface RawBuildTextConfig {
   speakability?: {
     warningThresholds?: {
       scoreThreshold?: number | string;
@@ -63,7 +63,7 @@ const DEFAULT_WARNING_THRESHOLDS: SpeakabilityWarningConfig = {
   maxLongUtteranceRatio: 0.25
 };
 
-export const DEFAULT_STAGE4_TEXT_CONFIG: Stage4TextConfig = {
+export const DEFAULT_BUILD_TEXT_CONFIG: BuildTextConfig = {
   speakability: {
     warningThresholds: { ...DEFAULT_WARNING_THRESHOLDS },
     scoring: { ...SpeakabilityConfig }
@@ -81,7 +81,7 @@ function coerceNumber(value: number | string | undefined, fallback: number): num
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function normalizeStage4TextConfig(raw?: RawStage4TextConfig): Stage4TextConfig {
+export function normalizeBuildTextConfig(raw?: RawBuildTextConfig): BuildTextConfig {
   const warningThresholds = raw?.speakability?.warningThresholds;
   const scoring = raw?.speakability?.scoring;
   const pause = raw?.pause;
@@ -91,81 +91,81 @@ export function normalizeStage4TextConfig(raw?: RawStage4TextConfig): Stage4Text
       warningThresholds: {
         scoreThreshold: coerceNumber(
           warningThresholds?.scoreThreshold,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.warningThresholds.scoreThreshold
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.scoreThreshold
         ),
         minTerminalPunctuationRatio: coerceNumber(
           warningThresholds?.minTerminalPunctuationRatio,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.warningThresholds.minTerminalPunctuationRatio
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.minTerminalPunctuationRatio
         ),
         maxLongUtteranceRatio: coerceNumber(
           warningThresholds?.maxLongUtteranceRatio,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.warningThresholds.maxLongUtteranceRatio
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.maxLongUtteranceRatio
         )
       },
       scoring: {
         targetAverageChars: coerceNumber(
           scoring?.targetAverageChars,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.scoring.targetAverageChars
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.targetAverageChars
         ),
         averagePenaltyFactor: coerceNumber(
           scoring?.averagePenaltyFactor,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.scoring.averagePenaltyFactor
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.averagePenaltyFactor
         ),
         averagePenaltyMax: coerceNumber(
           scoring?.averagePenaltyMax,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.scoring.averagePenaltyMax
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.averagePenaltyMax
         ),
         longRatioWeight: coerceNumber(
           scoring?.longRatioWeight,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.scoring.longRatioWeight
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.longRatioWeight
         ),
         punctuationWeight: coerceNumber(
           scoring?.punctuationWeight,
-          DEFAULT_STAGE4_TEXT_CONFIG.speakability.scoring.punctuationWeight
+          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.punctuationWeight
         )
       }
     },
     pause: {
-      minMs: coerceNumber(pause?.minMs, DEFAULT_STAGE4_TEXT_CONFIG.pause.minMs),
-      maxMs: coerceNumber(pause?.maxMs, DEFAULT_STAGE4_TEXT_CONFIG.pause.maxMs),
+      minMs: coerceNumber(pause?.minMs, DEFAULT_BUILD_TEXT_CONFIG.pause.minMs),
+      maxMs: coerceNumber(pause?.maxMs, DEFAULT_BUILD_TEXT_CONFIG.pause.maxMs),
       bases: {
-        default: coerceNumber(pause?.bases?.default, DEFAULT_STAGE4_TEXT_CONFIG.pause.bases.default),
+        default: coerceNumber(pause?.bases?.default, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.default),
         strongEnding: coerceNumber(
           pause?.bases?.strongEnding,
-          DEFAULT_STAGE4_TEXT_CONFIG.pause.bases.strongEnding
+          DEFAULT_BUILD_TEXT_CONFIG.pause.bases.strongEnding
         ),
-        fullStop: coerceNumber(pause?.bases?.fullStop, DEFAULT_STAGE4_TEXT_CONFIG.pause.bases.fullStop),
-        clauseEnd: coerceNumber(pause?.bases?.clauseEnd, DEFAULT_STAGE4_TEXT_CONFIG.pause.bases.clauseEnd)
+        fullStop: coerceNumber(pause?.bases?.fullStop, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.fullStop),
+        clauseEnd: coerceNumber(pause?.bases?.clauseEnd, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.clauseEnd)
       },
       lengthBonus: {
-        step: coerceNumber(pause?.lengthBonus?.step, DEFAULT_STAGE4_TEXT_CONFIG.pause.lengthBonus.step),
+        step: coerceNumber(pause?.lengthBonus?.step, DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.step),
         increment: coerceNumber(
           pause?.lengthBonus?.increment,
-          DEFAULT_STAGE4_TEXT_CONFIG.pause.lengthBonus.increment
+          DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.increment
         ),
-        max: coerceNumber(pause?.lengthBonus?.max, DEFAULT_STAGE4_TEXT_CONFIG.pause.lengthBonus.max)
+        max: coerceNumber(pause?.lengthBonus?.max, DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.max)
       },
       penalties: {
         conjunction: coerceNumber(
           pause?.penalties?.conjunction,
-          DEFAULT_STAGE4_TEXT_CONFIG.pause.penalties.conjunction
+          DEFAULT_BUILD_TEXT_CONFIG.pause.penalties.conjunction
         ),
         continuation: coerceNumber(
           pause?.penalties?.continuation,
-          DEFAULT_STAGE4_TEXT_CONFIG.pause.penalties.continuation
+          DEFAULT_BUILD_TEXT_CONFIG.pause.penalties.continuation
         )
       }
     }
   };
 }
 
-export async function loadStage4TextConfig(stage4ConfigPath: string): Promise<Stage4TextConfig> {
-  const resolvedPath = path.resolve(stage4ConfigPath);
+export async function loadBuildTextConfig(configPath: string): Promise<BuildTextConfig> {
+  const resolvedPath = path.resolve(configPath);
   try {
-    const raw = (await readJson(resolvedPath)) as RawStage4TextConfig;
-    return normalizeStage4TextConfig(raw);
+    const raw = (await readJson(resolvedPath)) as RawBuildTextConfig;
+    return normalizeBuildTextConfig(raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to load stage4 text config (${resolvedPath}): ${message}`);
+    throw new Error(`Failed to load build-text config (${resolvedPath}): ${message}`);
   }
 }
