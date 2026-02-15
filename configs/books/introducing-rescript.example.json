@@ -1,4 +1,5 @@
 {
+  "GENRE": "study",
   "BOOK_ID": "introducing-rescript",
   "BOOK_TITLE": "Introducing ReScript: Functional Programming for Web Applications",
   "SOURCE_MARKDOWN_PATHS": "inputs/books/introducing-rescript/source/*.md",

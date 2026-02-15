@@ -5,10 +5,11 @@ import { buildProject } from "../pipeline/build_project.ts";
 import { buildAudio } from "../pipeline/build_audio.ts";
 import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
+import { renderPrompt } from "./render_prompt.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
 import type { CliOptions } from "../shared/cli_args.ts";
 
-type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run";
+type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run" | "render-prompt";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
@@ -23,7 +24,9 @@ const usageByCommand: Record<CommandName, string> = {
   "check-run":
     "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>",
   "prepare-run":
-    "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]"
+    "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
+  "render-prompt":
+    "Usage:\n  bun src/cli/main.ts render-prompt --genre <genre> --step <blueprint|variables> --book-config <configs/books/ID.json> [--episode-id E##]"
 };
 
 function printUsage(command?: string) {
@@ -39,6 +42,7 @@ function printUsage(command?: string) {
   ${usageByCommand["build-all"].replace("Usage:\n  ", "")}
   ${usageByCommand["check-run"].replace("Usage:\n  ", "")}
   ${usageByCommand["prepare-run"].replace("Usage:\n  ", "")}
+  ${usageByCommand["render-prompt"].replace("Usage:\n  ", "")}
 `);
 }
 
@@ -150,6 +154,16 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "prepare-run": async (options) => {
     await runPrepareRun(options);
+  },
+  "render-prompt": async (options) => {
+    const result = await renderPrompt({
+      genre: ensureOption(options, "genre", "render-prompt"),
+      step: ensureOption(options, "step", "render-prompt"),
+      bookConfigPath: ensureOption(options, "book-config", "render-prompt"),
+      episodeId: optionAsString(options, "episode-id"),
+    });
+
+    process.stdout.write(result.resolvedPrompt);
   },
 };
 

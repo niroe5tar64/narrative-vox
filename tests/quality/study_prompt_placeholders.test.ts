@@ -64,6 +64,13 @@ test("study README key definitions are consistent with variables prompt naming",
   }
 });
 
+test("book config has GENRE field", async () => {
+  const configRaw = await readFile(sampleBookConfigPath, "utf-8");
+  const config = JSON.parse(configRaw) as Record<string, unknown>;
+  assert.equal(typeof config.GENRE, "string", "GENRE field must be a string");
+  assert.ok((config.GENRE as string).length > 0, "GENRE field must not be empty");
+});
+
 test("blueprint/variables/script prompt placeholders can be resolved with sample book config", async () => {
   const [stage1Raw, stage2Raw, stage3Raw, configRaw] = await Promise.all([
     readFile(blueprintPromptPath, "utf-8"),
