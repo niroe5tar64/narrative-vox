@@ -53,6 +53,7 @@ Episode Variablesで回を切り替える場合は以下を追加します。
 ## 必須キー（book config）
 
 - `BOOK_ID`
+- `GENRE`
 - `BOOK_TITLE`
 - `SOURCE_MARKDOWN_PATHS`
 - `AUDIENCE_BACKGROUND`
@@ -68,6 +69,13 @@ Episode Variablesで回を切り替える場合は以下を追加します。
 ## CLI 実行例（Build Text/Project）
 
 ```bash
+# Prompt解決（Blueprint）
+bun src/cli/main.ts render-prompt -- \
+  --genre study \
+  --step blueprint \
+  --book-config configs/books/introducing-rescript.example.json
+
+# Build Text + Build Project
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
   --run-dir projects/introducing-rescript/run-20260211-0000

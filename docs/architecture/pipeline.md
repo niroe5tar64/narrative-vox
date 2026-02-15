@@ -48,7 +48,7 @@ flowchart TB
 
   CFG4["build-text config<br/>configs/voicevox/build_text_config.json"]
   CFG5P["voice profile<br/>configs/voicevox/default_profile.json<br/>(or .example.json)"]
-  CFG5S["character map<br/>configs/characters/*.json"]
+  CFG5S["character map (optional)<br/>configs/voicevox/default_character_map.json"]
   VXURL["VOICEVOX URL<br/>--voicevox-url / VOICEVOX_URL"]
   VXAPI["VOICEVOX Engine API<br/>/audio_query, /synthesis"]
   VXSCRIPT["運用スクリプト<br/>scripts/voicevox-\*.sh<br/>docker-compose.voicevox.yml"]
@@ -85,7 +85,7 @@ flowchart TB
 | `configs/voicevox/build_text_config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
 | `configs/voicevox/default_profile.json` | `build-project` | CLI操作前提 | 話者デフォルト値とqueryDefaults |
 | `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | `default_profile.json` 未作成時のフォールバック |
-| `configs/characters/*.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定 |
+| `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（任意） |
 | `--voicevox-url` / `VOICEVOX_URL` | `build-project`/`build-audio` | CLI操作前提 | VOICEVOX Engine接続先を指定 |
 | `scripts/voicevox-up.sh` など | Engine起動/疎通確認 | CLI操作前提 | Docker上のVOICEVOX Engine運用補助 |
 
@@ -97,6 +97,7 @@ flowchart TB
 
 | コマンド | 必須入力 | 主な自動推論 | 出力 |
 | --- | --- | --- | --- |
+| `render-prompt` | `--genre`, `--step`, `--book-config` | なし（`variables` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
 | `build-text` | `--script script/E##_script.md` | `--run-dir` は `.../run-.../script/...` なら推論。`--episode-id` 未指定時はファイル名 `E##_script.md` から推論。 | `voicevox_text/*.json`, `voicevox_text/*.txt`, `dict_candidates/*.csv` |
 | `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。profileは `default_profile.json` を優先し、なければ `.example.json`。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj` |
 | `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。 | `audio/E##.wav`, `audio/manifest.json` |

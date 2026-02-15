@@ -11,7 +11,7 @@
 
 - `voicevox_project/E##_voicevox_import.json`
 - `voicevox_project/E##.vvproj`
-  - スキーマ: `schemas/stage5.voicevox-import.schema.json`
+  - スキーマ: `schemas/voicevox-import.schema.json`
 
 ## 変換ルール
 
@@ -26,8 +26,8 @@
 
 ```bash
 bun run build-project -- \
-  --stage4-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json \
+  --voicevox-text-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json \
   --prefill-query engine
 ```
 
-- `--run-dir` は任意（`--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論）。
+- `--run-dir` は任意（`--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論）。

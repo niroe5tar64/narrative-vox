@@ -9,7 +9,7 @@
 ## 出力
 
 - `voicevox_text/E##_voicevox_text.json`
-  - スキーマ: `schemas/stage4.voicevox-text.schema.json`
+  - スキーマ: `schemas/voicevox-text.schema.json`
 - `voicevox_text/E##_voicevox.txt`
 - `dict_candidates/E##_dict_candidates.csv`
 

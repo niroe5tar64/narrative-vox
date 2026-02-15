@@ -24,7 +24,7 @@ bun test
 
 # パイプライン実行
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/stage3/E01_script.md \
+  --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
   --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 

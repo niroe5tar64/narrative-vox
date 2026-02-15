@@ -100,7 +100,6 @@ bun run build-text -- \
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
   --voicevox-text-json projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json \
-  --character-map configs/characters/ \
   --prefill-query engine \
   --voicevox-url http://voicevox-engine:50021
 
@@ -112,6 +111,12 @@ bun run build-audio -- \
 # Build Text + Build Project を連続実行
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md
+
+# (補助) Promptテンプレートを book config で解決して出力
+bun src/cli/main.ts render-prompt \
+  --genre study \
+  --step blueprint \
+  --book-config configs/books/introducing-rescript.example.json
 ```
 
 - `--run-id` は任意です。
@@ -119,7 +124,7 @@ bun run build-all -- \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
-- `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` のマップです（未指定時は `configs/characters/` ディレクトリが存在すれば自動適用）。
+- `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。未指定時は profile の voice が使われます。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
 - `--build-text-config` は Build Text の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `script/E01_script.md`）。
