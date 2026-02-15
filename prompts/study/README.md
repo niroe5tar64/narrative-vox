@@ -80,3 +80,19 @@ bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
   --run-dir projects/introducing-rescript/run-20260211-0000
 ```
+
+## Skills 実行例（Blueprint / Variables / Script）
+
+Prompt工程は Skills で連続実行できます。
+
+```text
+/gen-blueprint introducing-rescript
+/gen-variables introducing-rescript E01
+/gen-script introducing-rescript E01
+```
+
+- Skill定義:
+  - `skills/gen-blueprint/SKILL.md`
+  - `skills/gen-variables/SKILL.md`
+  - `skills/gen-script/SKILL.md`
+- Skills を使わない場合は、`render-prompt` で解決した Prompt を任意のLLMへ渡して実行してください。

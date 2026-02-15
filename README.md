@@ -119,6 +119,38 @@ bun src/cli/main.ts render-prompt \
   --book-config configs/books/introducing-rescript.example.json
 ```
 
+## Prompt工程の実行方法（Blueprint / Variables / Script）
+
+Phase 1（Blueprint / Variables / Script）は次のどちらかで実行します。
+
+1. Skills で一気通貫に実行する（推奨）
+
+```text
+/gen-blueprint introducing-rescript
+/gen-variables introducing-rescript E01
+/gen-script introducing-rescript E01
+```
+
+- Skill定義: `skills/gen-blueprint/SKILL.md`, `skills/gen-variables/SKILL.md`, `skills/gen-script/SKILL.md`
+- 出力先: `projects/<book-id>/run-YYYYMMDD-HHMM/{blueprint,variables,script}/...`
+
+2. `render-prompt` でテンプレートを解決し、任意のLLMに投入する
+
+```bash
+# Blueprint Promptを解決
+bun src/cli/main.ts render-prompt \
+  --genre study \
+  --step blueprint \
+  --book-config configs/books/introducing-rescript.example.json
+
+# Variables Promptを解決（EPISODE_IDを上書き）
+bun src/cli/main.ts render-prompt \
+  --genre study \
+  --step variables \
+  --book-config configs/books/introducing-rescript.example.json \
+  --episode-id E01
+```
+
 - `--run-id` は任意です。
 - 未指定時は `--run-dir` のパス要素に含まれる `run-YYYYMMDD-HHMM` を優先利用します。
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
