@@ -15,7 +15,12 @@ interface VoicevoxTextJsonTest {
     run_id: string;
     source_script_path: string;
   };
-  utterances: Array<{ utterance_id: string; text: string; pause_length_ms: number }>;
+  utterances: Array<{
+    utterance_id: string;
+    speaker_key?: string;
+    text: string;
+    pause_length_ms: number;
+  }>;
   dictionary_candidates: Array<{ surface: string; reading_or_empty: string }>;
   quality_checks: {
     speakability: {
@@ -181,6 +186,243 @@ test("stage5 prefill-query=minimal adds query defaults to every audio item", asy
     assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
     assert.equal(audioItem.query?.outputStereo, false);
   }
+});
+
+test("stage4 extracts speaker_key from line-head [speaker:<key>] tags", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "[speaker:teacher] これは先生の発話です。続けて説明します。",
+      "[speaker:student] なるほど、わかりました。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  assert.equal(stage4Json.utterances.length, 3);
+  assert.equal(stage4Json.utterances[0]?.speaker_key, "teacher");
+  assert.equal(stage4Json.utterances[1]?.speaker_key, "teacher");
+  assert.equal(stage4Json.utterances[2]?.speaker_key, "student");
+});
+
+test("stage5 applies speaker_map voices per utterance speaker_key", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "[speaker:teacher] これは先生の発話です。",
+      "[speaker:student] こちらは生徒の発話です。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const speakerMapPath = path.join(tempRoot, "speaker_map.json");
+  await writeFile(
+    speakerMapPath,
+    JSON.stringify(
+      {
+        defaultSpeakerKey: "narrator",
+        speakers: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          },
+          teacher: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 68
+          },
+          student: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 69
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  const stage5 = await buildProject({
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+    runDir,
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+    speakerMapPath
+  });
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+  const expectedStyleBySpeakerKey: Record<string, number> = {
+    narrator: 67,
+    teacher: 68,
+    student: 69
+  };
+
+  for (const utterance of stage4Json.utterances) {
+    const audioKey = `E01_${utterance.utterance_id}`;
+    const audioItem = stage5Json.talk.audioItems[audioKey];
+    assert.ok(audioItem);
+    const speakerKey = utterance.speaker_key ?? "narrator";
+    assert.equal(audioItem.voice.styleId, expectedStyleBySpeakerKey[speakerKey]);
+  }
+});
+
+test("stage5 speaker-key overrides utterance speaker_key values", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "[speaker:teacher] これは先生の発話です。",
+      "[speaker:student] こちらは生徒の発話です。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const speakerMapPath = path.join(tempRoot, "speaker_map.json");
+  await writeFile(
+    speakerMapPath,
+    JSON.stringify(
+      {
+        defaultSpeakerKey: "narrator",
+        speakers: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 70
+          },
+          teacher: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 68
+          },
+          student: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 69
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  const stage5 = await buildProject({
+    voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+    runDir,
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+    speakerMapPath,
+    speakerKey: "narrator"
+  });
+  const stage5Json = JSON.parse(await readFile(stage5.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+  for (const audioKey of stage5Json.talk.audioKeys) {
+    const audioItem = stage5Json.talk.audioItems[audioKey];
+    assert.equal(audioItem.voice.styleId, 70);
+  }
+});
+
+test("stage5 rejects unknown speaker_key in stage4 utterance", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "[speaker:ghost] この話者キーは未定義です。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const speakerMapPath = path.join(tempRoot, "speaker_map.json");
+  await writeFile(
+    speakerMapPath,
+    JSON.stringify(
+      {
+        defaultSpeakerKey: "narrator",
+        speakers: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await assert.rejects(
+    () =>
+      buildProject({
+        voicevoxTextJsonPath: stage4.voicevoxTextJsonPath,
+        runDir,
+        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        speakerMapPath
+      }),
+    /Unknown speaker_key "ghost"/
+  );
 });
 
 test("stage5 normalizes too-old appVersion to supported vvproj format version", async () => {
