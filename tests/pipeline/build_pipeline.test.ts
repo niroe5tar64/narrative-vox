@@ -218,6 +218,44 @@ test("stage4 extracts speaker_key from line-head [speaker:<key>] tags", async ()
   assert.equal(stage4Json.utterances[0]?.speaker_key, "teacher");
   assert.equal(stage4Json.utterances[1]?.speaker_key, "teacher");
   assert.equal(stage4Json.utterances[2]?.speaker_key, "student");
+  assert.equal(
+    stage4Json.quality_checks.warnings.some((message) => message.includes("speaker_key is omitted for")),
+    false
+  );
+});
+
+test("stage4 warns when source lines omit speaker tags", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "[speaker:teacher] これは先生の発話です。",
+      "こちらはタグなしです。",
+      "合計想定時間: 1分"
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const stage4 = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+  const stage4Json = JSON.parse(await readFile(stage4.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  const omittedSpeakerWarning = stage4Json.quality_checks.warnings.find((message) =>
+    message.includes("speaker_key is omitted for")
+  );
+  assert.ok(omittedSpeakerWarning);
+  assert.equal(omittedSpeakerWarning?.includes("1 utterances across 1 source lines"), true);
+  assert.equal(omittedSpeakerWarning?.includes("lines: 3"), true);
 });
 
 test("stage5 applies speaker_map voices per utterance speaker_key", async () => {

@@ -101,18 +101,45 @@ function extractSpeakerTag(rawLine: string): { speakerKey?: string; content: str
   return { content: rawLine };
 }
 
+interface SpeakerTagStats {
+  taggedSourceLineCount: number;
+  untaggedSourceLineCount: number;
+  untaggedUtteranceCount: number;
+  sampleUntaggedLineNumbers: number[];
+}
+
+function formatLineNumberSummary(lineNumbers: number[]): string {
+  if (lineNumbers.length === 0) {
+    return "";
+  }
+  const maxSamples = 5;
+  const head = lineNumbers.slice(0, maxSamples).join(", ");
+  if (lineNumbers.length <= maxSamples) {
+    return head;
+  }
+  return `${head}, ... (+${lineNumbers.length - maxSamples} more)`;
+}
+
 function buildUtterancesAndCandidates(
   source: string,
   morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>,
   stage4TextConfig: Stage4TextConfig
-): { utterances: VoicevoxTextUtterance[]; dictionaryCandidates: ReturnType<typeof toDictionaryCandidates> } {
+): {
+  utterances: VoicevoxTextUtterance[];
+  dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
+  speakerTagStats: SpeakerTagStats;
+} {
   const lines = source.split(/\r?\n/);
   const termCandidates: TermCandidateMap = new Map();
   const utterances: VoicevoxTextUtterance[] = [];
   let currentSectionId = 0;
   let currentSectionTitle = "";
+  let taggedSourceLineCount = 0;
+  let untaggedSourceLineCount = 0;
+  let untaggedUtteranceCount = 0;
+  const sampleUntaggedLineNumbers: number[] = [];
 
-  for (const rawLine of lines) {
+  for (const [lineIndex, rawLine] of lines.entries()) {
     const sectionHeader = parseSectionHeader(rawLine);
     if (sectionHeader) {
       currentSectionId = sectionHeader.id;
@@ -132,12 +159,23 @@ function buildUtterancesAndCandidates(
     if (currentSectionId < 1 || currentSectionId > 8) {
       continue;
     }
+    if (speakerKey) {
+      taggedSourceLineCount += 1;
+    } else {
+      untaggedSourceLineCount += 1;
+      if (sampleUntaggedLineNumbers.length < 20) {
+        sampleUntaggedLineNumbers.push(lineIndex + 1);
+      }
+    }
 
     collectRubyCandidates(normalized, termCandidates);
     const withoutRuby = replaceRubyWithReading(normalized);
     const sentences = splitIntoSentences(withoutRuby);
     for (const [sentenceIndex, sentence] of sentences.entries()) {
       collectTermCandidatesWithMorphology(sentence, termCandidates, morphTokenizer);
+      if (!speakerKey) {
+        untaggedUtteranceCount += 1;
+      }
       utterances.push({
         utterance_id: toUtteranceId(utterances.length),
         section_id: currentSectionId,
@@ -153,14 +191,21 @@ function buildUtterancesAndCandidates(
 
   return {
     utterances,
-    dictionaryCandidates: toDictionaryCandidates(termCandidates)
+    dictionaryCandidates: toDictionaryCandidates(termCandidates),
+    speakerTagStats: {
+      taggedSourceLineCount,
+      untaggedSourceLineCount,
+      untaggedUtteranceCount,
+      sampleUntaggedLineNumbers
+    }
   };
 }
 
 function buildQualityChecks(
   source: string,
   utterances: VoicevoxTextUtterance[],
-  stage4TextConfig: Stage4TextConfig
+  stage4TextConfig: Stage4TextConfig,
+  speakerTagStats: SpeakerTagStats
 ): VoicevoxTextQualityChecks {
   const maxChars = Math.max(...utterances.map((entry) => entry.text.length));
   const hasRuby = /\{[^|{}]+\|[^{}]+\}/.test(source);
@@ -190,6 +235,12 @@ function buildQualityChecks(
       )}, threshold=${warningThresholds.maxLongUtteranceRatio}). Split longer lines and consult ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
     );
   }
+  if (speakerTagStats.untaggedSourceLineCount > 0) {
+    const lineSummary = formatLineNumberSummary(speakerTagStats.sampleUntaggedLineNumbers);
+    warnings.push(
+      `speaker_key is omitted for ${speakerTagStats.untaggedUtteranceCount} utterances across ${speakerTagStats.untaggedSourceLineCount} source lines (e.g. lines: ${lineSummary}). Stage5 will fallback to default speaker resolution.`
+    );
+  }
 
   return {
     utterance_count: utterances.length,
@@ -210,8 +261,14 @@ function buildVoicevoxTextData(params: {
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
   source: string;
   stage4TextConfig: Stage4TextConfig;
+  speakerTagStats: SpeakerTagStats;
 }): VoicevoxTextData {
-  const qualityChecks = buildQualityChecks(params.source, params.utterances, params.stage4TextConfig);
+  const qualityChecks = buildQualityChecks(
+    params.source,
+    params.utterances,
+    params.stage4TextConfig,
+    params.speakerTagStats
+  );
   return {
     schema_version: "1.0",
     meta: {
@@ -260,7 +317,7 @@ export async function buildText({
   const stage4TextConfig = stage4ConfigPath
     ? await loadStage4TextConfig(stage4ConfigPath)
     : normalizeStage4TextConfig();
-  const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(
+  const { utterances, dictionaryCandidates, speakerTagStats } = buildUtterancesAndCandidates(
     source,
     morphTokenizer,
     stage4TextConfig
@@ -279,7 +336,8 @@ export async function buildText({
     utterances,
     dictionaryCandidates,
     source,
-    stage4TextConfig
+    stage4TextConfig,
+    speakerTagStats
   });
 
   await validateAgainstSchema(voicevoxTextData, SchemaPaths.voicevoxText);
