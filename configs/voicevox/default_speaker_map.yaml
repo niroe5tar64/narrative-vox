@@ -1,4 +1,4 @@
-# speaker mapping (planned)
-# example:
-# narrator: 1
-# character_a: 3
+# deprecated placeholder
+# use:
+# - configs/voicevox/default_speaker_map.json (local)
+# - configs/voicevox/default_speaker_map.example.json (shared template)

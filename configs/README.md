@@ -7,3 +7,5 @@
 - `voicevox/`: Stage 4/5 用の変換設定
   - `default_profile.example.json`: 共有用テンプレート
   - `default_profile.json`: ローカル実運用値（gitignore）
+  - `default_speaker_map.example.json`: 話者キー -> VOICEVOX voice 設定テンプレート
+  - `default_speaker_map.json`: ローカル実運用値（gitignore）

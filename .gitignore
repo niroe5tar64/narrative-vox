@@ -48,7 +48,9 @@ configs/**/*.local.yaml
 configs/**/*.local.yml
 configs/**/*.secrets.*
 configs/voicevox/default_profile.json
+configs/voicevox/default_speaker_map.json
 !configs/voicevox/default_profile.example.json
+!configs/voicevox/default_speaker_map.example.json
 
 # project/content specific configs (keep local by default)
 configs/books/*.json
