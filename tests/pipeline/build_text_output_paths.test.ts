@@ -10,7 +10,7 @@ const projectId = "introducing-rescript";
 
 test("resolveBuildTextOutputPaths infers episode_id from strict E##_script.md basename", () => {
   const result = resolveBuildTextOutputPaths({
-    scriptPath: path.join(runDir, "stage3", "E01_script.md"),
+    scriptPath: path.join(runDir, "script", "E01_script.md"),
     runDir,
     projectId,
     runId
@@ -23,7 +23,7 @@ test("resolveBuildTextOutputPaths rejects ambiguous script basename when --episo
   assert.throws(
     () =>
       resolveBuildTextOutputPaths({
-        scriptPath: path.join(runDir, "stage3", "prefix_E01_script.md"),
+        scriptPath: path.join(runDir, "script", "prefix_E01_script.md"),
         runDir,
         projectId,
         runId
@@ -34,7 +34,7 @@ test("resolveBuildTextOutputPaths rejects ambiguous script basename when --episo
 
 test("resolveBuildTextOutputPaths prefers explicit --episode-id over basename inference", () => {
   const result = resolveBuildTextOutputPaths({
-    scriptPath: path.join(runDir, "stage3", "prefix_E01_script.md"),
+    scriptPath: path.join(runDir, "script", "prefix_E01_script.md"),
     runDir,
     projectId,
     runId,

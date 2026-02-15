@@ -11,9 +11,9 @@ async function loadJson<T>(filePath: string): Promise<T> {
   return JSON.parse(raw) as T;
 }
 
-test("stage4 voicevox_text samples match schema", async () => {
+test("voicevox_text samples match schema", async () => {
   const voicevoxTextDir = path.join(sampleRunDir, "voicevox_text");
-  const schemaPath = path.resolve("schemas/stage4.voicevox-text.schema.json");
+  const schemaPath = path.resolve("schemas/voicevox-text.schema.json");
   const files = (await readdir(voicevoxTextDir))
     .filter((name) => /^E[0-9]{2}_voicevox_text\.json$/.test(name))
     .sort();
@@ -27,9 +27,9 @@ test("stage4 voicevox_text samples match schema", async () => {
   }
 });
 
-test("stage5 voicevox import samples match schema", async () => {
+test("voicevox import samples match schema", async () => {
   const voicevoxProjectDir = path.join(sampleRunDir, "voicevox_project");
-  const schemaPath = path.resolve("schemas/stage5.voicevox-import.schema.json");
+  const schemaPath = path.resolve("schemas/voicevox-import.schema.json");
   const files = (await readdir(voicevoxProjectDir))
     .filter((name) => /^E[0-9]{2}_voicevox_import\.json$/.test(name))
     .sort();

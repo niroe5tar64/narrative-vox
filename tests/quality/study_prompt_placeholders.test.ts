@@ -3,9 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "bun:test";
 
-const stage1PromptPath = path.resolve("prompts/study/stage1_blueprint.md");
-const stage2PromptPath = path.resolve("prompts/study/stage2_episode_variables.md");
-const stage3PromptPath = path.resolve("prompts/study/stage3_script_common_frame.md");
+const blueprintPromptPath = path.resolve("prompts/study/blueprint.md");
+const variablesPromptPath = path.resolve("prompts/study/episode_variables.md");
+const scriptPromptPath = path.resolve("prompts/study/script_common_frame.md");
 const studyReadmePath = path.resolve("prompts/study/README.md");
 const sampleBookConfigPath = path.resolve("configs/books/introducing-rescript.example.json");
 
@@ -27,8 +27,8 @@ function extractPlaceholders(markdown: string): string[] {
   return [...keys].sort();
 }
 
-test("stage2 prompt uses config-aligned placeholder names for source and audience", async () => {
-  const stage2Raw = await readFile(stage2PromptPath, "utf-8");
+test("variables prompt uses config-aligned placeholder names for source and audience", async () => {
+  const stage2Raw = await readFile(variablesPromptPath, "utf-8");
 
   for (const retiredAlias of retiredStage2Aliases) {
     assert.equal(stage2Raw.includes(retiredAlias), false, `found retired alias: ${retiredAlias}`);
@@ -40,10 +40,10 @@ test("stage2 prompt uses config-aligned placeholder names for source and audienc
   }
 });
 
-test("study README key definitions are consistent with stage2 prompt naming", async () => {
+test("study README key definitions are consistent with variables prompt naming", async () => {
   const [readmeRaw, stage2Raw] = await Promise.all([
     readFile(studyReadmePath, "utf-8"),
-    readFile(stage2PromptPath, "utf-8")
+    readFile(variablesPromptPath, "utf-8")
   ]);
 
   const expectedReadmeKeys = [
@@ -60,15 +60,15 @@ test("study README key definitions are consistent with stage2 prompt naming", as
 
   for (const retiredAlias of retiredStage2Aliases) {
     assert.equal(readmeRaw.includes(retiredAlias), false, `README still references retired alias: ${retiredAlias}`);
-    assert.equal(stage2Raw.includes(retiredAlias), false, `stage2 still references retired alias: ${retiredAlias}`);
+    assert.equal(stage2Raw.includes(retiredAlias), false, `variables prompt still references retired alias: ${retiredAlias}`);
   }
 });
 
-test("stage1-3 prompt placeholders can be resolved with sample book config", async () => {
+test("blueprint/variables/script prompt placeholders can be resolved with sample book config", async () => {
   const [stage1Raw, stage2Raw, stage3Raw, configRaw] = await Promise.all([
-    readFile(stage1PromptPath, "utf-8"),
-    readFile(stage2PromptPath, "utf-8"),
-    readFile(stage3PromptPath, "utf-8"),
+    readFile(blueprintPromptPath, "utf-8"),
+    readFile(variablesPromptPath, "utf-8"),
+    readFile(scriptPromptPath, "utf-8"),
     readFile(sampleBookConfigPath, "utf-8")
   ]);
 

@@ -73,44 +73,44 @@ function buildValidScriptWithDurationSuffixes(): string {
 }
 
 async function prepareMinimalRun(
-  stage2EpisodeIds: string[],
-  stage3Scripts: Record<string, string>
+  variablesEpisodeIds: string[],
+  scriptScripts: Record<string, string>
 ): Promise<string> {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-stage123-"));
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-run-"));
   const runDir = path.join(tempRoot, "projects", "book", "run-20260211-9999");
 
-  const stage1Dir = path.join(runDir, "stage1");
-  const stage2Dir = path.join(runDir, "stage2");
-  const stage3Dir = path.join(runDir, "stage3");
-  await mkdir(stage1Dir, { recursive: true });
-  await mkdir(stage2Dir, { recursive: true });
-  await mkdir(stage3Dir, { recursive: true });
+  const blueprintDir = path.join(runDir, "blueprint");
+  const variablesDir = path.join(runDir, "variables");
+  const scriptDir = path.join(runDir, "script");
+  await mkdir(blueprintDir, { recursive: true });
+  await mkdir(variablesDir, { recursive: true });
+  await mkdir(scriptDir, { recursive: true });
 
-  const stage1Raw = await readFile(path.join(sampleRunDir, "stage1", "book_blueprint.json"), "utf-8");
-  await writeFile(path.join(stage1Dir, "book_blueprint.json"), stage1Raw, "utf-8");
+  const blueprintRaw = await readFile(path.join(sampleRunDir, "blueprint", "book_blueprint.json"), "utf-8");
+  await writeFile(path.join(blueprintDir, "book_blueprint.json"), blueprintRaw, "utf-8");
 
-  const stage2Template = JSON.parse(
-    await readFile(path.join(sampleRunDir, "stage2", "E01_variables.json"), "utf-8")
+  const variablesTemplate = JSON.parse(
+    await readFile(path.join(sampleRunDir, "variables", "E01_variables.json"), "utf-8")
   ) as {
     meta: { episode_id: string };
   };
-  for (const episodeId of stage2EpisodeIds) {
+  for (const episodeId of variablesEpisodeIds) {
     const data = {
-      ...stage2Template,
+      ...variablesTemplate,
       meta: {
-        ...stage2Template.meta,
+        ...variablesTemplate.meta,
         episode_id: episodeId
       }
     };
     await writeFile(
-      path.join(stage2Dir, `${episodeId}_variables.json`),
+      path.join(variablesDir, `${episodeId}_variables.json`),
       `${JSON.stringify(data, null, 2)}\n`,
       "utf-8"
     );
   }
 
-  for (const [episodeId, scriptText] of Object.entries(stage3Scripts)) {
-    await writeFile(path.join(stage3Dir, `${episodeId}_script.md`), scriptText, "utf-8");
+  for (const [episodeId, scriptText] of Object.entries(scriptScripts)) {
+    await writeFile(path.join(scriptDir, `${episodeId}_script.md`), scriptText, "utf-8");
   }
 
   return runDir;
@@ -121,12 +121,12 @@ test("checkRun accepts current sample run", async () => {
     runDir: sampleRunDir
   });
 
-  assert.equal(result.stage2EpisodeCount > 0, true);
-  assert.equal(result.stage2EpisodeCount, result.stage3EpisodeCount);
+  assert.equal(result.variablesEpisodeCount > 0, true);
+  assert.equal(result.variablesEpisodeCount, result.scriptEpisodeCount);
   assert.equal(result.validatedEpisodeIds[0], "E01");
 });
 
-test('checkRun rejects stage3 script without "合計想定時間:"', async () => {
+test('checkRun rejects script without "合計想定時間:"', async () => {
   const invalidScript = buildValidScript()
     .split("\n")
     .filter((line) => !line.startsWith("合計想定時間:"))
@@ -139,7 +139,7 @@ test('checkRun rejects stage3 script without "合計想定時間:"', async () =>
   );
 });
 
-test("checkRun rejects episode mismatch between stage2 and stage3", async () => {
+test("checkRun rejects episode mismatch between variables and script", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildValidScript(),
     E02: buildValidScript()
@@ -147,11 +147,11 @@ test("checkRun rejects episode mismatch between stage2 and stage3", async () => 
 
   await assert.rejects(
     () => checkRun({ runDir }),
-    /stage3 has episodes not in stage2 variables: E02/
+    /script has episodes not in variables: E02/
   );
 });
 
-test("checkRun rejects stage3 script with section order violation", async () => {
+test("checkRun rejects script with section order violation", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildScriptFromSectionOrder([1, 2, 4, 3, 5, 6, 7, 8])
   });
@@ -162,7 +162,7 @@ test("checkRun rejects stage3 script with section order violation", async () => 
   );
 });
 
-test("checkRun rejects stage3 script with duplicate section ID", async () => {
+test("checkRun rejects script with duplicate section ID", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildScriptFromSectionOrder([1, 2, 2, 3, 4, 5, 6, 7, 8])
   });
