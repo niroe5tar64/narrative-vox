@@ -99,6 +99,7 @@ bun run build-text -- \
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
   --stage4-json projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json \
+  --speaker-map configs/voicevox/default_speaker_map.json \
   --prefill-query engine \
   --voicevox-url http://voicevox-engine:50021
 
@@ -117,6 +118,8 @@ bun run build-all -- \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
+- `--speaker-map` は `speaker_key -> voice(engineId/speakerId/styleId)` のマップです（未指定時は `configs/voicevox/default_speaker_map.json` が存在すれば自動適用）。
+- `--speaker-key` を指定すると Stage4 の `utterances[*].speaker_key` より優先して全 utterance に同一話者キーを適用します。
 - `--stage4-config` は Stage4 の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `stage3/E01_script.md`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
@@ -130,6 +133,15 @@ bun run build-all -- \
   - `build-project`: `--stage4-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
   - `build-audio`: `--stage5-vvproj` が `.../run-.../voicevox_project/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
+
+### VOICEVOX の利用可能キャラクターID確認
+
+```bash
+VOICEVOX_URL=${VOICEVOX_URL:-http://127.0.0.1:50021}
+curl -fsS "${VOICEVOX_URL}/speakers"
+```
+
+- `styles[*].id` が `styleId`、`speaker_uuid` が `speakerId` です。
 
 ## DevContainer + VOICEVOX Engine
 
