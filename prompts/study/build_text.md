@@ -1,10 +1,10 @@
-# Stage 4: Script to VOICEVOX Text
+# Build Text: Script to VOICEVOX Text
 
-目的: Stage 3 の台本 (`E##_script.md`) を、VOICEVOX取り込み前処理向けに正規化する。
+目的: Script の台本 (`E##_script.md`) を、VOICEVOX取り込み前処理向けに正規化する。
 
 ## 入力
 
-- `stage3/E##_script.md`
+- `script/E##_script.md`
 
 ## 出力
 
@@ -26,7 +26,7 @@
 
 ```bash
 bun run build-text -- \
-  --script projects/<id>/run-YYYYMMDD-HHMM/stage3/E01_script.md
+  --script projects/<id>/run-YYYYMMDD-HHMM/script/E01_script.md
 ```
 
-- `--run-dir` は任意（`--script` が `.../run-.../stage3/...` 配下なら自動推論）。
+- `--run-dir` は任意（`--script` が `.../run-.../script/...` 配下なら自動推論）。

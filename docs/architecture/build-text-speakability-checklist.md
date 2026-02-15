@@ -14,13 +14,13 @@
 
 | スクリプト | Run ID | 警告 | メモ |
 | --- | --- | --- | --- |
-| `/tmp/nv-stage4-script/E01_script.md` | `run-20260211-8888` | Terminal punctuation warning | `terminal_punctuation_ratio=0.5`。set `long_utterance_ratio=0` |
-| `/tmp/nv-stage4-script/E02_script.md` | `run-20260211-9999` | Terminal punctuation warning | `terminal_punctuation_ratio=0.467`、`long_utterance_ratio=0.067` |
-| `/tmp/nv-stage4-script/E04_script.md` | `run-20260211-1111` | Low score / long utterance / terminal punctuation | `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` |
+| `/tmp/nv-build-text-script/E01_script.md` | `run-20260211-8888` | Terminal punctuation warning | `terminal_punctuation_ratio=0.5`。set `long_utterance_ratio=0` |
+| `/tmp/nv-build-text-script/E02_script.md` | `run-20260211-9999` | Terminal punctuation warning | `terminal_punctuation_ratio=0.467`、`long_utterance_ratio=0.067` |
+| `/tmp/nv-build-text-script/E04_script.md` | `run-20260211-1111` | Low score / long utterance / terminal punctuation | `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` |
 
 ## チェック手順
 
-1. `bun run build-text -- --script <script> --run-dir <run-dir> --project-id introducing-rescript --run-id <run> --episode-id <expected>` を実行する（必要なスクリプトは `/tmp/nv-stage4-script/` に存在）。  
+1. `bun run build-text -- --script <script> --run-dir <run-dir> --project-id introducing-rescript --run-id <run> --episode-id <expected>` を実行する（必要なスクリプトは `/tmp/nv-build-text-script/` に存在）。  
 2. 出力 JSON の `quality_checks.speakability` を確認し、上記の `score`/`ratio` が期待どおりであるか検証する。  
 3. `quality_checks.warnings` に該当の警告メッセージが含まれていることを確認する。  
 4. `dict_candidates/<episode>_dict_candidates.csv` を開いて `DictionaryCsvField` のヘッダー順（`surface,reading,priority,occurrences,source,note`）と quote ルールが守れているか確認。
@@ -29,19 +29,19 @@
 
 | 警告 | コマンド | 期待される出力 |
 | --- | --- | --- |
-| Speakability score is low / long utterance ratio is high | `bun run build-text -- --script /tmp/nv-stage4-script/E04_script.md --run-dir /tmp/nv-test-run/run-20260211-1111 --project-id introducing-rescript --run-id run-20260211-1111 --episode-id E04` | `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` / 警告3件 |
-| Terminal punctuation is infrequent | `bun run build-text -- --script /tmp/nv-stage4-script/E01_script.md --run-dir /tmp/nv-test-run/run-20260211-8888 --project-id introducing-rescript --run-id run-20260211-8888 --episode-id E01` | `terminal_punctuation_ratio=0.5` / Terminal punctuation 警告 |
-| Terminal punctuation is infrequent（比率低） | `bun run build-text -- --script /tmp/nv-stage4-script/E02_script.md --run-dir /tmp/nv-test-run/run-20260211-9999 --project-id introducing-rescript --run-id run-20260211-9999 --episode-id E02` | `terminal_punctuation_ratio=0.467` / `long_utterance_ratio=0.067` / Terminal punctuation 警告 |
+| Speakability score is low / long utterance ratio is high | `bun run build-text -- --script /tmp/nv-build-text-script/E04_script.md --run-dir /tmp/nv-test-run/run-20260211-1111 --project-id introducing-rescript --run-id run-20260211-1111 --episode-id E04` | `quality_checks.speakability.score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` / 警告3件 |
+| Terminal punctuation is infrequent | `bun run build-text -- --script /tmp/nv-build-text-script/E01_script.md --run-dir /tmp/nv-test-run/run-20260211-8888 --project-id introducing-rescript --run-id run-20260211-8888 --episode-id E01` | `terminal_punctuation_ratio=0.5` / Terminal punctuation 警告 |
+| Terminal punctuation is infrequent（比率低） | `bun run build-text -- --script /tmp/nv-build-text-script/E02_script.md --run-dir /tmp/nv-test-run/run-20260211-9999 --project-id introducing-rescript --run-id run-20260211-9999 --episode-id E02` | `terminal_punctuation_ratio=0.467` / `long_utterance_ratio=0.067` / Terminal punctuation 警告 |
 
 ## 再現ログの活用
 
-- 警告再現の主データは `/tmp/nv-stage4-script/E01_script.md` `/tmp/nv-stage4-script/E02_script.md` `/tmp/nv-stage4-script/E04_script.md` から生成した run（例: `run-20260212-0300`）を使ってください。`E04` は `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` で 3 件警告、`E01` と `E02` は Terminal punctuation 警告を再現できます。
+- 警告再現の主データは `/tmp/nv-build-text-script/E01_script.md` `/tmp/nv-build-text-script/E02_script.md` `/tmp/nv-build-text-script/E04_script.md` から生成した run（例: `run-20260212-0300`）を使ってください。`E04` は `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` で 3 件警告、`E01` と `E02` は Terminal punctuation 警告を再現できます。
 - `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は 2026-02-12 再生成時点で `E01`〜`E12` の `quality_checks.warnings` が 0 件です。こちらは「通常サンプルの健全系確認」用途として扱ってください。
 - `dict_candidates/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
 
 ## テストとの紐付け
 
-- `tests/pipeline/build_pipeline.test.ts` では `/tmp/nv-stage4-script/E04_script.md` を使って `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と Jira などの報告をリンクさせることで再現済みシナリオを維持できます。
+- `tests/pipeline/build_pipeline.test.ts` では `/tmp/nv-build-text-script/E04_script.md` を使って `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と Jira などの報告をリンクさせることで再現済みシナリオを維持できます。
 - `tests/pipeline/build_text.unit.test.ts` 系のユニットテストは `evaluateSpeakability`/`splitIntoSentences`/`decidePauseLengthMs` などの内部ロジックが期待どおりに動作し、`SpeakabilityWarningConfig.*` の各しきい値で警告をトリガーする前提を支えるため、変更を加える際は該当テストの入力値も見直してください。
 
 ## 警告別ドキュメント更新のたたき台
