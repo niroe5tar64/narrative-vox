@@ -4,6 +4,7 @@ import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import type { VoicevoxTextData } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
+import { normalizeSpeakerMap, type SpeakerMap } from "../shared/speaker_map.ts";
 import {
   RawVoiceProfile,
   VoiceProfile,
@@ -25,12 +26,20 @@ interface ProjectAudioItem {
   query?: VoicevoxAudioQuery;
 }
 
+interface ProjectVoice {
+  engineId: string;
+  speakerId: string;
+  styleId: number;
+}
+
 type QueryPrefillMode = "none" | "minimal" | "engine";
 
 interface BuildProjectOptions {
   voicevoxTextJsonPath: string;
   runDir?: string;
   profilePath?: string;
+  speakerMapPath?: string;
+  speakerKey?: string;
   engineId?: string;
   speakerId?: string;
   styleId?: number;
@@ -63,6 +72,20 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
     return localDefault;
   } catch {
     return path.resolve("configs/voicevox/default_profile.example.json");
+  }
+}
+
+async function resolveSpeakerMapPath(speakerMapPath?: string): Promise<string | undefined> {
+  if (speakerMapPath) {
+    return path.resolve(speakerMapPath);
+  }
+
+  const localDefault = path.resolve("configs/voicevox/default_speaker_map.json");
+  try {
+    await access(localDefault);
+    return localDefault;
+  } catch {
+    return undefined;
   }
 }
 
@@ -168,10 +191,51 @@ function applyQueryDefaults(
   };
 }
 
+function resolveUtteranceVoice(params: {
+  utteranceSpeakerKey?: string;
+  forcedSpeakerKey?: string;
+  speakerMap?: SpeakerMap;
+  profileVoice: ProjectVoice;
+  cliOverrides: {
+    engineId?: string;
+    speakerId?: string;
+    styleId?: number;
+  };
+}): ProjectVoice {
+  const selectedSpeakerKey =
+    params.forcedSpeakerKey ||
+    params.utteranceSpeakerKey ||
+    params.speakerMap?.defaultSpeakerKey;
+
+  let baseVoice: ProjectVoice = params.profileVoice;
+  if (selectedSpeakerKey) {
+    if (!params.speakerMap) {
+      throw new Error(
+        `speaker_key "${selectedSpeakerKey}" was requested but no speaker map is configured. Set --speaker-map or add configs/voicevox/default_speaker_map.json`
+      );
+    }
+    const mapped = params.speakerMap.speakers[selectedSpeakerKey];
+    if (!mapped) {
+      throw new Error(
+        `Unknown speaker_key "${selectedSpeakerKey}". Define it in the speaker map.`
+      );
+    }
+    baseVoice = mapped;
+  }
+
+  return {
+    engineId: params.cliOverrides.engineId || baseVoice.engineId,
+    speakerId: params.cliOverrides.speakerId || baseVoice.speakerId,
+    styleId: params.cliOverrides.styleId ?? baseVoice.styleId
+  };
+}
+
 export async function buildProject({
   voicevoxTextJsonPath,
   runDir,
   profilePath,
+  speakerMapPath,
+  speakerKey,
   engineId,
   speakerId,
   styleId,
@@ -190,6 +254,7 @@ export async function buildProject({
   }
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
+  const resolvedSpeakerMapPath = await resolveSpeakerMapPath(speakerMapPath);
 
   const voicevoxTextData = await loadJson<VoicevoxTextData>(
     resolvedVoicevoxTextPath,
@@ -197,10 +262,15 @@ export async function buildProject({
   );
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
+  const speakerMap = resolvedSpeakerMapPath
+    ? normalizeSpeakerMap(await loadJson<unknown>(resolvedSpeakerMapPath))
+    : undefined;
 
-  const finalEngineId = engineId || profile.engineId;
-  const finalSpeakerId = speakerId || profile.speakerId;
-  const finalStyleId = styleId ?? profile.styleId;
+  const profileVoice: ProjectVoice = {
+    engineId: profile.engineId,
+    speakerId: profile.speakerId,
+    styleId: profile.styleId
+  };
   const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
   const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
@@ -211,13 +281,16 @@ export async function buildProject({
   for (const utterance of voicevoxTextData.utterances) {
     const key = toAudioKey(voicevoxTextData.meta.episode_id, utterance.utterance_id);
     audioKeys.push(key);
+    const resolvedVoice = resolveUtteranceVoice({
+      utteranceSpeakerKey: utterance.speaker_key,
+      forcedSpeakerKey: speakerKey,
+      speakerMap,
+      profileVoice,
+      cliOverrides: { engineId, speakerId, styleId }
+    });
     const audioItem: ProjectAudioItem = {
       text: utterance.text,
-      voice: {
-        engineId: finalEngineId,
-        speakerId: finalSpeakerId,
-        styleId: finalStyleId
-      }
+      voice: resolvedVoice
     };
     if (queryPrefillMode === "minimal") {
       audioItem.query = buildMinimalQuery(profile, utterance.pause_length_ms);
@@ -226,7 +299,7 @@ export async function buildProject({
       const { query: engineQuery } = await fetchAudioQueryFromEngine({
         voicevoxApiUrl: resolvedVoicevoxApiUrl,
         text: utterance.text,
-        styleId: finalStyleId,
+        styleId: resolvedVoice.styleId,
         audioKey: key
       });
       audioItem.query = applyQueryDefaults(engineQuery, profile, utterance.pause_length_ms);

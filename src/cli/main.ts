@@ -15,7 +15,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-text":
     "Usage:\n  bun src/cli/main.ts build-text --script <stage3/E##_script.md> [--stage4-config <configs/voicevox/stage4_text_config.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
+    "Usage:\n  bun src/cli/main.ts build-project --stage4-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--speaker-map configs/voicevox/default_speaker_map.json|default_speaker_map.example.json] [--speaker-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --stage5-vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-all":
@@ -46,6 +46,8 @@ function buildProjectOptions(options: CliOptions) {
   return {
     runDir: optionAsString(options, "run-dir"),
     profilePath: optionAsString(options, "profile"),
+    speakerMapPath: optionAsString(options, "speaker-map"),
+    speakerKey: optionAsString(options, "speaker-key"),
     engineId: optionAsString(options, "engine-id"),
     speakerId: optionAsString(options, "speaker-id"),
     styleId: optionAsNumber(options, "style-id"),
