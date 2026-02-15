@@ -6,6 +6,7 @@ export interface VoicevoxTextUtterance {
   utterance_id: string;
   section_id: number;
   section_title: string;
+  speaker_key?: string;
   text: string;
   pause_length_ms: number;
 }

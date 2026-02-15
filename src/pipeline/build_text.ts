@@ -45,6 +45,8 @@ export {
 } from "./build_text/text_processing.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
+const SPEAKER_TAG_RE = /^\s*\[speaker:([a-z][a-z0-9_-]*)\]\s*/;
+const SPEAKER_TAG_PREFIX_RE = /^\s*\[speaker:/;
 const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 
 function formatPercentage(value: number): string {
@@ -81,6 +83,24 @@ export function replaceRubyWithReading(text: string): string {
   return text.replace(RUBY_RE, (_matched, _surface, reading: string) => reading);
 }
 
+function extractSpeakerTag(rawLine: string): { speakerKey?: string; content: string } {
+  const match = rawLine.match(SPEAKER_TAG_RE);
+  if (match?.[1]) {
+    return {
+      speakerKey: match[1],
+      content: rawLine.slice(match[0].length)
+    };
+  }
+
+  if (SPEAKER_TAG_PREFIX_RE.test(rawLine)) {
+    throw new Error(
+      `Invalid speaker tag format: "${rawLine.trim()}". Expected: [speaker:<key>] at line start.`
+    );
+  }
+
+  return { content: rawLine };
+}
+
 function buildUtterancesAndCandidates(
   source: string,
   morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>,
@@ -104,7 +124,8 @@ function buildUtterancesAndCandidates(
       continue;
     }
 
-    const normalized = normalizeScriptLine(rawLine);
+    const { speakerKey, content } = extractSpeakerTag(rawLine);
+    const normalized = normalizeScriptLine(content);
     if (!normalized) {
       continue;
     }
@@ -121,6 +142,7 @@ function buildUtterancesAndCandidates(
         utterance_id: toUtteranceId(utterances.length),
         section_id: currentSectionId,
         section_title: currentSectionTitle,
+        ...(speakerKey ? { speaker_key: speakerKey } : {}),
         text: sentence,
         pause_length_ms: decidePauseLengthMs(sentence, {
           isTerminalInSourceLine: sentenceIndex === sentences.length - 1

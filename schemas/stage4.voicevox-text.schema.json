@@ -77,6 +77,10 @@
             "type": "string",
             "minLength": 1
           },
+          "speaker_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
           "text": {
             "type": "string",
             "minLength": 1,
