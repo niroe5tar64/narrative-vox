@@ -53,7 +53,9 @@
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
   - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Build Project: Build Text JSON から VOICEVOX import (`.vvproj`) 生成
-  - VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を常に生成し、profile 既定値を重ねて出力する（`postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算して反映）
+  - VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を常に生成し、profile 既定値を適用する
+  - `--speed-preset`（`slow|normal|fast`）指定時は `speedScale/pauseLengthScale/postPhonemeLength` を上書きする
+  - 最後に `postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算した下限で補正する
 - Build Audio: Build Project `.vvproj` から VOICEVOX Engine API で WAV を自動生成
   - `audio/E##.wav` を出力（utteranceを連結した単一ファイル）
   - 既定で `audio/E##.mp3`（128kbps）を自動生成
@@ -163,6 +165,7 @@ bun src/cli/main.ts render-prompt \
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `script/E01_script.md`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `build-project` と `build-audio` の両方で同じ URL 解決ロジックを使います。
+- `build-project` では `--speed-preset slow|normal|fast` で速度プリセットを指定できます（`--speed-profiles` で定義ファイルを上書き可能、未指定時は `configs/voicevox/speed_profiles.json` を利用）。
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
 - `build-audio` は Build Project の `query`（手調整済み含む）を優先して `synthesis` を呼びます。`query` 未設定項目のみ `audio_query` で補完します。
 - `build-audio` は途中失敗があっても成功分を保持して `audio/manifest.json` に要約します。

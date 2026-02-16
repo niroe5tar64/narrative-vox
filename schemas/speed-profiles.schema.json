@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Speed Profiles",
+  "type": "object",
+  "required": ["version", "presets"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "presets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["speedScale", "pauseLengthScale", "postPhonemeLength"],
+        "properties": {
+          "speedScale": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "pauseLengthScale": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "postPhonemeLength": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

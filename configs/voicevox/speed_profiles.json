@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "presets": {
+    "slow": {
+      "speedScale": 0.9,
+      "pauseLengthScale": 1.2,
+      "postPhonemeLength": 0.14
+    },
+    "normal": {
+      "speedScale": 1.0,
+      "pauseLengthScale": 1.0,
+      "postPhonemeLength": 0.1
+    },
+    "fast": {
+      "speedScale": 1.15,
+      "pauseLengthScale": 0.9,
+      "postPhonemeLength": 0.08
+    }
+  }
+}

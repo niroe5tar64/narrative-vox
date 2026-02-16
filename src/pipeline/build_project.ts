@@ -15,6 +15,12 @@ import {
   resolveVoicevoxApiUrl,
   type VoicevoxAudioQuery
 } from "./voicevox_engine.ts";
+import {
+  applySpeedPreset,
+  loadSpeedProfiles,
+  type SpeedPreset,
+  type SpeedProfiles
+} from "./build_project/speed_profiles.ts";
 
 interface ProjectAudioItem {
   text: string;
@@ -43,6 +49,8 @@ interface BuildProjectOptions {
   styleId?: number;
   appVersion?: string;
   voicevoxApiUrl?: string;
+  speedPreset?: string;
+  speedProfilesPath?: string;
 }
 
 interface BuildProjectResult {
@@ -80,6 +88,20 @@ async function resolveCharacterMapPath(characterMapPath?: string): Promise<strin
   }
 
   const localDefault = path.resolve("configs/voicevox/default_character_map.json");
+  try {
+    await access(localDefault);
+    return localDefault;
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolveSpeedProfilesPath(speedProfilesPath?: string): Promise<string | undefined> {
+  if (speedProfilesPath) {
+    return path.resolve(speedProfilesPath);
+  }
+
+  const localDefault = path.resolve("configs/voicevox/speed_profiles.json");
   try {
     await access(localDefault);
     return localDefault;
@@ -143,8 +165,7 @@ function toPostPhonemeLength(
 
 function applyQueryDefaults(
   query: VoicevoxAudioQuery,
-  profile: VoiceProfile,
-  pauseLengthMs?: number
+  profile: VoiceProfile
 ): VoicevoxAudioQuery {
   const defaults = profile.queryDefaults;
   return {
@@ -155,10 +176,35 @@ function applyQueryDefaults(
     volumeScale: defaults.volumeScale,
     pauseLengthScale: defaults.pauseLengthScale,
     prePhonemeLength: defaults.prePhonemeLength,
-    postPhonemeLength: toPostPhonemeLength(defaults.postPhonemeLength, pauseLengthMs),
+    postPhonemeLength: defaults.postPhonemeLength,
     outputSamplingRate: defaults.outputSamplingRate,
     outputStereo: defaults.outputStereo
   };
+}
+
+function resolveSpeedPreset(
+  speedPreset: string | undefined,
+  speedProfiles: SpeedProfiles | undefined
+): SpeedPreset | undefined {
+  if (!speedPreset) {
+    return undefined;
+  }
+
+  if (!speedProfiles) {
+    throw new Error(
+      `Speed preset "${speedPreset}" was requested but no speed profiles are configured. Set --speed-profiles or add configs/voicevox/speed_profiles.json`
+    );
+  }
+
+  const preset = speedProfiles.presets[speedPreset];
+  if (!preset) {
+    const availablePresets = Object.keys(speedProfiles.presets);
+    throw new Error(
+      `Unknown speed preset "${speedPreset}". Available presets: ${availablePresets.join(", ")}`
+    );
+  }
+
+  return preset;
 }
 
 function resolveUtteranceVoice(params: {
@@ -215,7 +261,9 @@ export async function buildProject({
   speakerId,
   styleId,
   appVersion,
-  voicevoxApiUrl
+  voicevoxApiUrl,
+  speedPreset,
+  speedProfilesPath
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
@@ -229,6 +277,7 @@ export async function buildProject({
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
   const resolvedCharacterMapPath = await resolveCharacterMapPath(characterMapPath);
+  const resolvedSpeedProfilesPath = await resolveSpeedProfilesPath(speedProfilesPath);
 
   const voicevoxTextData = await loadJson<VoicevoxTextData>(
     resolvedVoicevoxTextPath,
@@ -239,6 +288,10 @@ export async function buildProject({
   const characterMap = resolvedCharacterMapPath
     ? normalizeCharacterMap(await loadJson<unknown>(resolvedCharacterMapPath))
     : undefined;
+  const speedProfiles = resolvedSpeedProfilesPath
+    ? await loadSpeedProfiles(resolvedSpeedProfilesPath)
+    : undefined;
+  const resolvedSpeedPreset = resolveSpeedPreset(speedPreset, speedProfiles);
 
   const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
@@ -261,10 +314,16 @@ export async function buildProject({
       styleId: resolvedVoice.styleId,
       audioKey: key
     });
+    let query = applyQueryDefaults(engineQuery, profile);
+    query = applySpeedPreset(query, resolvedSpeedPreset);
+    query = {
+      ...query,
+      postPhonemeLength: toPostPhonemeLength(query.postPhonemeLength, utterance.pause_length_ms)
+    };
     const audioItem: ProjectAudioItem = {
       text: utterance.text,
       voice: resolvedVoice,
-      query: applyQueryDefaults(engineQuery, profile, utterance.pause_length_ms)
+      query
     };
     audioItems[key] = audioItem;
   }

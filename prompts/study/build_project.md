@@ -23,7 +23,9 @@
    - どちらもない場合: profile の voice
    - `speaker_key` または `--character-key` を使う場合、`character map` が未設定だとエラー
 4. `song` は空トラック構成で最小値を埋める。
-5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` と Build Text `pause_length_ms` を重ねて `query` を出力する（`--voicevox-url` 未指定時は `http://127.0.0.1:50021`）。
+5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` を適用する。
+6. `--speed-preset` 指定時は `speed_profiles` の値で `speedScale/pauseLengthScale/postPhonemeLength` を上書きする。
+7. 最後に Build Text `pause_length_ms` を秒換算して `postPhonemeLength` の下限を保証する（`--voicevox-url` 未指定時は自動解決）。
 
 ## 実行
 
