@@ -227,13 +227,9 @@ test("build-text extracts speaker_key from line-head [speaker:<key>] tags", asyn
   assert.equal(textJson.utterances[0]?.speaker_key, "teacher");
   assert.equal(textJson.utterances[1]?.speaker_key, "teacher");
   assert.equal(textJson.utterances[2]?.speaker_key, "student");
-  assert.equal(
-    textJson.quality_checks.warnings.some((message) => message.includes("speaker_key is omitted for")),
-    false
-  );
 });
 
-test("build-text does not emit speaker fallback warning when source lines omit speaker tags", async () => {
+test("build-text keeps speaker_key undefined for lines without [speaker:<key>] tag", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -258,10 +254,9 @@ test("build-text does not emit speaker fallback warning when source lines omit s
   });
   const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
 
-  assert.equal(
-    textJson.quality_checks.warnings.some((message) => message.includes("speaker_key is omitted for")),
-    false
-  );
+  assert.equal(textJson.utterances.length, 2);
+  assert.equal(textJson.utterances[0]?.speaker_key, "teacher");
+  assert.equal(textJson.utterances[1]?.speaker_key, undefined);
 });
 
 test("build-text applies reading dictionary entries to generated utterances", async () => {
