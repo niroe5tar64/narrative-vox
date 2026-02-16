@@ -153,7 +153,7 @@ export async function runPrepareRun(options: CliOptions) {
 	const projectsDir = path.resolve(
 		optionAsString(options, "projects-dir") || "projects",
 	);
-	const noPrompt = Boolean(options["no-prompt"] || options["non-interactive"]);
+	const noPrompt = Boolean(options["no-prompt"]);
 	const interactive = !noPrompt && process.stdin.isTTY && process.stdout.isTTY;
 
 	let runDir = optionAsString(options, "run-dir");
