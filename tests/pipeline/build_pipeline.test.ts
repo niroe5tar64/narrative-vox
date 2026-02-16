@@ -8,6 +8,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { buildText as buildTextBase } from "../../src/pipeline/build_text.ts";
 import { buildProject } from "../../src/pipeline/build_project.ts";
+import { DEFAULT_BUILD_TEXT_CONFIG } from "../../src/pipeline/build_text/build_text_config.ts";
 
 interface VoicevoxTextJsonTest {
   meta: {
@@ -1737,21 +1738,55 @@ test("build-text rejects invalid --run-id format with expected pattern in messag
 
 test("build-text falls back to built-in defaults when build-text config path is omitted", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const runDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7778");
-  await mkdir(runDir, { recursive: true });
+  const withoutConfigRunDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7778");
+  const explicitConfigRunDir = path.join(tempRoot, "introducing-rescript", "run-20260211-7779");
+  await mkdir(withoutConfigRunDir, { recursive: true });
+  await mkdir(explicitConfigRunDir, { recursive: true });
 
-  const buildTextResult = await buildTextBase({
+  const builtInConfigPath = path.join(tempRoot, "built-in-build_text_config.json");
+  await writeFile(
+    builtInConfigPath,
+    `${JSON.stringify(DEFAULT_BUILD_TEXT_CONFIG, null, 2)}\n`,
+    "utf-8"
+  );
+
+  const withoutConfigResult = await buildTextBase({
     scriptPath: sampleScriptPath,
-    runDir,
+    runDir: withoutConfigRunDir,
     episodeId: "E01",
     projectId: "introducing-rescript",
     runId: "run-20260211-7778"
   });
 
-  const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
-  assert.equal(textJson.utterances.length > 0, true);
-  assert.equal(textJson.quality_checks.speakability.score >= 0, true);
-  assert.equal(textJson.quality_checks.speakability.score <= 100, true);
+  const explicitConfigResult = await buildTextBase({
+    scriptPath: sampleScriptPath,
+    runDir: explicitConfigRunDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-7779",
+    buildTextConfigPath: builtInConfigPath
+  });
+
+  const withoutConfigJson = JSON.parse(
+    await readFile(withoutConfigResult.voicevoxTextJsonPath, "utf-8")
+  ) as VoicevoxTextJsonTest;
+  const explicitConfigJson = JSON.parse(
+    await readFile(explicitConfigResult.voicevoxTextJsonPath, "utf-8")
+  ) as VoicevoxTextJsonTest;
+
+  const pickConfigDependentValues = (data: VoicevoxTextJsonTest) => ({
+    utterances: data.utterances.map((utterance) => ({
+      text: utterance.text,
+      pause_length_ms: utterance.pause_length_ms
+    })),
+    speakability: data.quality_checks.speakability,
+    warnings: data.quality_checks.warnings
+  });
+
+  assert.deepEqual(
+    pickConfigDependentValues(withoutConfigJson),
+    pickConfigDependentValues(explicitConfigJson)
+  );
 });
 
 test("build-text extracts dictionary candidates with readings from morphological analysis", async () => {

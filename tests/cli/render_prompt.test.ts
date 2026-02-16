@@ -155,10 +155,9 @@ describe("renderPrompt", () => {
       episodeId: "E99",
     });
 
-    assert.ok(result.resolvedPrompt.includes("E99"));
-    assert.ok(!result.resolvedPrompt.includes("{{EPISODE_ID}}") ||
-      // code blocks may still contain {{EPISODE_ID}}
-      result.resolvedPrompt.includes("```"));
+    assert.ok(result.resolvedPrompt.includes("- 対象エピソードID: `E99`"));
+    assert.ok(!result.resolvedPrompt.includes("- 対象エピソードID: `{{EPISODE_ID}}`"));
+    assert.ok(result.resolvedPrompt.includes('"episode_id": "{{EPISODE_ID}}"'));
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
