@@ -32,8 +32,6 @@ interface ProjectVoice {
   styleId: number;
 }
 
-type QueryPrefillMode = "none" | "minimal" | "engine";
-
 interface BuildProjectOptions {
   voicevoxTextJsonPath: string;
   runDir?: string;
@@ -44,7 +42,6 @@ interface BuildProjectOptions {
   speakerId?: string;
   styleId?: number;
   appVersion?: string;
-  prefillQuery?: string;
   voicevoxApiUrl?: string;
 }
 
@@ -99,19 +96,6 @@ function inferRunDirFromVoicevoxTextJsonPath(voicevoxTextJsonPath: string): stri
   return path.dirname(voicevoxTextDir);
 }
 
-function normalizeQueryPrefillMode(mode?: string): QueryPrefillMode {
-  if (!mode || mode === "none") {
-    return "none";
-  }
-  if (mode === "minimal") {
-    return "minimal";
-  }
-  if (mode === "engine") {
-    return "engine";
-  }
-  throw new Error(`Invalid --prefill-query: ${mode}. Expected one of: none, minimal, engine`);
-}
-
 function parseSemver(value: string): [number, number, number] | undefined {
   const match = value.match(/^(\d+)\.(\d+)\.(\d+)$/);
   if (!match) {
@@ -155,22 +139,6 @@ function toPostPhonemeLength(
 
   const fromPause = Math.max(0, Math.round(pauseLengthMs) / 1000);
   return Math.max(defaultPostPhonemeLength, fromPause);
-}
-
-function buildMinimalQuery(profile: VoiceProfile, pauseLengthMs?: number): VoicevoxAudioQuery {
-  const defaults = profile.queryDefaults;
-  return {
-    accentPhrases: [],
-    speedScale: defaults.speedScale,
-    pitchScale: defaults.pitchScale,
-    intonationScale: defaults.intonationScale,
-    volumeScale: defaults.volumeScale,
-    pauseLengthScale: defaults.pauseLengthScale,
-    prePhonemeLength: defaults.prePhonemeLength,
-    postPhonemeLength: toPostPhonemeLength(defaults.postPhonemeLength, pauseLengthMs),
-    outputSamplingRate: defaults.outputSamplingRate,
-    outputStereo: defaults.outputStereo
-  };
 }
 
 function applyQueryDefaults(
@@ -247,7 +215,6 @@ export async function buildProject({
   speakerId,
   styleId,
   appVersion,
-  prefillQuery,
   voicevoxApiUrl
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
@@ -274,7 +241,6 @@ export async function buildProject({
     : undefined;
 
   const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
-  const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
 
   const audioKeys: string[] = [];
@@ -289,22 +255,17 @@ export async function buildProject({
       characterMap,
       cliOverrides: { engineId, speakerId, styleId }
     });
+    const { query: engineQuery } = await fetchAudioQueryFromEngine({
+      voicevoxApiUrl: resolvedVoicevoxApiUrl,
+      text: utterance.text,
+      styleId: resolvedVoice.styleId,
+      audioKey: key
+    });
     const audioItem: ProjectAudioItem = {
       text: utterance.text,
-      voice: resolvedVoice
+      voice: resolvedVoice,
+      query: applyQueryDefaults(engineQuery, profile, utterance.pause_length_ms)
     };
-    if (queryPrefillMode === "minimal") {
-      audioItem.query = buildMinimalQuery(profile, utterance.pause_length_ms);
-    }
-    if (queryPrefillMode === "engine") {
-      const { query: engineQuery } = await fetchAudioQueryFromEngine({
-        voicevoxApiUrl: resolvedVoicevoxApiUrl,
-        text: utterance.text,
-        styleId: resolvedVoice.styleId,
-        audioKey: key
-      });
-      audioItem.query = applyQueryDefaults(engineQuery, profile, utterance.pause_length_ms);
-    }
     audioItems[key] = audioItem;
   }
 

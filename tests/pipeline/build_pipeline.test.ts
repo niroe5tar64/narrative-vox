@@ -133,66 +133,60 @@ test("build-text -> build-project pipeline works with sample script", async () =
   assert.equal(textJson.quality_checks.speakability.score >= 0, true);
   assert.equal(textJson.quality_checks.speakability.score <= 100, true);
 
-  const projectResult = await buildProject({
-    voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
-    runDir,
-    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-    ...explicitVoiceOverrides
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      voicevoxApiUrl,
+      ...explicitVoiceOverrides
+    });
+
+    const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+    assert.equal(projectJson.talk.audioKeys.length, textJson.utterances.length);
+    const firstAudioItem = projectJson.talk.audioItems[projectJson.talk.audioKeys[0]];
+    assert.ok(firstAudioItem);
+    assert.ok(firstAudioItem.query);
+    assert.equal((firstAudioItem.query?.accentPhrases.length ?? 0) > 0, true);
   });
-
-  const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
-  assert.equal(projectJson.talk.audioKeys.length, textJson.utterances.length);
-  const firstAudioItem = projectJson.talk.audioItems[projectJson.talk.audioKeys[0]];
-  assert.ok(firstAudioItem);
-  assert.equal(firstAudioItem.query, undefined);
-});
-
-test("build-project prefill-query=minimal adds query defaults to every audio item", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
-  await mkdir(runDir, { recursive: true });
-
-  const buildTextResult = await buildText({
-    scriptPath: sampleScriptPath,
-    runDir,
-    episodeId: "E01",
-    projectId: "introducing-rescript",
-    runId: "run-20260211-1234"
-  });
-
-  const projectResult = await buildProject({
-    voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
-    runDir,
-    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-    prefillQuery: "minimal",
-    ...explicitVoiceOverrides
-  });
-
-  const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
-  const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
-  assert.equal(projectJson.talk.audioKeys.length > 0, true);
-  const textUtteranceById = new Map(
-    textJson.utterances.map((utterance) => [utterance.utterance_id, utterance] as const)
-  );
-
-  for (const audioKey of projectJson.talk.audioKeys) {
-    const audioItem = projectJson.talk.audioItems[audioKey];
-    assert.ok(audioItem);
-    assert.ok(audioItem.query);
-    const utteranceId = audioKey.split("_").slice(1).join("_");
-    const sourceUtterance = textUtteranceById.get(utteranceId);
-    assert.ok(sourceUtterance);
-    assert.deepEqual(audioItem.query?.accentPhrases, []);
-    assert.equal(audioItem.query?.speedScale, 1);
-    assert.equal(audioItem.query?.pitchScale, 0);
-    assert.equal(audioItem.query?.intonationScale, 1);
-    assert.equal(audioItem.query?.volumeScale, 1);
-    assert.equal(audioItem.query?.pauseLengthScale, 1);
-    assert.equal(audioItem.query?.prePhonemeLength, 0.1);
-    assert.equal(audioItem.query?.postPhonemeLength, sourceUtterance.pause_length_ms / 1000);
-    assert.equal(audioItem.query?.outputSamplingRate, "engineDefault");
-    assert.equal(audioItem.query?.outputStereo, false);
-  }
 });
 
 test("build-text extracts speaker_key from line-head [speaker:<key>] tags", async () => {
@@ -520,32 +514,7 @@ test("build-project normalizes too-old appVersion to supported vvproj format ver
   assert.equal(projectJson.appVersion, "0.25.0");
 });
 
-test("build-project rejects unsupported prefill-query mode", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
-  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
-  await mkdir(runDir, { recursive: true });
-
-  const buildTextResult = await buildText({
-    scriptPath: sampleScriptPath,
-    runDir,
-    episodeId: "E01",
-    projectId: "introducing-rescript",
-    runId: "run-20260211-1234"
-  });
-
-  await assert.rejects(
-    () =>
-      buildProject({
-        voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
-        runDir,
-        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-        prefillQuery: "invalid" as "minimal"
-      }),
-    /Expected one of: none, minimal, engine/
-  );
-});
-
-test("build-project prefill-query=engine fills accentPhrases via VOICEVOX audio_query", async () => {
+test("build-project fills accentPhrases via VOICEVOX audio_query", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -606,7 +575,6 @@ test("build-project prefill-query=engine fills accentPhrases via VOICEVOX audio_
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-      prefillQuery: "engine",
       voicevoxApiUrl,
       ...explicitVoiceOverrides
     });
@@ -639,7 +607,7 @@ test("build-project prefill-query=engine fills accentPhrases via VOICEVOX audio_
   });
 });
 
-test("build-project prefill-query=engine supports snake_case audio_query response", async () => {
+test("build-project supports snake_case audio_query response", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -697,7 +665,6 @@ test("build-project prefill-query=engine supports snake_case audio_query respons
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-      prefillQuery: "engine",
       voicevoxApiUrl,
       ...explicitVoiceOverrides
     });
@@ -713,7 +680,7 @@ test("build-project prefill-query=engine supports snake_case audio_query respons
   });
 });
 
-test("build-project prefill-query=engine rejects empty accentPhrases from VOICEVOX audio_query", async () => {
+test("build-project rejects empty accentPhrases from VOICEVOX audio_query", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -755,7 +722,6 @@ test("build-project prefill-query=engine rejects empty accentPhrases from VOICEV
           voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
           runDir,
           profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-          prefillQuery: "engine",
           voicevoxApiUrl,
           ...explicitVoiceOverrides
         }),

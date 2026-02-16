@@ -23,15 +23,13 @@
    - どちらもない場合: profile の voice
    - `speaker_key` または `--character-key` を使う場合、`character map` が未設定だとエラー
 4. `song` は空トラック構成で最小値を埋める。
-5. `--prefill-query minimal` 指定時は `talk.audioItems[*].query` を profile の `queryDefaults`（未指定時は組み込み既定値）で事前埋めし、`postPhonemeLength` は Build Text `pause_length_ms` を秒換算して反映する。
-6. `--prefill-query engine` 指定時は VOICEVOX Engine `/audio_query` で `accentPhrases` を生成し、profile の `queryDefaults` と Build Text `pause_length_ms` を重ねて `query` を出力する（`--voicevox-url` 未指定時は `http://127.0.0.1:50021`）。
+5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` と Build Text `pause_length_ms` を重ねて `query` を出力する（`--voicevox-url` 未指定時は `http://127.0.0.1:50021`）。
 
 ## 実行
 
 ```bash
 bun run build-project -- \
-  --voicevox-text-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json \
-  --prefill-query engine
+  --voicevox-text-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json
 ```
 
 - `--run-dir` は任意（`--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論）。
