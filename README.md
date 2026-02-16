@@ -57,6 +57,7 @@
   - `--prefill-query engine` を指定すると VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を生成し、profile 既定値を重ねて出力する
 - Build Audio: Build Project `.vvproj` から VOICEVOX Engine API で WAV を自動生成
   - `audio/E##.wav` を出力（utteranceを連結した単一ファイル）
+  - 既定で `audio/E##.mp3`（128kbps）を自動生成
   - `audio/manifest.json` に voice 設定・出力先・実行結果を保存
 
 ## サンプルデータ
@@ -106,7 +107,9 @@ bun run build-project -- \
 # 5) Build Project `.vvproj` から VOICEVOX audio を生成（GUI操作不要）
 bun run build-audio -- \
   --vvproj projects/introducing-rescript/run-20260211-0000/voicevox_project/E01.vvproj \
-  --voicevox-url http://voicevox-engine:50021
+  --voicevox-url http://voicevox-engine:50021 \
+  --compressed-format mp3 \
+  --compressed-bitrate-kbps 128
 
 # Build Text + Build Project を連続実行
 bun run build-all -- \
@@ -166,6 +169,9 @@ bun src/cli/main.ts render-prompt \
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
 - `build-audio` は Build Project の `query`（手調整済み含む）を優先して `synthesis` を呼びます。`query` 未設定項目のみ `audio_query` で補完します。
 - `build-audio` は途中失敗があっても成功分を保持して `audio/manifest.json` に要約します。
+- `build-audio` は WAV 連結後に `ffmpeg` で圧縮音声を生成します（既定: `mp3` / `128kbps`）。
+- `build-audio` の圧縮設定は `--compressed-format mp3|m4a|ogg|none` と `--compressed-bitrate-kbps <num>` で上書きできます。
+- 圧縮を有効化する場合は `ffmpeg` が必要です。`--ffmpeg-path <path>` で実行ファイルの場所を明示できます。
 - `bun run prepare-run` は `blueprint` / `variables` / `script` を新 run に複製します。
 - `build-text` / `build-project` / `build-audio` / `build-all` の `--run-dir` は任意です。
   - `build-text` / `build-all`: `--script` が `.../run-.../script/...` 配下なら自動推論

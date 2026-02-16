@@ -18,7 +18,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-project":
     "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--prefill-query none|minimal|engine] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-audio":
-    "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>]",
+    "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
@@ -93,7 +93,10 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     const result = await buildAudio({
       stage5VvprojPath: ensureOption(options, "vvproj", "build-audio"),
       runDir: optionAsString(options, "run-dir"),
-      voicevoxApiUrl: optionAsString(options, "voicevox-url")
+      voicevoxApiUrl: optionAsString(options, "voicevox-url"),
+      compressedAudioFormat: optionAsString(options, "compressed-format"),
+      compressedAudioBitrateKbps: optionAsNumber(options, "compressed-bitrate-kbps"),
+      ffmpegPath: optionAsString(options, "ffmpeg-path")
     });
 
     console.log(
@@ -102,10 +105,15 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     if (result.mergedWavPath) {
       console.log(`- ${path.relative(process.cwd(), result.mergedWavPath)}`);
     }
+    if (result.compressedAudioPath) {
+      console.log(`- ${path.relative(process.cwd(), result.compressedAudioPath)}`);
+    }
     console.log(`- ${path.relative(process.cwd(), result.audioDir)}`);
     console.log(`- ${path.relative(process.cwd(), result.manifestPath)}`);
 
+    let hasError = false;
     if (result.failureCount > 0) {
+      hasError = true;
       console.log("Failed utterances:");
       for (const failure of result.failures) {
         console.log(
@@ -114,7 +122,19 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
           } ${failure.message}`
         );
       }
-      throw new Error(`build-audio failed for ${result.failureCount} utterance(s).`);
+    }
+
+    if (result.compression.status === "failed") {
+      hasError = true;
+      console.log(
+        `Compressed audio conversion failed (${result.compression.format}): ${result.compression.error ?? "unknown error"}`
+      );
+    }
+
+    if (hasError) {
+      throw new Error(
+        `build-audio failed (utterance failures=${result.failureCount}, compression=${result.compression.status}).`
+      );
     }
   },
   "build-all": async (options) => {

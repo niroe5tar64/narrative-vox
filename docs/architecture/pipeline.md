@@ -37,7 +37,7 @@ flowchart TB
     C3["build-audio<br/>bun run build-audio"]
     O4["voicevox_text/E##_voicevox_text.json<br/>voicevox_text/E##_voicevox.txt<br/>dict_candidates/E##_dict_candidates.csv"]
     O5["voicevox_project/E##_voicevox_import.json<br/>voicevox_project/E##.vvproj"]
-    O6["audio/E##.wav<br/>audio/manifest.json"]
+    O6["audio/E##.wav<br/>audio/E##.mp3 (default)<br/>audio/manifest.json"]
     C0 --> C1
     C1 --> O4
     O4 --> C2
@@ -87,6 +87,7 @@ flowchart TB
 | `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | `default_profile.json` 未作成時のフォールバック |
 | `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（`speaker_key` / `--character-key` 利用時は必須） |
 | `--voicevox-url` / `VOICEVOX_URL` | `build-project`/`build-audio` | CLI操作前提 | VOICEVOX Engine接続先を指定 |
+| `ffmpeg` (`--ffmpeg-path`) | `build-audio` | CLI操作前提 | WAV を mp3/m4a/ogg へ圧縮変換 |
 | `scripts/voicevox-up.sh` など | Engine起動/疎通確認 | CLI操作前提 | Docker上のVOICEVOX Engine運用補助 |
 
 補足:
@@ -100,7 +101,7 @@ flowchart TB
 | `render-prompt` | `--genre`, `--step`, `--book-config` | なし（`variables` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
 | `build-text` | `--script script/E##_script.md` | `--run-dir` は `.../run-.../script/...` なら推論。`--episode-id` 未指定時はファイル名 `E##_script.md` から推論。 | `voicevox_text/*.json`, `voicevox_text/*.txt`, `dict_candidates/*.csv` |
 | `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。profileは `default_profile.json` を優先し、なければ `.example.json`。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj` |
-| `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。 | `audio/E##.wav`, `audio/manifest.json` |
+| `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。圧縮は `--compressed-format` / `--compressed-bitrate-kbps` で変更可。 | `audio/E##.wav`, `audio/E##.(mp3|m4a|ogg)`, `audio/manifest.json` |
 
 ## 現状ステータス
 

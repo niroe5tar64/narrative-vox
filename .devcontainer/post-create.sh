@@ -12,7 +12,7 @@ sudo chown -R $(id -u):$(id -g) ~/.claude ~/.codex 2>/dev/null || true
 
 # Update system packages
 sudo apt-get update
-sudo apt-get install -y vim tree jq unzip
+sudo apt-get install -y vim tree jq unzip ffmpeg
 
 # Install bun
 curl -fsSL https://bun.sh/install | bash

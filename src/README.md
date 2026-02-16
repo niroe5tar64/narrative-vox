@@ -7,6 +7,6 @@
 - `src/cli/main.ts`
   - `build-text`: script -> voicevox text
   - `build-project`: voicevox_text json -> vvproj
-  - `build-audio`: vvproj -> wav/audio manifest
+  - `build-audio`: vvproj -> wav + compressed audio/audio manifest
   - `build-all`: build-text + build-project
   - `check-run`: blueprint/variables/script validation

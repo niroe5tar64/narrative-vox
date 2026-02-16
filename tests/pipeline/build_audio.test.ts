@@ -1,6 +1,6 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createServer } from "node:http";
@@ -26,9 +26,18 @@ interface BuildAudioManifest {
     retry_max_attempts: number;
     retry_base_delay_ms: number;
     request_timeout_ms: number;
+    compressed_audio: {
+      format: "none" | "mp3" | "m4a" | "ogg";
+      bitrate_kbps?: number;
+    };
   };
   output: {
     merged_wav_path?: string;
+    compressed_audio_path?: string;
+  };
+  compression: {
+    status: "disabled" | "skipped" | "succeeded" | "failed";
+    error?: string;
   };
   utterances: Array<{
     audio_key: string;
@@ -248,6 +257,46 @@ function respondHealthCheck(req: IncomingMessage, res: ServerResponse): boolean 
   return false;
 }
 
+async function buildAudioWithoutCompression(
+  options: Parameters<typeof buildAudio>[0]
+): Promise<Awaited<ReturnType<typeof buildAudio>>> {
+  return await buildAudio({
+    ...options,
+    compressedAudioFormat: "none"
+  });
+}
+
+async function createMockFfmpegScript(params?: {
+  mode?: "success" | "failure";
+  stderr?: string;
+}): Promise<string> {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-ffmpeg-test-"));
+  const scriptPath = path.join(tempRoot, "mock-ffmpeg.sh");
+  const mode = params?.mode ?? "success";
+  const stderr = params?.stderr ?? "mock ffmpeg error";
+  const script =
+    mode === "success"
+      ? `#!/usr/bin/env bash
+set -euo pipefail
+input=""
+for ((i=1; i<=$#; i++)); do
+  if [ "\${!i}" = "-i" ]; then
+    j=$((i + 1))
+    input="\${!j}"
+  fi
+done
+output="\${!#}"
+cp "$input" "$output"
+`
+      : `#!/usr/bin/env bash
+echo "${stderr}" >&2
+exit 1
+`;
+  await writeFile(scriptPath, script, "utf-8");
+  await chmod(scriptPath, 0o755);
+  return scriptPath;
+}
+
 test("build-audio uses stage5 query directly when present", async () => {
   const { runDir, stage5VvprojPath, query } = await createStage5Fixture(true);
 
@@ -293,7 +342,7 @@ test("build-audio uses stage5 query directly when present", async () => {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const result = await buildAudio({
+    const result = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -344,7 +393,7 @@ test("build-audio falls back to audio_query when stage5 query is missing", async
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const result = await buildAudio({
+    const result = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -391,7 +440,7 @@ test("build-audio retries 5xx and eventually succeeds", async () => {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const result = await buildAudio({
+    const result = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -425,7 +474,7 @@ test("build-audio does not retry 4xx and records failure in manifest", async () 
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const result = await buildAudio({
+    const result = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -462,14 +511,14 @@ test("build-audio manifest keeps major values stable for same input", async () =
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const first = await buildAudio({
+    const first = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
     });
     const firstManifest = JSON.parse(await readFile(first.manifestPath, "utf-8")) as BuildAudioManifest;
 
-    const second = await buildAudio({
+    const second = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -518,7 +567,7 @@ test("build-audio outputs one merged wav for multiple utterances", async () => {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "not found" }));
   }, async (voicevoxApiUrl) => {
-    const result = await buildAudio({
+    const result = await buildAudioWithoutCompression({
       stage5VvprojPath,
       runDir,
       voicevoxApiUrl
@@ -536,5 +585,90 @@ test("build-audio outputs one merged wav for multiple utterances", async () => {
     assert.equal(manifest.output.merged_wav_path, path.join("audio", "E01.wav"));
     assert.equal(manifest.utterances[0]?.wav_path, path.join("audio", "E01.wav"));
     assert.equal(manifest.utterances[1]?.wav_path, path.join("audio", "E01.wav"));
+  });
+});
+
+test("build-audio converts merged wav to mp3 when ffmpeg succeeds", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5Fixture(true);
+  const ffmpegPath = await createMockFfmpegScript();
+
+  await withMockVoicevoxServer((req, res) => {
+    if (respondHealthCheck(req, res)) {
+      return;
+    }
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+
+    if (req.method === "POST" && requestUrl.pathname === "/synthesis") {
+      res.writeHead(200, { "content-type": "audio/wav" });
+      res.end(buildMockWav([11, 22, 33, 44]));
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not found" }));
+  }, async (voicevoxApiUrl) => {
+    const result = await buildAudio({
+      stage5VvprojPath,
+      runDir,
+      voicevoxApiUrl,
+      compressedAudioFormat: "mp3",
+      compressedAudioBitrateKbps: 96,
+      ffmpegPath
+    });
+
+    assert.equal(result.failureCount, 0);
+    assert.equal(result.compression.status, "succeeded");
+    assert.equal(path.extname(result.compressedAudioPath ?? ""), ".mp3");
+
+    const manifest = JSON.parse(await readFile(result.manifestPath, "utf-8")) as BuildAudioManifest;
+    assert.equal(manifest.parameters.compressed_audio.format, "mp3");
+    assert.equal(manifest.parameters.compressed_audio.bitrate_kbps, 96);
+    assert.equal(manifest.compression.status, "succeeded");
+    assert.equal(manifest.output.compressed_audio_path, path.join("audio", "E01.mp3"));
+    const compressed = await readFile(path.join(runDir, "audio", "E01.mp3"));
+    assert.equal(compressed.length > 0, true);
+  });
+});
+
+test("build-audio records compression failure when ffmpeg exits with error", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5Fixture(true);
+  const ffmpegPath = await createMockFfmpegScript({
+    mode: "failure",
+    stderr: "mocked ffmpeg failure"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    if (respondHealthCheck(req, res)) {
+      return;
+    }
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+
+    if (req.method === "POST" && requestUrl.pathname === "/synthesis") {
+      res.writeHead(200, { "content-type": "audio/wav" });
+      res.end(buildMockWav([11, 22, 33, 44]));
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not found" }));
+  }, async (voicevoxApiUrl) => {
+    const result = await buildAudio({
+      stage5VvprojPath,
+      runDir,
+      voicevoxApiUrl,
+      compressedAudioFormat: "mp3",
+      compressedAudioBitrateKbps: 128,
+      ffmpegPath
+    });
+
+    assert.equal(result.failureCount, 0);
+    assert.equal(result.compression.status, "failed");
+    assert.equal(result.compression.error?.includes("ffmpeg conversion failed"), true);
+
+    const manifest = JSON.parse(await readFile(result.manifestPath, "utf-8")) as BuildAudioManifest;
+    assert.equal(manifest.summary.failed, 0);
+    assert.equal(manifest.compression.status, "failed");
+    assert.equal(manifest.compression.error?.includes("mocked ffmpeg failure"), true);
+    assert.equal(manifest.output.compressed_audio_path, undefined);
   });
 });

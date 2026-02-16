@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import { mkdir, readdir, rm, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { SchemaPaths } from "../shared/schema_paths.ts";
@@ -33,6 +34,9 @@ interface BuildAudioOptions {
   stage5VvprojPath: string;
   runDir?: string;
   voicevoxApiUrl?: string;
+  compressedAudioFormat?: string;
+  compressedAudioBitrateKbps?: number;
+  ffmpegPath?: string;
 }
 
 interface BuildAudioFailure {
@@ -44,15 +48,28 @@ interface BuildAudioFailure {
   retriable: boolean;
 }
 
+type CompressedAudioFormat = "none" | "mp3" | "m4a" | "ogg";
+type CompressionStatus = "disabled" | "skipped" | "succeeded" | "failed";
+
+interface BuildAudioCompressionResult {
+  format: CompressedAudioFormat;
+  bitrateKbps?: number;
+  status: CompressionStatus;
+  compressedAudioPath?: string;
+  error?: string;
+}
+
 interface BuildAudioResult {
   manifestPath: string;
   audioDir: string;
   mergedWavPath?: string;
+  compressedAudioPath?: string;
   episodeId: string;
   utteranceCount: number;
   successCount: number;
   failureCount: number;
   failures: BuildAudioFailure[];
+  compression: BuildAudioCompressionResult;
 }
 
 interface BuildAudioManifestEntry {
@@ -95,9 +112,18 @@ interface BuildAudioManifest {
     retry_max_attempts: number;
     retry_base_delay_ms: number;
     request_timeout_ms: number;
+    compressed_audio: {
+      format: CompressedAudioFormat;
+      bitrate_kbps?: number;
+    };
   };
   output: {
     merged_wav_path?: string;
+    compressed_audio_path?: string;
+  };
+  compression: {
+    status: CompressionStatus;
+    error?: string;
   };
   utterances: BuildAudioManifestEntry[];
   summary: {
@@ -116,6 +142,86 @@ interface ParsedWav {
   byteRate: number;
   blockAlign: number;
   bitsPerSample: number;
+}
+
+const DEFAULT_COMPRESSED_AUDIO_FORMAT: CompressedAudioFormat = "mp3";
+const DEFAULT_COMPRESSED_AUDIO_BITRATE_KBPS = 128;
+const DEFAULT_FFMPEG_PATH = "ffmpeg";
+
+function normalizeCompressedAudioFormat(value?: string): CompressedAudioFormat {
+  if (!value) {
+    return DEFAULT_COMPRESSED_AUDIO_FORMAT;
+  }
+  if (value === "none" || value === "mp3" || value === "m4a" || value === "ogg") {
+    return value;
+  }
+  throw new Error(
+    `Invalid --compressed-format: ${value}. Expected one of: none, mp3, m4a, ogg`
+  );
+}
+
+function normalizeCompressedAudioBitrateKbps(value?: number): number {
+  if (value === undefined) {
+    return DEFAULT_COMPRESSED_AUDIO_BITRATE_KBPS;
+  }
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(
+      `Invalid --compressed-bitrate-kbps: ${value}. Expected a positive number.`
+    );
+  }
+  return Math.round(value);
+}
+
+function codecArgsByFormat(
+  format: Exclude<CompressedAudioFormat, "none">,
+  bitrateKbps: number
+): string[] {
+  if (format === "mp3") {
+    return ["-vn", "-codec:a", "libmp3lame", "-b:a", `${bitrateKbps}k`];
+  }
+  if (format === "m4a") {
+    return [
+      "-vn",
+      "-codec:a",
+      "aac",
+      "-b:a",
+      `${bitrateKbps}k`,
+      "-movflags",
+      "+faststart"
+    ];
+  }
+  return ["-vn", "-codec:a", "libvorbis", "-b:a", `${bitrateKbps}k`];
+}
+
+async function convertWavToCompressedAudio(params: {
+  ffmpegPath: string;
+  inputWavPath: string;
+  outputPath: string;
+  format: Exclude<CompressedAudioFormat, "none">;
+  bitrateKbps: number;
+}): Promise<void> {
+  const args = [
+    "-y",
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-i",
+    params.inputWavPath,
+    ...codecArgsByFormat(params.format, params.bitrateKbps),
+    params.outputPath
+  ];
+
+  await new Promise<void>((resolve, reject) => {
+    execFile(params.ffmpegPath, args, { encoding: "utf-8" }, (error, _stdout, stderr) => {
+      if (!error) {
+        resolve();
+        return;
+      }
+      const cause = error instanceof Error ? error.message : String(error);
+      const detail = typeof stderr === "string" && stderr.trim() ? ` ${stderr.trim()}` : "";
+      reject(new Error(`ffmpeg conversion failed: ${cause}.${detail}`));
+    });
+  });
 }
 
 function readAscii(buffer: Uint8Array, start: number, end: number): string {
@@ -289,7 +395,12 @@ function toFailure(
 
 async function cleanupEpisodeAudioOutputs(audioDir: string, episodeId: string): Promise<void> {
   const entries = await readdir(audioDir, { withFileTypes: true });
-  const fileNamesToDelete = new Set<string>([`${episodeId}.wav`]);
+  const fileNamesToDelete = new Set<string>([
+    `${episodeId}.wav`,
+    `${episodeId}.mp3`,
+    `${episodeId}.m4a`,
+    `${episodeId}.ogg`
+  ]);
 
   for (const entry of entries) {
     if (!entry.isFile()) {
@@ -318,7 +429,10 @@ async function cleanupEpisodeAudioOutputs(audioDir: string, episodeId: string): 
 export async function buildAudio({
   stage5VvprojPath,
   runDir,
-  voicevoxApiUrl
+  voicevoxApiUrl,
+  compressedAudioFormat,
+  compressedAudioBitrateKbps,
+  ffmpegPath
 }: BuildAudioOptions): Promise<BuildAudioResult> {
   const resolvedStage5VvprojPath = path.resolve(stage5VvprojPath);
   const inferredRunDir = runDir
@@ -331,6 +445,12 @@ export async function buildAudio({
   }
   const resolvedRunDir = inferredRunDir;
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
+  const resolvedCompressedFormat = normalizeCompressedAudioFormat(compressedAudioFormat);
+  const resolvedBitrateKbps =
+    resolvedCompressedFormat === "none"
+      ? undefined
+      : normalizeCompressedAudioBitrateKbps(compressedAudioBitrateKbps);
+  const resolvedFfmpegPath = ffmpegPath || DEFAULT_FFMPEG_PATH;
 
   const stage5Data = await loadJson<Stage5VoicevoxProjectData>(
     resolvedStage5VvprojPath,
@@ -453,9 +573,34 @@ export async function buildAudio({
 
   const successCount = manifestEntries.filter((entry) => entry.status === "succeeded").length;
   const failureCount = failures.length;
+  let compressedAudioRelativePath: string | undefined = undefined;
+  let compressedAudioPath: string | undefined = undefined;
+  let compressionStatus: CompressionStatus =
+    resolvedCompressedFormat === "none" ? "disabled" : "skipped";
+  let compressionError: string | undefined = undefined;
+
   if (successfulWavSegments.length > 0) {
     const mergedWavData = concatWavSegments(successfulWavSegments);
     await writeFile(mergedWavPath, Buffer.from(mergedWavData));
+
+    if (resolvedCompressedFormat !== "none" && resolvedBitrateKbps !== undefined) {
+      compressedAudioRelativePath = path.join("audio", `${episodeId}.${resolvedCompressedFormat}`);
+      compressedAudioPath = path.join(resolvedRunDir, compressedAudioRelativePath);
+      try {
+        await convertWavToCompressedAudio({
+          ffmpegPath: resolvedFfmpegPath,
+          inputWavPath: mergedWavPath,
+          outputPath: compressedAudioPath,
+          format: resolvedCompressedFormat,
+          bitrateKbps: resolvedBitrateKbps
+        });
+        compressionStatus = "succeeded";
+      } catch (error) {
+        compressionStatus = "failed";
+        compressionError =
+          error instanceof Error ? error.message : `Unknown compression error: ${String(error)}`;
+      }
+    }
   }
 
   const manifest: BuildAudioManifest = {
@@ -474,10 +619,21 @@ export async function buildAudio({
     parameters: {
       retry_max_attempts: DEFAULT_VOICEVOX_RETRY_CONFIG.maxAttempts,
       retry_base_delay_ms: DEFAULT_VOICEVOX_RETRY_CONFIG.baseDelayMs,
-      request_timeout_ms: DEFAULT_VOICEVOX_RETRY_CONFIG.timeoutMs
+      request_timeout_ms: DEFAULT_VOICEVOX_RETRY_CONFIG.timeoutMs,
+      compressed_audio: {
+        format: resolvedCompressedFormat,
+        ...(resolvedBitrateKbps ? { bitrate_kbps: resolvedBitrateKbps } : {})
+      }
     },
     output: {
-      ...(successfulWavSegments.length > 0 ? { merged_wav_path: mergedWavRelativePath } : {})
+      ...(successfulWavSegments.length > 0 ? { merged_wav_path: mergedWavRelativePath } : {}),
+      ...(compressionStatus === "succeeded" && compressedAudioRelativePath
+        ? { compressed_audio_path: compressedAudioRelativePath }
+        : {})
+    },
+    compression: {
+      status: compressionStatus,
+      ...(compressionStatus === "failed" && compressionError ? { error: compressionError } : {})
     },
     utterances: manifestEntries,
     summary: {
@@ -494,10 +650,20 @@ export async function buildAudio({
     manifestPath,
     audioDir,
     ...(successfulWavSegments.length > 0 ? { mergedWavPath } : {}),
+    ...(compressionStatus === "succeeded" && compressedAudioPath ? { compressedAudioPath } : {}),
     episodeId,
     utteranceCount: stage5Data.talk.audioKeys.length,
     successCount,
     failureCount,
-    failures
+    failures,
+    compression: {
+      format: resolvedCompressedFormat,
+      ...(resolvedBitrateKbps ? { bitrateKbps: resolvedBitrateKbps } : {}),
+      status: compressionStatus,
+      ...(compressionStatus === "succeeded" && compressedAudioPath
+        ? { compressedAudioPath }
+        : {}),
+      ...(compressionStatus === "failed" && compressionError ? { error: compressionError } : {})
+    }
   };
 }
