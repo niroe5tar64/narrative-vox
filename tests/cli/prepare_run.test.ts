@@ -44,13 +44,13 @@ test("cloneRunDirectories copies blueprint/variables/script into target run", as
   await mkdir(path.join(sourceRunDir, "variables"), { recursive: true });
   await mkdir(path.join(sourceRunDir, "script"), { recursive: true });
 
-  await writeFile(path.join(sourceRunDir, "blueprint", "book_blueprint.json"), '{"ok":true}\n', "utf-8");
+  await writeFile(path.join(sourceRunDir, "blueprint", "project_blueprint.json"), '{"ok":true}\n', "utf-8");
   await writeFile(path.join(sourceRunDir, "variables", "E01_variables.json"), '{"ok":true}\n', "utf-8");
   await writeFile(path.join(sourceRunDir, "script", "E01_script.md"), "1. 見出し\n本文\n", "utf-8");
 
   await cloneRunDirectories({ sourceRunDir, runDir });
 
-  const blueprint = await readFile(path.join(runDir, "blueprint", "book_blueprint.json"), "utf-8");
+  const blueprint = await readFile(path.join(runDir, "blueprint", "project_blueprint.json"), "utf-8");
   const variables = await readFile(path.join(runDir, "variables", "E01_variables.json"), "utf-8");
   const script = await readFile(path.join(runDir, "script", "E01_script.md"), "utf-8");
   assert.equal(blueprint, '{"ok":true}\n');

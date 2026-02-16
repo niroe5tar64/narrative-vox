@@ -17,7 +17,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "book_title",
+        "project_title",
         "episode_id",
         "episode_title",
         "chapter_theme",
@@ -29,7 +29,7 @@
         "comparison_mode"
       ],
       "properties": {
-        "book_title": {
+        "project_title": {
           "type": "string",
           "minLength": 1
         },

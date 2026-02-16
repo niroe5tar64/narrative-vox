@@ -9,22 +9,22 @@
 - `prompts/study/script_common_frame.md`
 - `prompts/study/build_text.md`
 - `prompts/study/build_project.md`
-- `configs/books/<book-id>.json`
-- `configs/books/<book-id>.example.json`
+- `configs/projects/<project-id>.json`
+- `configs/projects/<project-id>.example.json`
 
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/books/<book-id>.json`
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/blueprint/book_blueprint.json`
+- 入力: `blueprint.md` + `configs/projects/<project-id>.json`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Variables
 - 入力: `episode_variables.md` + Blueprint 出力 + `EPISODE_ID`
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
 
 3. Script
 - 入力: `script_common_frame.md` + Episode Variables 出力
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text (script -> voicevox text)
 - 入力: `script/E##_script.md`
@@ -38,33 +38,33 @@
 - 出力: `voicevox_project/E##.vvproj`
 
 6. 品質確認
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/reports/quality_gate_report.md`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/reports/quality_gate_report.md`
 
 ## 補助指示
 
 各Phaseの末尾に以下を付けると安定します。
 
-`上記Prompt内の {{PLACEHOLDER}} は、添付したbook-config JSONの同名キーで解決してから実行してください。`
+`上記Prompt内の {{PLACEHOLDER}} は、添付したproject-config JSONの同名キーで解決してから実行してください。`
 
 Episode Variablesで回を切り替える場合は以下を追加します。
 
 `今回は EPISODE_ID=E02 として実行してください。`
 
-## 必須キー（book config）
+## 必須キー（project config）
 
-- `BOOK_ID`
+- `PROJECT_ID`
 - `GENRE`
-- `BOOK_TITLE`
+- `PROJECT_TITLE`
 - `SOURCE_MARKDOWN_PATHS`
 - `AUDIENCE_BACKGROUND`
 - `AUDIENCE_LEVEL`
 - `AUDIENCE_INTEREST`
 - `BASELINE_CONTEXT_OR_EMPTY`
 - `EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY`
-- `BOOK_BLUEPRINT_JSON_PATH`
+- `PROJECT_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
 
-推奨: 初期作成は `configs/books/<book-id>.example.json` をコピーして `configs/books/<book-id>.json` を作る。
+推奨: 初期作成は `configs/projects/<project-id>.example.json` をコピーして `configs/projects/<project-id>.json` を作る。
 
 ## CLI 実行例（Build Text/Project）
 
@@ -73,7 +73,7 @@ Episode Variablesで回を切り替える場合は以下を追加します。
 bun src/cli/main.ts render-prompt -- \
   --genre study \
   --step blueprint \
-  --book-config configs/books/introducing-rescript.example.json
+  --project-config configs/projects/introducing-rescript.example.json
 
 # Build Text + Build Project
 bun run build-all -- \

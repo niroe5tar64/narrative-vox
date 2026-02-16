@@ -12,7 +12,7 @@
 
 ### 入力
 
-- Blueprint JSON: `{{BOOK_BLUEPRINT_JSON_PATH}}`
+- Blueprint JSON: `{{PROJECT_BLUEPRINT_JSON_PATH}}`
 - 対象エピソードID: `{{EPISODE_ID}}`
 - リポジトリルートパス: `{{REPO_ROOT_PATH}}`
 - 深掘りフォーカス: `{{DEEP_DIVE_FOCUS}}`
@@ -67,7 +67,7 @@
 ```json
 {
   "meta": {
-    "book_title": "",
+    "project_title": "",
     "episode_id": "{{EPISODE_ID}}",
     "episode_title": "",
     "chapter_theme": "",

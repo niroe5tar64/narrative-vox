@@ -7,7 +7,7 @@ import {
   resolvePromptTemplatePath,
 } from "../../src/cli/render_prompt.ts";
 
-const sampleBookConfigPath = path.resolve("configs/books/introducing-rescript.example.json");
+const sampleProjectConfigPath = path.resolve("configs/projects/introducing-rescript.example.json");
 
 describe("resolvePromptTemplatePath", () => {
   test("returns correct path for genre+step", () => {
@@ -26,7 +26,7 @@ describe("resolvePromptTemplatePath", () => {
 });
 
 describe("resolvePromptTemplate", () => {
-  test("resolves {{BOOK_TITLE}} from config", () => {
+  test("resolves {{PROJECT_TITLE}} from config", () => {
     const template = [
       "# Preamble",
       "",
@@ -34,10 +34,10 @@ describe("resolvePromptTemplate", () => {
       "",
       "## Prompt",
       "",
-      "Book: {{BOOK_TITLE}}",
+      "Book: {{PROJECT_TITLE}}",
     ].join("\n");
 
-    const config = { BOOK_TITLE: "My Book" };
+    const config = { PROJECT_TITLE: "My Book" };
     const result = resolvePromptTemplate(template, config);
 
     assert.ok(result.resolvedPrompt.includes("Book: My Book"));
@@ -50,13 +50,13 @@ describe("resolvePromptTemplate", () => {
       "",
       "## Prompt",
       "",
-      "- Title: {{BOOK_TITLE}}",
+      "- Title: {{PROJECT_TITLE}}",
       "- Episode: {{EPISODE_ID}}",
       "- Audience: {{AUDIENCE_BACKGROUND}}",
     ].join("\n");
 
     const config = {
-      BOOK_TITLE: "Test Book",
+      PROJECT_TITLE: "Test Book",
       EPISODE_ID: "E03",
       AUDIENCE_BACKGROUND: "JS devs",
     };
@@ -87,18 +87,18 @@ describe("resolvePromptTemplate", () => {
     const template = [
       "## Prompt",
       "",
-      "Resolve this: {{BOOK_TITLE}}",
+      "Resolve this: {{PROJECT_TITLE}}",
       "",
       "```json",
       '{',
-      '  "title": "{{BOOK_TITLE}}"',
+      '  "title": "{{PROJECT_TITLE}}"',
       '}',
       "```",
       "",
       "Also resolve: {{EPISODE_ID}}",
     ].join("\n");
 
-    const config = { BOOK_TITLE: "Resolved Title", EPISODE_ID: "E05" };
+    const config = { PROJECT_TITLE: "Resolved Title", EPISODE_ID: "E05" };
     const result = resolvePromptTemplate(template, config);
 
     // Outside code block: resolved
@@ -106,13 +106,13 @@ describe("resolvePromptTemplate", () => {
     assert.ok(result.resolvedPrompt.includes("Also resolve: E05"));
 
     // Inside code block: NOT resolved
-    assert.ok(result.resolvedPrompt.includes('"title": "{{BOOK_TITLE}}"'));
+    assert.ok(result.resolvedPrompt.includes('"title": "{{PROJECT_TITLE}}"'));
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
   test("does not resolve placeholders in preamble before ## Prompt", () => {
     const template = [
-      "# Header {{BOOK_TITLE}}",
+      "# Header {{PROJECT_TITLE}}",
       "",
       "Preamble text {{EPISODE_ID}}",
       "",
@@ -120,14 +120,14 @@ describe("resolvePromptTemplate", () => {
       "",
       "## Prompt",
       "",
-      "Body: {{BOOK_TITLE}}",
+      "Body: {{PROJECT_TITLE}}",
     ].join("\n");
 
-    const config = { BOOK_TITLE: "Resolved", EPISODE_ID: "E01" };
+    const config = { PROJECT_TITLE: "Resolved", EPISODE_ID: "E01" };
     const result = resolvePromptTemplate(template, config);
 
     // Preamble should be untouched
-    assert.ok(result.resolvedPrompt.includes("# Header {{BOOK_TITLE}}"));
+    assert.ok(result.resolvedPrompt.includes("# Header {{PROJECT_TITLE}}"));
     assert.ok(result.resolvedPrompt.includes("Preamble text {{EPISODE_ID}}"));
     // Prompt section should be resolved
     assert.ok(result.resolvedPrompt.includes("Body: Resolved"));
@@ -135,11 +135,11 @@ describe("resolvePromptTemplate", () => {
 });
 
 describe("renderPrompt", () => {
-  test("resolves blueprint template with book config", async () => {
+  test("resolves blueprint template with project config", async () => {
     const result = await renderPrompt({
       genre: "study",
       step: "blueprint",
-      bookConfigPath: sampleBookConfigPath,
+      projectConfigPath: sampleProjectConfigPath,
     });
 
     assert.ok(result.resolvedPrompt.includes("Introducing ReScript"));
@@ -147,11 +147,11 @@ describe("renderPrompt", () => {
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
-  test("resolves variables template with book config and episodeId override", async () => {
+  test("resolves variables template with project config and episodeId override", async () => {
     const result = await renderPrompt({
       genre: "study",
       step: "variables",
-      bookConfigPath: sampleBookConfigPath,
+      projectConfigPath: sampleProjectConfigPath,
       episodeId: "E99",
     });
 
@@ -165,14 +165,14 @@ describe("renderPrompt", () => {
   test("throws on unresolved placeholder", async () => {
     // Create a minimal config that is missing required keys
     const { writeFile, unlink } = await import("node:fs/promises");
-    const tmpConfig = path.resolve("configs/books/_test_incomplete.json");
-    await writeFile(tmpConfig, JSON.stringify({ GENRE: "study", BOOK_TITLE: "Test" }));
+    const tmpConfig = path.resolve("configs/projects/_test_incomplete.json");
+    await writeFile(tmpConfig, JSON.stringify({ GENRE: "study", PROJECT_TITLE: "Test" }));
     try {
       await assert.rejects(
         () => renderPrompt({
           genre: "study",
           step: "blueprint",
-          bookConfigPath: tmpConfig,
+          projectConfigPath: tmpConfig,
         }),
         /Unresolved placeholders/
       );

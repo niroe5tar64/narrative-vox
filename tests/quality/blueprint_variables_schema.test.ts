@@ -12,7 +12,7 @@ async function loadJson<T>(filePath: string): Promise<T> {
 }
 
 test("blueprint sample matches schema", async () => {
-  const blueprintPath = path.join(sampleRunDir, "blueprint", "book_blueprint.json");
+  const blueprintPath = path.join(sampleRunDir, "blueprint", "project_blueprint.json");
   const schemaPath = path.resolve("schemas/blueprint.schema.json");
   const data = await loadJson<unknown>(blueprintPath);
 

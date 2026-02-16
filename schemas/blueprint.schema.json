@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://narrative-vox/schemas/stage1.book-blueprint.schema.json",
-  "title": "Stage1 Book Blueprint",
+  "$id": "https://narrative-vox/schemas/stage1.project-blueprint.schema.json",
+  "title": "Stage1 Project Blueprint",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "meta",
-    "book_intent",
+    "project_intent",
     "theme_catalog",
     "episode_plan",
     "coverage_matrix",
@@ -18,7 +18,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "book_title",
+        "project_title",
         "audience_background",
         "audience_level",
         "audience_interest",
@@ -27,7 +27,7 @@
         "episode_duration_target"
       ],
       "properties": {
-        "book_title": {
+        "project_title": {
           "type": "string",
           "minLength": 1
         },
@@ -52,7 +52,7 @@
         }
       }
     },
-    "book_intent": {
+    "project_intent": {
       "type": "object",
       "additionalProperties": false,
       "required": [

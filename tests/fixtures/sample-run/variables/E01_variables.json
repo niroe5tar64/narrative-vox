@@ -1,6 +1,6 @@
 {
   "meta": {
-    "book_title": "Introducing ReScript: Functional Programming for Web Applications",
+    "project_title": "Introducing ReScript: Functional Programming for Web Applications",
     "episode_id": "E01",
     "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
     "chapter_theme": "ReScript基礎意味論と型安全",

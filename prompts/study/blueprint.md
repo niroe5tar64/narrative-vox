@@ -12,7 +12,7 @@
 
 ### 入力
 
-- 書籍タイトル: `{{BOOK_TITLE}}`
+- タイトル: `{{PROJECT_TITLE}}`
 - 参照Markdown: `{{SOURCE_MARKDOWN_PATHS}}`
 - 想定リスナー:
   - 背景: `{{AUDIENCE_BACKGROUND}}`
@@ -38,7 +38,7 @@
 ```json
 {
   "meta": {
-    "book_title": "{{BOOK_TITLE}}",
+    "project_title": "{{PROJECT_TITLE}}",
     "audience_background": "{{AUDIENCE_BACKGROUND}}",
     "audience_level": "{{AUDIENCE_LEVEL}}",
     "audience_interest": "{{AUDIENCE_INTEREST}}",
@@ -46,7 +46,7 @@
     "existing_audio_script_dir_or_empty": "{{EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}}",
     "episode_duration_target": "10-12min"
   },
-  "book_intent": {
+  "project_intent": {
     "primary_message": "",
     "learning_outcomes": [
       "outcome_1",

@@ -7,7 +7,7 @@ const blueprintPromptPath = path.resolve("prompts/study/blueprint.md");
 const variablesPromptPath = path.resolve("prompts/study/episode_variables.md");
 const scriptPromptPath = path.resolve("prompts/study/script_common_frame.md");
 const studyReadmePath = path.resolve("prompts/study/README.md");
-const sampleBookConfigPath = path.resolve("configs/books/introducing-rescript.example.json");
+const sampleProjectConfigPath = path.resolve("configs/projects/introducing-rescript.example.json");
 
 const retiredStage2Aliases = [
   "SOURCE_MARKDOWN_PATHS_OR_EMPTY",
@@ -64,19 +64,19 @@ test("study README key definitions are consistent with variables prompt naming",
   }
 });
 
-test("book config has GENRE field", async () => {
-  const configRaw = await readFile(sampleBookConfigPath, "utf-8");
+test("project config has GENRE field", async () => {
+  const configRaw = await readFile(sampleProjectConfigPath, "utf-8");
   const config = JSON.parse(configRaw) as Record<string, unknown>;
   assert.equal(typeof config.GENRE, "string", "GENRE field must be a string");
   assert.ok((config.GENRE as string).length > 0, "GENRE field must not be empty");
 });
 
-test("blueprint/variables/script prompt placeholders can be resolved with sample book config", async () => {
+test("blueprint/variables/script prompt placeholders can be resolved with sample project config", async () => {
   const [stage1Raw, stage2Raw, stage3Raw, configRaw] = await Promise.all([
     readFile(blueprintPromptPath, "utf-8"),
     readFile(variablesPromptPath, "utf-8"),
     readFile(scriptPromptPath, "utf-8"),
-    readFile(sampleBookConfigPath, "utf-8")
+    readFile(sampleProjectConfigPath, "utf-8")
   ]);
 
   const config = JSON.parse(configRaw) as Record<string, unknown>;

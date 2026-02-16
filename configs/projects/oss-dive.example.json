@@ -1,7 +1,7 @@
 {
   "GENRE": "oss-dive",
-  "BOOK_ID": "example-oss-project",
-  "BOOK_TITLE": "Deep Dive: Example OSS Project",
+  "PROJECT_ID": "example-oss-project",
+  "PROJECT_TITLE": "Deep Dive: Example OSS Project",
   "REPO_ROOT_PATH": "inputs/repos/example-oss-project",
   "DEEP_DIVE_FOCUS": "アーキテクチャと設計思想",
   "SOURCE_MARKDOWN_PATHS": "",
@@ -10,9 +10,9 @@
   "AUDIENCE_INTEREST": "設計思想、アーキテクチャパターン、実務での活用判断",
   "BASELINE_CONTEXT_OR_EMPTY": "",
   "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": "",
-  "BOOK_BLUEPRINT_JSON_PATH": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/book_blueprint.json",
+  "PROJECT_BLUEPRINT_JSON_PATH": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
   "EPISODE_ID": "E01",
-  "OUTPUT_BLUEPRINT_JSON": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/book_blueprint.json",
+  "OUTPUT_BLUEPRINT_JSON": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
   "OUTPUT_EPISODE_VARIABLES_JSON_PATTERN": "projects/example-oss-project/run-YYYYMMDD-HHMM/variables/E##_variables.json",
   "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": "projects/example-oss-project/run-YYYYMMDD-HHMM/script/E##_script.md",
   "NOTES": "REPO_ROOT_PATHにclone先を指定。DEEP_DIVE_FOCUSで深掘りの方向性を設定。SOURCE_MARKDOWN_PATHSは空文字で運用。"

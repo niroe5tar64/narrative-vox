@@ -4,7 +4,7 @@ import path from "node:path";
 export interface RenderPromptOptions {
   genre: string;
   step: string;
-  bookConfigPath: string;
+  projectConfigPath: string;
   episodeId?: string;
 }
 
@@ -78,13 +78,13 @@ export function resolvePromptTemplate(
 
 /**
  * Load a prompt template for the given genre/step, resolve placeholders
- * from the book config, and return the result.
+ * from the project config, and return the result.
  */
 export async function renderPrompt(options: RenderPromptOptions): Promise<RenderPromptResult> {
   const templatePath = resolvePromptTemplatePath(options.genre, options.step);
   const [template, configRaw] = await Promise.all([
     readFile(templatePath, "utf-8"),
-    readFile(options.bookConfigPath, "utf-8"),
+    readFile(options.projectConfigPath, "utf-8"),
   ]);
 
   const config: Record<string, string> = JSON.parse(configRaw);
@@ -99,7 +99,7 @@ export async function renderPrompt(options: RenderPromptOptions): Promise<Render
   if (result.unresolvedKeys.length > 0) {
     throw new Error(
       `Unresolved placeholders: ${result.unresolvedKeys.join(", ")}. ` +
-        `Check book config: ${options.bookConfigPath}`
+        `Check project config: ${options.projectConfigPath}`
     );
   }
 

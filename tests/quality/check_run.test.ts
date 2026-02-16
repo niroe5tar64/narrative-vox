@@ -66,8 +66,8 @@ async function prepareMinimalRun(
   await mkdir(variablesDir, { recursive: true });
   await mkdir(scriptDir, { recursive: true });
 
-  const blueprintRaw = await readFile(path.join(sampleRunDir, "blueprint", "book_blueprint.json"), "utf-8");
-  await writeFile(path.join(blueprintDir, "book_blueprint.json"), blueprintRaw, "utf-8");
+  const blueprintRaw = await readFile(path.join(sampleRunDir, "blueprint", "project_blueprint.json"), "utf-8");
+  await writeFile(path.join(blueprintDir, "project_blueprint.json"), blueprintRaw, "utf-8");
 
   const variablesTemplate = JSON.parse(
     await readFile(path.join(sampleRunDir, "variables", "E01_variables.json"), "utf-8")

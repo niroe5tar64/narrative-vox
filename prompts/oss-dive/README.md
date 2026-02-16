@@ -16,8 +16,8 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 - `prompts/oss-dive/blueprint.md`
 - `prompts/oss-dive/episode_variables.md`
 - `prompts/oss-dive/script_common_frame.md`
-- `configs/books/<book-id>.json`
-- `configs/books/oss-dive.example.json`
+- `configs/projects/<project-id>.json`
+- `configs/projects/oss-dive.example.json`
 
 ## 準備
 
@@ -27,38 +27,38 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 git clone https://github.com/owner/repo.git inputs/repos/repo-name
 ```
 
-2. `configs/books/oss-dive.example.json` をコピーして book config を作成:
+2. `configs/projects/oss-dive.example.json` をコピーして project config を作成:
 
 ```bash
-cp configs/books/oss-dive.example.json configs/books/my-oss-project.json
+cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 ```
 
-3. config の `REPO_ROOT_PATH` / `DEEP_DIVE_FOCUS` / `BOOK_ID` 等を編集する。
+3. config の `REPO_ROOT_PATH` / `DEEP_DIVE_FOCUS` / `PROJECT_ID` 等を編集する。
 
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/books/<book-id>.json`
+- 入力: `blueprint.md` + `configs/projects/<project-id>.json`
 - Claudeが `REPO_ROOT_PATH` を探索してリポジトリ全体像を把握
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/blueprint/book_blueprint.json`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Variables
 - 入力: `episode_variables.md` + Blueprint 出力 + `EPISODE_ID`
 - Claudeが `source_refs` のファイルパスから実際のコードを読む
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
 
 3. Script
 - 入力: `script_common_frame.md` + Episode Variables 出力
-- 出力: `projects/<book-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text / Build Project / Build Audio
 - study と同じパイプライン（ジャンル非依存）
 
-## 必須キー（book config）
+## 必須キー（project config）
 
-- `BOOK_ID`
+- `PROJECT_ID`
 - `GENRE` — `"oss-dive"`
-- `BOOK_TITLE`
+- `PROJECT_TITLE`
 - `REPO_ROOT_PATH` — clone先パス（例: `inputs/repos/my-project`）
 - `DEEP_DIVE_FOCUS` — 深掘りの方向性
 - `AUDIENCE_BACKGROUND`
@@ -66,7 +66,7 @@ cp configs/books/oss-dive.example.json configs/books/my-oss-project.json
 - `AUDIENCE_INTEREST`
 - `BASELINE_CONTEXT_OR_EMPTY`
 - `EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY`
-- `BOOK_BLUEPRINT_JSON_PATH`
+- `PROJECT_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
 
 ## Skills 実行例
@@ -84,7 +84,7 @@ cp configs/books/oss-dive.example.json configs/books/my-oss-project.json
 bun src/cli/main.ts render-prompt -- \
   --genre oss-dive \
   --step blueprint \
-  --book-config configs/books/my-oss-project.json
+  --project-config configs/projects/my-oss-project.json
 
 # Build Text + Build Project
 bun run build-all -- \

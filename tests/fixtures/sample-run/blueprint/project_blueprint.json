@@ -1,6 +1,6 @@
 {
   "meta": {
-    "book_title": "Introducing ReScript: Functional Programming for Web Applications",
+    "project_title": "Introducing ReScript: Functional Programming for Web Applications",
     "audience_background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
     "audience_level": "ReScript初学者〜中級手前",
     "audience_interest": "型安全、設計の見通し、保守性、実務での採用判断",
@@ -8,7 +8,7 @@
     "existing_audio_script_dir_or_empty": "",
     "episode_duration_target": "10-12min"
   },
-  "book_intent": {
+  "project_intent": {
     "primary_message": "ReScriptは、静的型検査と関数型の表現力を保ちながらJavaScriptと高い相互運用性を持ち、既存Web開発に段階導入できる実務的な選択肢である。",
     "learning_outcomes": [
       "ReScriptの型システム・式中心モデル・推論を理解し、JavaScript/TypeScriptとの差分を説明できる",

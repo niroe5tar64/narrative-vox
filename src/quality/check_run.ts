@@ -67,7 +67,7 @@ function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
 export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
 
-  const blueprintPath = path.join(resolvedRunDir, "blueprint", "book_blueprint.json");
+  const blueprintPath = path.join(resolvedRunDir, "blueprint", "project_blueprint.json");
   const variablesDir = path.join(resolvedRunDir, "variables");
   const scriptDir = path.join(resolvedRunDir, "script");
 

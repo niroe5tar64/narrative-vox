@@ -12,7 +12,7 @@
 
 ### 入力
 
-- リポジトリタイトル: `{{BOOK_TITLE}}`
+- リポジトリタイトル: `{{PROJECT_TITLE}}`
 - リポジトリルートパス: `{{REPO_ROOT_PATH}}`
 - 深掘りフォーカス: `{{DEEP_DIVE_FOCUS}}`
 - 想定リスナー:
@@ -43,7 +43,7 @@
 ```json
 {
   "meta": {
-    "book_title": "{{BOOK_TITLE}}",
+    "project_title": "{{PROJECT_TITLE}}",
     "repo_root_path": "{{REPO_ROOT_PATH}}",
     "deep_dive_focus": "{{DEEP_DIVE_FOCUS}}",
     "audience_background": "{{AUDIENCE_BACKGROUND}}",
@@ -53,7 +53,7 @@
     "existing_audio_script_dir_or_empty": "{{EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}}",
     "episode_duration_target": "10-12min"
   },
-  "book_intent": {
+  "project_intent": {
     "primary_message": "",
     "learning_outcomes": [
       "outcome_1",
