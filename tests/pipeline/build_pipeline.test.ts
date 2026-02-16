@@ -64,6 +64,15 @@ interface VoicevoxProjectJsonTest {
   };
 }
 
+interface VoicevoxProjectMetaJsonTest {
+  generated_at: string;
+  adjustments: {
+    speed_preset?: string;
+    emotion?: string;
+    intonation_scale_delta?: number;
+  };
+}
+
 const sampleScriptPath = path.resolve(
   "tests/fixtures/sample-run/script/E01_script.md"
 );
@@ -1209,6 +1218,277 @@ test("build-project rejects unknown speed-preset", async () => {
       }),
     /Unknown speed preset "invalid"/
   );
+});
+
+test("build-project applies intonation-scale-delta and preserves interrogative accent flags", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: true
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      voicevoxApiUrl,
+      intonationScaleDelta: 0.05,
+      ...explicitVoiceOverrides
+    });
+    const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+    const projectMeta = JSON.parse(
+      await readFile(projectResult.projectMetaJsonPath, "utf-8")
+    ) as VoicevoxProjectMetaJsonTest;
+
+    for (const audioKey of projectJson.talk.audioKeys) {
+      const audioItem = projectJson.talk.audioItems[audioKey];
+      assert.equal(audioItem.query?.intonationScale, 1.05);
+      const firstAccentPhrase = audioItem.query?.accentPhrases[0] as
+        | { isInterrogative?: boolean }
+        | undefined;
+      assert.equal(firstAccentPhrase?.isInterrogative, true);
+    }
+
+    assert.equal(typeof projectMeta.generated_at, "string");
+    assert.equal(projectMeta.adjustments.intonation_scale_delta, 0.05);
+  });
+});
+
+test("build-project clamps intonationScale to zero when intonation delta is negative", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      voicevoxApiUrl,
+      intonationScaleDelta: -2,
+      ...explicitVoiceOverrides
+    });
+    const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+    for (const audioKey of projectJson.talk.audioKeys) {
+      const audioItem = projectJson.talk.audioItems[audioKey];
+      assert.equal(audioItem.query?.intonationScale, 0);
+    }
+  });
+});
+
+test("build-project writes project meta sidecar with speed, emotion, and prosody adjustments", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const characterMapPath = path.join(tempRoot, "character_map.json");
+  await writeFile(
+    characterMapPath,
+    JSON.stringify(
+      {
+        characters: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        },
+        emotionStyles: {
+          narrator: {
+            calm: 67
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const speedProfilesPath = path.join(tempRoot, "speed_profiles.json");
+  await writeFile(
+    speedProfilesPath,
+    JSON.stringify(
+      {
+        version: 1,
+        presets: {
+          slow: {
+            speedScale: 0.9,
+            pauseLengthScale: 1.2,
+            postPhonemeLength: 0.14
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      characterMapPath,
+      characterKey: "narrator",
+      emotion: "calm",
+      speedPreset: "slow",
+      speedProfilesPath,
+      intonationScaleDelta: 0.02,
+      voicevoxApiUrl
+    });
+    const projectMeta = JSON.parse(
+      await readFile(projectResult.projectMetaJsonPath, "utf-8")
+    ) as VoicevoxProjectMetaJsonTest;
+
+    assert.deepEqual(projectMeta.adjustments, {
+      speed_preset: "slow",
+      emotion: "calm",
+      intonation_scale_delta: 0.02
+    });
+  });
 });
 
 test("build-project supports snake_case audio_query response", async () => {

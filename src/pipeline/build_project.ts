@@ -21,6 +21,7 @@ import {
   type SpeedPreset,
   type SpeedProfiles
 } from "./build_project/speed_profiles.ts";
+import { applyProsodyAdjustments } from "./build_project/prosody.ts";
 
 interface ProjectAudioItem {
   text: string;
@@ -52,11 +53,13 @@ interface BuildProjectOptions {
   speedPreset?: string;
   speedProfilesPath?: string;
   emotion?: string;
+  intonationScaleDelta?: number;
 }
 
 interface BuildProjectResult {
   importJsonPath: string;
   vvprojPath: string;
+  projectMetaJsonPath: string;
   audioItemCount: number;
   episodeId: string;
 }
@@ -294,7 +297,8 @@ export async function buildProject({
   voicevoxApiUrl,
   speedPreset,
   speedProfilesPath,
-  emotion
+  emotion,
+  intonationScaleDelta
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
@@ -348,6 +352,7 @@ export async function buildProject({
     });
     let query = applyQueryDefaults(engineQuery, profile);
     query = applySpeedPreset(query, resolvedSpeedPreset);
+    query = applyProsodyAdjustments(query, { intonationScaleDelta });
     query = {
       ...query,
       postPhonemeLength: toPostPhonemeLength(query.postPhonemeLength, utterance.pause_length_ms)
@@ -392,16 +397,32 @@ export async function buildProject({
   await mkdir(projectDir, { recursive: true });
 
   const episodeId = voicevoxTextData.meta.episode_id;
+  const projectMeta = {
+    generated_at: new Date().toISOString(),
+    adjustments: {
+      ...(speedPreset ? { speed_preset: speedPreset } : {}),
+      ...(emotion ? { emotion } : {}),
+      ...(typeof intonationScaleDelta === "number"
+        ? { intonation_scale_delta: intonationScaleDelta }
+        : {})
+    }
+  };
+  await validateAgainstSchema(projectMeta, SchemaPaths.voicevoxProjectMeta);
+
   const importJsonPath = path.join(projectDir, `${episodeId}_voicevox_import.json`);
   const vvprojPath = path.join(projectDir, `${episodeId}.vvproj`);
+  const projectMetaJsonPath = path.join(projectDir, `${episodeId}_project_meta.json`);
 
   const serialized = `${JSON.stringify(vvproj, null, 2)}\n`;
+  const projectMetaSerialized = `${JSON.stringify(projectMeta, null, 2)}\n`;
   await writeFile(importJsonPath, serialized, "utf-8");
   await writeFile(vvprojPath, serialized, "utf-8");
+  await writeFile(projectMetaJsonPath, projectMetaSerialized, "utf-8");
 
   return {
     importJsonPath,
     vvprojPath,
+    projectMetaJsonPath,
     audioItemCount: audioKeys.length,
     episodeId
   };

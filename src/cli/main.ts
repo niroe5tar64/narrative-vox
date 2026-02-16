@@ -16,7 +16,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-text":
     "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--reading-dictionary <configs/voicevox/reading_dictionary.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>]",
+    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>] [--intonation-scale-delta <number>]",
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
@@ -59,7 +59,8 @@ function buildProjectOptions(options: CliOptions) {
     appVersion: optionAsString(options, "app-version"),
     voicevoxApiUrl: optionAsString(options, "voicevox-url"),
     speedPreset: optionAsString(options, "speed-preset"),
-    speedProfilesPath: optionAsString(options, "speed-profiles")
+    speedProfilesPath: optionAsString(options, "speed-profiles"),
+    intonationScaleDelta: optionAsNumber(options, "intonation-scale-delta")
   };
 }
 
@@ -91,6 +92,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(`Build project done: episode=${result.episodeId}, audioItems=${result.audioItemCount}`);
     console.log(`- ${path.relative(process.cwd(), result.importJsonPath)}`);
     console.log(`- ${path.relative(process.cwd(), result.vvprojPath)}`);
+    console.log(`- ${path.relative(process.cwd(), result.projectMetaJsonPath)}`);
   },
   "build-audio": async (options) => {
     const result = await buildAudio({
@@ -163,7 +165,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       `- build-text: ${path.relative(process.cwd(), buildTextResult.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), buildTextResult.voicevoxTextPath)}, ${path.relative(process.cwd(), buildTextResult.dictionaryCsvPath)}`
     );
     console.log(
-      `- build-project: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}`
+      `- build-project: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}, ${path.relative(process.cwd(), result.projectMetaJsonPath)}`
     );
   },
   "check-run": async (options) => {

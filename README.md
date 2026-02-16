@@ -55,7 +55,9 @@
 - Build Project: Build Text JSON から VOICEVOX import (`.vvproj`) 生成
   - VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を常に生成し、profile 既定値を適用する
   - `--speed-preset`（`slow|normal|fast`）指定時は `speedScale/pauseLengthScale/postPhonemeLength` を上書きする
+  - `--intonation-scale-delta` 指定時は `intonationScale` に加算調整を適用する（0未満は0にクランプ）
   - 最後に `postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算した下限で補正する
+  - 適用した調整は `voicevox_project/E##_project_meta.json` に記録する
 - Build Audio: Build Project `.vvproj` から VOICEVOX Engine API で WAV を自動生成
   - `audio/E##.wav` を出力（utteranceを連結した単一ファイル）
   - 既定で `audio/E##.mp3`（128kbps）を自動生成
@@ -167,6 +169,8 @@ bun src/cli/main.ts render-prompt \
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `build-project` と `build-audio` の両方で同じ URL 解決ロジックを使います。
 - `build-project` では `--speed-preset slow|normal|fast` で速度プリセットを指定できます（`--speed-profiles` で定義ファイルを上書き可能、未指定時は `configs/voicevox/speed_profiles.json` を利用）。
+- `build-project` では `--intonation-scale-delta <number>` で `intonationScale` を微調整できます。
+- `build-project` 実行時は `voicevox_project/E##_project_meta.json` が出力され、`speed_preset` / `emotion` / `intonation_scale_delta` の適用情報が保存されます。
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
 - `build-audio` は Build Project の `query`（手調整済み含む）を優先して `synthesis` を呼びます。`query` 未設定項目のみ `audio_query` で補完します。
 - `build-audio` は途中失敗があっても成功分を保持して `audio/manifest.json` に要約します。
