@@ -20,8 +20,10 @@
 3. `voice.engineId/speakerId/styleId` は次の優先順で決定する。
    - `--character-key` 指定時: 対応する `character map` エントリ
    - `utterances[*].speaker_key` がある場合: 対応する `character map` エントリ
+   - `--emotion` 指定時: `character map` の `emotionStyles[character_key][emotion]` で `styleId` を上書き
    - どちらもない場合: profile の voice
    - `speaker_key` または `--character-key` を使う場合、`character map` が未設定だとエラー
+   - `--style-id` 指定時は emotion より優先して最終上書き
 4. `song` は空トラック構成で最小値を埋める。
 5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` を適用する。
 6. `--speed-preset` 指定時は `speed_profiles` の値で `speedScale/pauseLengthScale/postPhonemeLength` を上書きする。

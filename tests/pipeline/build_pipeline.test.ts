@@ -500,6 +500,295 @@ test("build-project character-key overrides utterance speaker_key values", async
   }
 });
 
+test("build-project applies --emotion style mapping from character map", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const characterMapPath = path.join(tempRoot, "character_map.json");
+  await writeFile(
+    characterMapPath,
+    JSON.stringify(
+      {
+        characters: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        },
+        emotionStyles: {
+          narrator: {
+            calm: 67,
+            energetic: 68
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      characterMapPath,
+      characterKey: "narrator",
+      emotion: "energetic",
+      voicevoxApiUrl
+    });
+    const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+    for (const audioKey of projectJson.talk.audioKeys) {
+      const audioItem = projectJson.talk.audioItems[audioKey];
+      assert.equal(audioItem.voice.styleId, 68);
+    }
+  });
+});
+
+test("build-project rejects unknown --emotion key with available list", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const characterMapPath = path.join(tempRoot, "character_map.json");
+  await writeFile(
+    characterMapPath,
+    JSON.stringify(
+      {
+        characters: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        },
+        emotionStyles: {
+          narrator: {
+            calm: 67
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await assert.rejects(
+    () =>
+      buildProject({
+        voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+        runDir,
+        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        characterMapPath,
+        characterKey: "narrator",
+        emotion: "unknown",
+        voicevoxApiUrl: "http://127.0.0.1:9"
+      }),
+    /Emotion "unknown" not found for character "narrator"\. Available: calm/
+  );
+});
+
+test("build-project rejects --emotion when character has no emotionStyles", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const characterMapPath = path.join(tempRoot, "character_map.json");
+  await writeFile(
+    characterMapPath,
+    JSON.stringify(
+      {
+        characters: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await assert.rejects(
+    () =>
+      buildProject({
+        voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+        runDir,
+        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        characterMapPath,
+        characterKey: "narrator",
+        emotion: "calm",
+        voicevoxApiUrl: "http://127.0.0.1:9"
+      }),
+    /Character "narrator" has no emotionStyles defined/
+  );
+});
+
+test("build-project keeps --style-id priority over --emotion", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const characterMapPath = path.join(tempRoot, "character_map.json");
+  await writeFile(
+    characterMapPath,
+    JSON.stringify(
+      {
+        characters: {
+          narrator: {
+            engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+            speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+            styleId: 67
+          }
+        },
+        emotionStyles: {
+          narrator: {
+            energetic: 68
+          }
+        }
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath: sampleScriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234"
+  });
+
+  await withMockVoicevoxServer((req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(
+      JSON.stringify({
+        accentPhrases: [
+          {
+            moras: [
+              {
+                text: "テ",
+                consonant: "t",
+                consonantLength: 0.05,
+                vowel: "e",
+                vowelLength: 0.08,
+                pitch: 5.5
+              }
+            ],
+            accent: 1,
+            isInterrogative: false
+          }
+        ],
+        speedScale: 1.8,
+        pitchScale: -0.2,
+        intonationScale: 0.5,
+        volumeScale: 0.7,
+        pauseLengthScale: 0.9,
+        prePhonemeLength: 0.03,
+        postPhonemeLength: 0.04,
+        outputSamplingRate: 24000,
+        outputStereo: true,
+        kana: ""
+      })
+    );
+  }, async (voicevoxApiUrl) => {
+    const projectResult = await buildProject({
+      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      runDir,
+      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      characterMapPath,
+      characterKey: "narrator",
+      emotion: "energetic",
+      styleId: 70,
+      voicevoxApiUrl
+    });
+    const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
+
+    for (const audioKey of projectJson.talk.audioKeys) {
+      const audioItem = projectJson.talk.audioItems[audioKey];
+      assert.equal(audioItem.voice.styleId, 70);
+    }
+  });
+});
+
 test("build-project rejects unknown character_key in utterance", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");

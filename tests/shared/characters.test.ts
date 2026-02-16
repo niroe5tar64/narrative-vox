@@ -25,6 +25,12 @@ test("normalizeCharacterMap parses valid character map", () => {
         speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
         styleId: 67
       }
+    },
+    emotionStyles: {
+      narrator: {
+        calm: 67,
+        energetic: 68
+      }
     }
   });
 
@@ -33,6 +39,10 @@ test("normalizeCharacterMap parses valid character map", () => {
     engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
     speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
     styleId: 67
+  });
+  assert.deepEqual(result.emotionStyles?.narrator, {
+    calm: 67,
+    energetic: 68
   });
 });
 
@@ -88,6 +98,27 @@ test("normalizeCharacterMap preserves optional name and description", () => {
   });
 });
 
+test("normalizeCharacterMap rejects emotionStyles for undefined character", () => {
+  assert.throws(
+    () =>
+      normalizeCharacterMap({
+        characters: {
+          narrator: {
+            engineId: "e",
+            speakerId: "s",
+            styleId: 1
+          }
+        },
+        emotionStyles: {
+          teacher: {
+            calm: 67
+          }
+        }
+      }),
+    /emotionStyles.teacher is not defined in characters/
+  );
+});
+
 test("loadCharacterDefinitions reads all *.json from directory", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-chars-"));
   const charsDir = path.join(tempDir, "characters");
@@ -103,6 +134,10 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
         engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
         speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
         styleId: 67
+      },
+      emotionStyles: {
+        calm: 67,
+        energetic: 68
       }
     }),
     "utf-8"
@@ -128,9 +163,40 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
   assert.equal(defs[0].name, "ナレーター");
   assert.equal(defs[0].description, "Default narrator voice");
   assert.equal(defs[0].voice.styleId, 67);
+  assert.deepEqual(defs[0].emotionStyles, {
+    calm: 67,
+    energetic: 68
+  });
   assert.equal(defs[1].key, "teacher");
   assert.equal(defs[1].name, "先生");
   assert.equal(defs[1].voice.styleId, 68);
+});
+
+test("loadCharacterDefinitions rejects invalid emotionStyles values", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-chars-"));
+  const charsDir = path.join(tempDir, "characters");
+  await mkdir(charsDir, { recursive: true });
+
+  await writeFile(
+    path.join(charsDir, "bad.json"),
+    JSON.stringify({
+      key: "bad",
+      voice: {
+        engineId: "e",
+        speakerId: "s",
+        styleId: 1
+      },
+      emotionStyles: {
+        calm: 0
+      }
+    }),
+    "utf-8"
+  );
+
+  await assert.rejects(
+    () => loadCharacterDefinitions(charsDir),
+    /emotionStyles.calm must be a positive integer/
+  );
 });
 
 test("buildRunCharacters assembles CharacterMap from definitions", () => {
@@ -141,6 +207,10 @@ test("buildRunCharacters assembles CharacterMap from definitions", () => {
         engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
         speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
         styleId: 67
+      },
+      emotionStyles: {
+        calm: 67,
+        energetic: 68
       }
     },
     {
@@ -158,4 +228,8 @@ test("buildRunCharacters assembles CharacterMap from definitions", () => {
   assert.equal(Object.keys(result.characters).length, 2);
   assert.equal(result.characters.narrator.styleId, 67);
   assert.equal(result.characters.teacher.styleId, 68);
+  assert.deepEqual(result.emotionStyles?.narrator, {
+    calm: 67,
+    energetic: 68
+  });
 });

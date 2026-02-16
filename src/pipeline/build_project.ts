@@ -51,6 +51,7 @@ interface BuildProjectOptions {
   voicevoxApiUrl?: string;
   speedPreset?: string;
   speedProfilesPath?: string;
+  emotion?: string;
 }
 
 interface BuildProjectResult {
@@ -211,6 +212,7 @@ function resolveUtteranceVoice(params: {
   utteranceSpeakerKey?: string;
   forcedCharacterKey?: string;
   characterMap?: CharacterMap;
+  emotion?: string;
   cliOverrides: {
     engineId?: string;
     speakerId?: string;
@@ -232,6 +234,34 @@ function resolveUtteranceVoice(params: {
       );
     }
     baseVoice = mapped;
+  }
+
+  if (params.emotion) {
+    if (!selectedCharacterKey) {
+      throw new Error(
+        `Emotion "${params.emotion}" requires a character voice source. Provide [speaker:<key>] or --character-key with a character map.`
+      );
+    }
+    if (!params.characterMap) {
+      throw new Error(
+        `Emotion "${params.emotion}" was requested but no character map is configured. Set --character-map or add configs/voicevox/default_character_map.json`
+      );
+    }
+    const emotionMap = params.characterMap.emotionStyles?.[selectedCharacterKey];
+    if (!emotionMap) {
+      throw new Error(`Character "${selectedCharacterKey}" has no emotionStyles defined`);
+    }
+    const emotionStyleId = emotionMap[params.emotion];
+    if (emotionStyleId === undefined) {
+      throw new Error(
+        `Emotion "${params.emotion}" not found for character "${selectedCharacterKey}". Available: ${Object.keys(
+          emotionMap
+        ).join(", ")}`
+      );
+    }
+    if (baseVoice) {
+      baseVoice = { ...baseVoice, styleId: emotionStyleId };
+    }
   }
 
   if (!baseVoice) {
@@ -263,7 +293,8 @@ export async function buildProject({
   appVersion,
   voicevoxApiUrl,
   speedPreset,
-  speedProfilesPath
+  speedProfilesPath,
+  emotion
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
@@ -306,6 +337,7 @@ export async function buildProject({
       utteranceSpeakerKey: utterance.speaker_key,
       forcedCharacterKey: characterKey,
       characterMap,
+      emotion,
       cliOverrides: { engineId, speakerId, styleId }
     });
     const { query: engineQuery } = await fetchAudioQueryFromEngine({

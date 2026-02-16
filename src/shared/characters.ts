@@ -13,11 +13,13 @@ export interface CharacterDefinition {
   name?: string;
   description?: string;
   voice: CharacterVoice;
+  emotionStyles?: Record<string, number>;
 }
 
 export interface CharacterMap {
   defaultCharacterKey?: string;
   characters: Record<string, CharacterVoice>;
+  emotionStyles?: Record<string, Record<string, number>>;
 }
 
 const CHARACTER_KEY_RE = /^[a-z][a-z0-9_-]*$/;
@@ -41,6 +43,41 @@ function requireStyleId(value: unknown, fieldName: string): number {
   return Math.trunc(parsed);
 }
 
+function requirePositiveStyleId(value: unknown, fieldName: string): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Character map ${fieldName} must be a positive integer`);
+  }
+  return parsed;
+}
+
+function requireEmotionKey(value: string, fieldName: string): string {
+  const key = value.trim();
+  if (!key) {
+    throw new Error(`Character map ${fieldName} must be a non-empty string`);
+  }
+  return key;
+}
+
+function normalizeEmotionStylesForCharacter(
+  raw: unknown,
+  fieldName: string
+): Record<string, number> {
+  if (!isRecord(raw)) {
+    throw new Error(`Character map ${fieldName} must be an object`);
+  }
+
+  const emotionStyles: Record<string, number> = {};
+  for (const [rawEmotionKey, rawStyleId] of Object.entries(raw)) {
+    const emotionKey = requireEmotionKey(rawEmotionKey, `${fieldName}.${rawEmotionKey}`);
+    emotionStyles[emotionKey] = requirePositiveStyleId(
+      rawStyleId,
+      `${fieldName}.${rawEmotionKey}`
+    );
+  }
+  return emotionStyles;
+}
+
 function normalizeCharacterKey(value: string, fieldName: string): string {
   if (!CHARACTER_KEY_RE.test(value)) {
     throw new Error(
@@ -57,6 +94,7 @@ export function normalizeCharacterMap(raw: unknown): CharacterMap {
 
   const defaultCharacterKeyRaw = raw.defaultCharacterKey;
   const charactersRaw = raw.characters;
+  const emotionStylesRaw = raw.emotionStyles;
 
   const charactersRecord = isRecord(charactersRaw) ? charactersRaw : {};
   const characters: Record<string, CharacterVoice> = {};
@@ -83,9 +121,34 @@ export function normalizeCharacterMap(raw: unknown): CharacterMap {
     );
   }
 
+  let emotionStyles: Record<string, Record<string, number>> | undefined;
+  if (emotionStylesRaw !== undefined) {
+    if (!isRecord(emotionStylesRaw)) {
+      throw new Error("Character map emotionStyles must be an object");
+    }
+    const normalizedEmotionStyles: Record<string, Record<string, number>> = {};
+    for (const [rawCharacterKey, rawEmotionMap] of Object.entries(emotionStylesRaw)) {
+      const characterKey = normalizeCharacterKey(
+        rawCharacterKey,
+        `emotionStyles.${rawCharacterKey}`
+      );
+      if (!characters[characterKey]) {
+        throw new Error(
+          `Character map emotionStyles.${characterKey} is not defined in characters`
+        );
+      }
+      normalizedEmotionStyles[characterKey] = normalizeEmotionStylesForCharacter(
+        rawEmotionMap,
+        `emotionStyles.${characterKey}`
+      );
+    }
+    emotionStyles = normalizedEmotionStyles;
+  }
+
   return {
     ...(defaultCharacterKey ? { defaultCharacterKey } : {}),
-    characters
+    characters,
+    ...(emotionStyles ? { emotionStyles } : {})
   };
 }
 
@@ -111,7 +174,15 @@ export async function loadCharacterDefinitions(dirPath: string): Promise<Charact
         engineId: requireString(voice.engineId, `${fileName}.voice.engineId`),
         speakerId: requireString(voice.speakerId, `${fileName}.voice.speakerId`),
         styleId: requireStyleId(voice.styleId, `${fileName}.voice.styleId`)
-      }
+      },
+      ...(raw.emotionStyles !== undefined
+        ? {
+            emotionStyles: normalizeEmotionStylesForCharacter(
+              raw.emotionStyles,
+              `${fileName}.emotionStyles`
+            )
+          }
+        : {})
     });
   }
 
@@ -120,8 +191,12 @@ export async function loadCharacterDefinitions(dirPath: string): Promise<Charact
 
 export function buildRunCharacters(defs: CharacterDefinition[], defaultKey?: string): CharacterMap {
   const characters: Record<string, CharacterVoice> = {};
+  const emotionStyles: Record<string, Record<string, number>> = {};
   for (const def of defs) {
     characters[def.key] = def.voice;
+    if (def.emotionStyles && Object.keys(def.emotionStyles).length > 0) {
+      emotionStyles[def.key] = def.emotionStyles;
+    }
   }
   if (defaultKey && !characters[defaultKey]) {
     throw new Error(
@@ -130,6 +205,7 @@ export function buildRunCharacters(defs: CharacterDefinition[], defaultKey?: str
   }
   return {
     ...(defaultKey ? { defaultCharacterKey: defaultKey } : {}),
-    characters
+    characters,
+    ...(Object.keys(emotionStyles).length > 0 ? { emotionStyles } : {})
   };
 }

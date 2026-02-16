@@ -161,6 +161,7 @@ bun src/cli/main.ts render-prompt \
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
 - `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は `--character-map`（または `configs/voicevox/default_character_map.json`）が必須です。どちらも使わない場合のみ profile の voice を使います。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
+- `--emotion <key>` を指定すると、`character map` の `emotionStyles[character_key][key]` に従って `styleId` を切り替えます（`--style-id` 指定時はそちらを優先）。
 - `--build-text-config` は Build Text の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `script/E01_script.md`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
