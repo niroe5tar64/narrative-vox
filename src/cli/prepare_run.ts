@@ -144,7 +144,7 @@ export async function cloneRunDirectories({
 }
 
 export async function runPrepareRun(options: CliOptions) {
-	const showHelp = Boolean(options.help || options.h);
+	const showHelp = Boolean(options.help);
 	if (showHelp) {
 		printUsage();
 		return;

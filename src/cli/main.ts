@@ -201,7 +201,7 @@ async function main() {
     printUsage();
     return;
   }
-  if (options.help || options.h) {
+  if (options.help) {
     printUsage(command);
     return;
   }
