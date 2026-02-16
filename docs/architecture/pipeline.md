@@ -85,7 +85,7 @@ flowchart TB
 | `configs/voicevox/build_text_config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
 | `configs/voicevox/default_profile.json` | `build-project` | CLI操作前提 | 話者デフォルト値とqueryDefaults |
 | `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | `default_profile.json` 未作成時のフォールバック |
-| `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（任意） |
+| `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（`speaker_key` / `--character-key` 利用時は必須） |
 | `--voicevox-url` / `VOICEVOX_URL` | `build-project`/`build-audio` | CLI操作前提 | VOICEVOX Engine接続先を指定 |
 | `scripts/voicevox-up.sh` など | Engine起動/疎通確認 | CLI操作前提 | Docker上のVOICEVOX Engine運用補助 |
 

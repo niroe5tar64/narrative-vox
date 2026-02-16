@@ -156,7 +156,8 @@ bun src/cli/main.ts render-prompt \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--prefill-query` は `none`（既定）/ `minimal` / `engine` を指定できます。
-- `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。未指定時は profile の voice が使われます。
+- `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
+- `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は `--character-map`（または `configs/voicevox/default_character_map.json`）が必須です。どちらも使わない場合のみ profile の voice を使います。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
 - `--build-text-config` は Build Text の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `script/E01_script.md`）。
