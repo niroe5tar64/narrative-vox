@@ -143,9 +143,12 @@ export const DEFAULT_VOICEVOX_RETRY_CONFIG: VoicevoxRequestRetryConfig = {
 };
 
 export function normalizeVoicevoxApiUrl(value?: string): string {
-  const url = (value || DEFAULT_VOICEVOX_API_URL).trim();
+  if (typeof value !== "string") {
+    throw new Error("VOICEVOX API URL must be provided");
+  }
+  const url = value.trim();
   if (!url) {
-    return DEFAULT_VOICEVOX_API_URL;
+    throw new Error("VOICEVOX API URL must not be empty");
   }
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }

@@ -247,15 +247,17 @@ export function evaluateSpeakability(
   };
 }
 
-const LEGACY_SECTION_DURATION_NOTE_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
+const DURATION_NOTE_LINE_RE = /^\s*\(想定:\s*[0-9.]+分\)\s*$/;
+const DURATION_NOTE_SUFFIX_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 
 export function normalizeScriptLine(rawLine: string): string {
-  // Keep compatibility with legacy Stage3 scripts that still include
-  // section duration notes like "(想定: 1分)".
-  const withoutLegacyDurationNote = rawLine.replace(LEGACY_SECTION_DURATION_NOTE_RE, "");
-  const withoutSilence = withoutLegacyDurationNote.replace(SILENCE_TAG_RE, "");
+  if (DURATION_NOTE_LINE_RE.test(rawLine)) {
+    return "";
+  }
+  const withoutDurationNote = rawLine.replace(DURATION_NOTE_SUFFIX_RE, "");
+  const withoutSilence = withoutDurationNote.replace(SILENCE_TAG_RE, "");
   const withoutInlineCode = withoutSilence.replace(INLINE_CODE_RE, "$1");
   return withoutInlineCode.replace(/\s+/g, " ").trim();
 }

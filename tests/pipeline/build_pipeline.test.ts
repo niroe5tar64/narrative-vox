@@ -68,6 +68,11 @@ const sampleScriptPath = path.resolve(
   "tests/fixtures/sample-run/script/E01_script.md"
 );
 const defaultBuildTextConfigPath = path.resolve("configs/voicevox/build_text_config.json");
+const explicitVoiceOverrides = {
+  engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
+  speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+  styleId: 67
+} as const;
 
 type BuildTextInput = Omit<Parameters<typeof buildTextBase>[0], "buildTextConfigPath"> & {
   buildTextConfigPath?: string;
@@ -131,7 +136,8 @@ test("build-text -> build-project pipeline works with sample script", async () =
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
     runDir,
-    profilePath: path.resolve("configs/voicevox/default_profile.example.json")
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+    ...explicitVoiceOverrides
   });
 
   const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
@@ -158,7 +164,8 @@ test("build-project prefill-query=minimal adds query defaults to every audio ite
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
     runDir,
     profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
-    prefillQuery: "minimal"
+    prefillQuery: "minimal",
+    ...explicitVoiceOverrides
   });
 
   const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
@@ -200,7 +207,6 @@ test("build-text extracts speaker_key from line-head [speaker:<key>] tags", asyn
       "1. 導入",
       "[speaker:teacher] これは先生の発話です。続けて説明します。",
       "[speaker:student] なるほど、わかりました。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -224,7 +230,7 @@ test("build-text extracts speaker_key from line-head [speaker:<key>] tags", asyn
   );
 });
 
-test("build-text warns when source lines omit speaker tags", async () => {
+test("build-text does not emit speaker fallback warning when source lines omit speaker tags", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -236,7 +242,6 @@ test("build-text warns when source lines omit speaker tags", async () => {
       "1. 導入",
       "[speaker:teacher] これは先生の発話です。",
       "こちらはタグなしです。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -250,12 +255,10 @@ test("build-text warns when source lines omit speaker tags", async () => {
   });
   const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
 
-  const omittedSpeakerWarning = textJson.quality_checks.warnings.find((message) =>
-    message.includes("speaker_key is omitted for")
+  assert.equal(
+    textJson.quality_checks.warnings.some((message) => message.includes("speaker_key is omitted for")),
+    false
   );
-  assert.ok(omittedSpeakerWarning);
-  assert.equal(omittedSpeakerWarning?.includes("1 utterances across 1 source lines"), true);
-  assert.equal(omittedSpeakerWarning?.includes("lines: 3"), true);
 });
 
 test("build-project resolves character voices per utterance speaker_key", async () => {
@@ -270,7 +273,6 @@ test("build-project resolves character voices per utterance speaker_key", async 
       "1. 導入",
       "[speaker:teacher] これは先生の発話です。",
       "[speaker:student] こちらは生徒の発話です。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -349,7 +351,6 @@ test("build-project character-key overrides utterance speaker_key values", async
       "1. 導入",
       "[speaker:teacher] これは先生の発話です。",
       "[speaker:student] こちらは生徒の発話です。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -418,7 +419,6 @@ test("build-project rejects unknown character_key in utterance", async () => {
     [
       "1. 導入",
       "[speaker:ghost] この話者キーは未定義です。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -476,7 +476,24 @@ test("build-project normalizes too-old appVersion to supported vvproj format ver
         appVersion: "0.14.7",
         engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
         speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
-        styleId: 67
+        styleId: 67,
+        tpqn: 480,
+        tempoBpm: 120,
+        timeSignature: {
+          beats: 4,
+          beatType: 4
+        },
+        queryDefaults: {
+          speedScale: 1,
+          pitchScale: 0,
+          intonationScale: 1,
+          volumeScale: 1,
+          pauseLengthScale: 1,
+          prePhonemeLength: 0.1,
+          postPhonemeLength: 0.1,
+          outputSamplingRate: "engineDefault",
+          outputStereo: false
+        }
       },
       null,
       2
@@ -495,7 +512,8 @@ test("build-project normalizes too-old appVersion to supported vvproj format ver
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
     runDir,
-    profilePath: oldProfilePath
+    profilePath: oldProfilePath,
+    ...explicitVoiceOverrides
   });
 
   const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
@@ -589,7 +607,8 @@ test("build-project prefill-query=engine fills accentPhrases via VOICEVOX audio_
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
       prefillQuery: "engine",
-      voicevoxApiUrl
+      voicevoxApiUrl,
+      ...explicitVoiceOverrides
     });
     const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
 
@@ -679,7 +698,8 @@ test("build-project prefill-query=engine supports snake_case audio_query respons
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
       prefillQuery: "engine",
-      voicevoxApiUrl
+      voicevoxApiUrl,
+      ...explicitVoiceOverrides
     });
     const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
 
@@ -736,7 +756,8 @@ test("build-project prefill-query=engine rejects empty accentPhrases from VOICEV
           runDir,
           profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
           prefillQuery: "engine",
-          voicevoxApiUrl
+          voicevoxApiUrl,
+          ...explicitVoiceOverrides
         }),
       /empty accentPhrases/
     );
@@ -787,7 +808,6 @@ test("build-text infers run-dir from --script path when run-dir is omitted", asy
     [
       "1. 導入",
       "これは推論テストです。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -813,7 +833,6 @@ test("build-text stores source_script_path as run-dir relative path", async () =
     [
       "1. 導入",
       "これは source_script_path の検証です。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -846,7 +865,8 @@ test("build-project infers run-dir from --voicevox-text-json path when run-dir i
 
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
-    profilePath: path.resolve("configs/voicevox/default_profile.example.json")
+    profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+    ...explicitVoiceOverrides
   });
 
   assert.equal(path.dirname(projectResult.importJsonPath), path.join(runDir, "voicevox_project"));
@@ -901,7 +921,6 @@ test("build-text extracts dictionary candidates with readings from morphological
       "1. 導入",
       "検証の流れを整理する。",
       "APIの挙動も検証する。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -938,7 +957,6 @@ test("build-text adds warning when speakability score is low", async () => {
     [
       "1. 導入",
       lowSpeakabilityLine,
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -972,7 +990,6 @@ test("build-text applies build-text config values to pause and warning threshold
     [
       "1. 導入",
       "終わり。",
-      "合計想定時間: 1分"
     ].join("\n"),
     "utf-8"
   );
@@ -998,12 +1015,35 @@ test("build-text applies build-text config values to pause and warning threshold
       {
         speakability: {
           warningThresholds: {
-            scoreThreshold: 101
+            scoreThreshold: 101,
+            minTerminalPunctuationRatio: 0.65,
+            maxLongUtteranceRatio: 0.25
+          },
+          scoring: {
+            targetAverageChars: 32,
+            averagePenaltyFactor: 1.2,
+            averagePenaltyMax: 35,
+            longRatioWeight: 45,
+            punctuationWeight: 20
           }
         },
         pause: {
+          minMs: 120,
+          maxMs: 520,
           bases: {
+            default: 190,
+            strongEnding: 360,
+            clauseEnd: 240,
             fullStop: 410
+          },
+          lengthBonus: {
+            step: 10,
+            increment: 20,
+            max: 120
+          },
+          penalties: {
+            conjunction: 40,
+            continuation: 50
           }
         }
       },

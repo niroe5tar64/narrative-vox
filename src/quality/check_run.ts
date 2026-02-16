@@ -45,9 +45,6 @@ function ensureHasAllSections(scriptText: string, scriptPath: string, episodeId:
     );
   }
 
-  if (!validation.hasTotalTimeLine) {
-    throw new Error(`${scriptRef} is missing "合計想定時間:" line`);
-  }
 }
 
 function collectEpisodeIds(fileNames: string[], pattern: RegExp): string[] {

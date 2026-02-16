@@ -71,7 +71,9 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
     await access(localDefault);
     return localDefault;
   } catch {
-    return path.resolve("configs/voicevox/default_profile.example.json");
+    throw new Error(
+      `Voice profile not found: ${localDefault}. Create configs/voicevox/default_profile.json or pass --profile.`
+    );
   }
 }
 
@@ -195,19 +197,14 @@ function resolveUtteranceVoice(params: {
   utteranceSpeakerKey?: string;
   forcedCharacterKey?: string;
   characterMap?: CharacterMap;
-  profileVoice: ProjectVoice;
   cliOverrides: {
     engineId?: string;
     speakerId?: string;
     styleId?: number;
   };
 }): ProjectVoice {
-  const selectedCharacterKey =
-    params.forcedCharacterKey ||
-    params.utteranceSpeakerKey ||
-    params.characterMap?.defaultCharacterKey;
-
-  let baseVoice: ProjectVoice = params.profileVoice;
+  const selectedCharacterKey = params.forcedCharacterKey || params.utteranceSpeakerKey;
+  let baseVoice: ProjectVoice | undefined;
   if (selectedCharacterKey) {
     if (!params.characterMap) {
       throw new Error(
@@ -221,6 +218,16 @@ function resolveUtteranceVoice(params: {
       );
     }
     baseVoice = mapped;
+  }
+
+  if (!baseVoice) {
+    const { engineId, speakerId, styleId } = params.cliOverrides;
+    if (engineId && speakerId && typeof styleId === "number") {
+      return { engineId, speakerId, styleId };
+    }
+    throw new Error(
+      'Voice must be specified explicitly. Provide [speaker:<key>] (or --character-key) with a character map, or pass all of --engine-id/--speaker-id/--style-id.'
+    );
   }
 
   return {
@@ -266,11 +273,6 @@ export async function buildProject({
     ? normalizeCharacterMap(await loadJson<unknown>(resolvedCharacterMapPath))
     : undefined;
 
-  const profileVoice: ProjectVoice = {
-    engineId: profile.engineId,
-    speakerId: profile.speakerId,
-    styleId: profile.styleId
-  };
   const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
   const queryPrefillMode = normalizeQueryPrefillMode(prefillQuery);
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
@@ -285,7 +287,6 @@ export async function buildProject({
       utteranceSpeakerKey: utterance.speaker_key,
       forcedCharacterKey: characterKey,
       characterMap,
-      profileVoice,
       cliOverrides: { engineId, speakerId, styleId }
     });
     const audioItem: ProjectAudioItem = {

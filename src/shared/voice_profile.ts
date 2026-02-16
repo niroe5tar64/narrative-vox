@@ -50,9 +50,6 @@ export interface VoiceProfileQueryDefaults {
   outputStereo: boolean;
 }
 
-const DEFAULT_TPQN = 480;
-const DEFAULT_TEMPO_BPM = 120;
-const DEFAULT_TIME_SIGNATURE = { beats: 4, beatType: 4 };
 const DEFAULT_QUERY_DEFAULTS: VoiceProfileQueryDefaults = {
   speedScale: 1,
   pitchScale: 0,
@@ -64,11 +61,6 @@ const DEFAULT_QUERY_DEFAULTS: VoiceProfileQueryDefaults = {
   outputSamplingRate: "engineDefault",
   outputStereo: false
 };
-
-function coerceNumber(value: number | string | undefined, fallback: number): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
 
 function requireFiniteNumber(value: number | string | undefined, fieldName: string): number {
   const parsed = Number(value);
@@ -91,24 +83,24 @@ function coerceOutputSamplingRate(value: number | string | undefined): number | 
 
 export function normalizeVoiceProfile(raw: RawVoiceProfile): VoiceProfile {
   const normalizedQueryDefaults: VoiceProfileQueryDefaults = {
-    speedScale: coerceNumber(raw.queryDefaults?.speedScale, DEFAULT_QUERY_DEFAULTS.speedScale),
-    pitchScale: coerceNumber(raw.queryDefaults?.pitchScale, DEFAULT_QUERY_DEFAULTS.pitchScale),
-    intonationScale: coerceNumber(
+    speedScale: requireFiniteNumber(raw.queryDefaults?.speedScale, "queryDefaults.speedScale"),
+    pitchScale: requireFiniteNumber(raw.queryDefaults?.pitchScale, "queryDefaults.pitchScale"),
+    intonationScale: requireFiniteNumber(
       raw.queryDefaults?.intonationScale,
-      DEFAULT_QUERY_DEFAULTS.intonationScale
+      "queryDefaults.intonationScale"
     ),
-    volumeScale: coerceNumber(raw.queryDefaults?.volumeScale, DEFAULT_QUERY_DEFAULTS.volumeScale),
-    pauseLengthScale: coerceNumber(
+    volumeScale: requireFiniteNumber(raw.queryDefaults?.volumeScale, "queryDefaults.volumeScale"),
+    pauseLengthScale: requireFiniteNumber(
       raw.queryDefaults?.pauseLengthScale,
-      DEFAULT_QUERY_DEFAULTS.pauseLengthScale
+      "queryDefaults.pauseLengthScale"
     ),
-    prePhonemeLength: coerceNumber(
+    prePhonemeLength: requireFiniteNumber(
       raw.queryDefaults?.prePhonemeLength,
-      DEFAULT_QUERY_DEFAULTS.prePhonemeLength
+      "queryDefaults.prePhonemeLength"
     ),
-    postPhonemeLength: coerceNumber(
+    postPhonemeLength: requireFiniteNumber(
       raw.queryDefaults?.postPhonemeLength,
-      DEFAULT_QUERY_DEFAULTS.postPhonemeLength
+      "queryDefaults.postPhonemeLength"
     ),
     outputSamplingRate: coerceOutputSamplingRate(raw.queryDefaults?.outputSamplingRate),
     outputStereo: raw.queryDefaults?.outputStereo ?? DEFAULT_QUERY_DEFAULTS.outputStereo
@@ -119,11 +111,11 @@ export function normalizeVoiceProfile(raw: RawVoiceProfile): VoiceProfile {
     speakerId: raw.speakerId,
     styleId: requireFiniteNumber(raw.styleId, "styleId"),
     appVersion: raw.appVersion,
-    tpqn: coerceNumber(raw.tpqn, DEFAULT_TPQN),
-    tempoBpm: coerceNumber(raw.tempoBpm, DEFAULT_TEMPO_BPM),
+    tpqn: requireFiniteNumber(raw.tpqn, "tpqn"),
+    tempoBpm: requireFiniteNumber(raw.tempoBpm, "tempoBpm"),
     timeSignature: {
-      beats: coerceNumber(raw.timeSignature?.beats, DEFAULT_TIME_SIGNATURE.beats),
-      beatType: coerceNumber(raw.timeSignature?.beatType, DEFAULT_TIME_SIGNATURE.beatType)
+      beats: requireFiniteNumber(raw.timeSignature?.beats, "timeSignature.beats"),
+      beatType: requireFiniteNumber(raw.timeSignature?.beatType, "timeSignature.beatType")
     },
     queryDefaults: normalizedQueryDefaults
   };

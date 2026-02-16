@@ -106,4 +106,4 @@ flowchart TB
 
 - Blueprint / Variables / Script は prompt資産中心（`skills/gen-*` または別LLM運用）。
 - Build Text / Build Project / Build Audio は `src/cli/main.ts` から実行可能。
-- `check-run` は Blueprint/Variables schema と Script 台本構造（1-8章 + 合計想定時間）を検証する補助コマンド。
+- `check-run` は Blueprint/Variables schema と Script 台本構造（1-8章）を検証する補助コマンド。

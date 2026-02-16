@@ -66,7 +66,6 @@ const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
 const UPPERCASE_ASCII_RE = /^[A-Z]{2,8}$/;
 const NUMBER_ONLY_RE = /^[0-9]+$/;
 const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
-const FALLBACK_TOKEN_RE = /[A-Za-z][A-Za-z0-9_.+-]{1,}|[ァ-ヴー]{3,}|[一-龠々]{2,}/g;
 
 function normalizeCandidateSurface(token: string): string {
   return token
@@ -139,7 +138,7 @@ function tokenizeWithSegmenter(text: string): string[] {
   }
 
   if (!cachedJaWordSegmenter) {
-    return text.match(FALLBACK_TOKEN_RE) ?? [];
+    throw new Error("Intl.Segmenter is required for dictionary tokenization");
   }
 
   const tokens: string[] = [];

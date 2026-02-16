@@ -76,12 +76,30 @@ export const DEFAULT_BUILD_TEXT_CONFIG: BuildTextConfig = {
   }
 };
 
-function coerceNumber(value: number | string | undefined, fallback: number): number {
+function requireFiniteNumber(value: number | string | undefined, fieldName: string): number {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Build-text config ${fieldName} must be a valid number`);
+  }
+  return parsed;
 }
 
 export function normalizeBuildTextConfig(raw?: RawBuildTextConfig): BuildTextConfig {
+  if (!raw) {
+    return {
+      speakability: {
+        warningThresholds: { ...DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds },
+        scoring: { ...DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring }
+      },
+      pause: {
+        ...DEFAULT_BUILD_TEXT_CONFIG.pause,
+        bases: { ...DEFAULT_BUILD_TEXT_CONFIG.pause.bases },
+        lengthBonus: { ...DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus },
+        penalties: { ...DEFAULT_BUILD_TEXT_CONFIG.pause.penalties }
+      }
+    };
+  }
+
   const warningThresholds = raw?.speakability?.warningThresholds;
   const scoring = raw?.speakability?.scoring;
   const pause = raw?.pause;
@@ -89,71 +107,50 @@ export function normalizeBuildTextConfig(raw?: RawBuildTextConfig): BuildTextCon
   return {
     speakability: {
       warningThresholds: {
-        scoreThreshold: coerceNumber(
-          warningThresholds?.scoreThreshold,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.scoreThreshold
-        ),
-        minTerminalPunctuationRatio: coerceNumber(
+        scoreThreshold: requireFiniteNumber(warningThresholds?.scoreThreshold, "speakability.warningThresholds.scoreThreshold"),
+        minTerminalPunctuationRatio: requireFiniteNumber(
           warningThresholds?.minTerminalPunctuationRatio,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.minTerminalPunctuationRatio
+          "speakability.warningThresholds.minTerminalPunctuationRatio"
         ),
-        maxLongUtteranceRatio: coerceNumber(
+        maxLongUtteranceRatio: requireFiniteNumber(
           warningThresholds?.maxLongUtteranceRatio,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.warningThresholds.maxLongUtteranceRatio
+          "speakability.warningThresholds.maxLongUtteranceRatio"
         )
       },
       scoring: {
-        targetAverageChars: coerceNumber(
-          scoring?.targetAverageChars,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.targetAverageChars
-        ),
-        averagePenaltyFactor: coerceNumber(
+        targetAverageChars: requireFiniteNumber(scoring?.targetAverageChars, "speakability.scoring.targetAverageChars"),
+        averagePenaltyFactor: requireFiniteNumber(
           scoring?.averagePenaltyFactor,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.averagePenaltyFactor
+          "speakability.scoring.averagePenaltyFactor"
         ),
-        averagePenaltyMax: coerceNumber(
+        averagePenaltyMax: requireFiniteNumber(
           scoring?.averagePenaltyMax,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.averagePenaltyMax
+          "speakability.scoring.averagePenaltyMax"
         ),
-        longRatioWeight: coerceNumber(
-          scoring?.longRatioWeight,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.longRatioWeight
-        ),
-        punctuationWeight: coerceNumber(
+        longRatioWeight: requireFiniteNumber(scoring?.longRatioWeight, "speakability.scoring.longRatioWeight"),
+        punctuationWeight: requireFiniteNumber(
           scoring?.punctuationWeight,
-          DEFAULT_BUILD_TEXT_CONFIG.speakability.scoring.punctuationWeight
+          "speakability.scoring.punctuationWeight"
         )
       }
     },
     pause: {
-      minMs: coerceNumber(pause?.minMs, DEFAULT_BUILD_TEXT_CONFIG.pause.minMs),
-      maxMs: coerceNumber(pause?.maxMs, DEFAULT_BUILD_TEXT_CONFIG.pause.maxMs),
+      minMs: requireFiniteNumber(pause?.minMs, "pause.minMs"),
+      maxMs: requireFiniteNumber(pause?.maxMs, "pause.maxMs"),
       bases: {
-        default: coerceNumber(pause?.bases?.default, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.default),
-        strongEnding: coerceNumber(
-          pause?.bases?.strongEnding,
-          DEFAULT_BUILD_TEXT_CONFIG.pause.bases.strongEnding
-        ),
-        fullStop: coerceNumber(pause?.bases?.fullStop, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.fullStop),
-        clauseEnd: coerceNumber(pause?.bases?.clauseEnd, DEFAULT_BUILD_TEXT_CONFIG.pause.bases.clauseEnd)
+        default: requireFiniteNumber(pause?.bases?.default, "pause.bases.default"),
+        strongEnding: requireFiniteNumber(pause?.bases?.strongEnding, "pause.bases.strongEnding"),
+        fullStop: requireFiniteNumber(pause?.bases?.fullStop, "pause.bases.fullStop"),
+        clauseEnd: requireFiniteNumber(pause?.bases?.clauseEnd, "pause.bases.clauseEnd")
       },
       lengthBonus: {
-        step: coerceNumber(pause?.lengthBonus?.step, DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.step),
-        increment: coerceNumber(
-          pause?.lengthBonus?.increment,
-          DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.increment
-        ),
-        max: coerceNumber(pause?.lengthBonus?.max, DEFAULT_BUILD_TEXT_CONFIG.pause.lengthBonus.max)
+        step: requireFiniteNumber(pause?.lengthBonus?.step, "pause.lengthBonus.step"),
+        increment: requireFiniteNumber(pause?.lengthBonus?.increment, "pause.lengthBonus.increment"),
+        max: requireFiniteNumber(pause?.lengthBonus?.max, "pause.lengthBonus.max")
       },
       penalties: {
-        conjunction: coerceNumber(
-          pause?.penalties?.conjunction,
-          DEFAULT_BUILD_TEXT_CONFIG.pause.penalties.conjunction
-        ),
-        continuation: coerceNumber(
-          pause?.penalties?.continuation,
-          DEFAULT_BUILD_TEXT_CONFIG.pause.penalties.continuation
-        )
+        conjunction: requireFiniteNumber(pause?.penalties?.conjunction, "pause.penalties.conjunction"),
+        continuation: requireFiniteNumber(pause?.penalties?.continuation, "pause.penalties.continuation")
       }
     }
   };

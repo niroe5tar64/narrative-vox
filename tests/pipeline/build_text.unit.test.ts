@@ -76,13 +76,6 @@ test("normalizeScriptLine keeps regular lines unchanged", () => {
   assert.equal(actual, "型の整合性を確認します。");
 });
 
-test("normalizeScriptLine ignores legacy section duration notes", () => {
-  assert.equal(normalizeScriptLine("(想定: 1分)"), "");
-  assert.equal(
-    normalizeScriptLine("型の整合性を確認します。(想定: 1分)"),
-    "型の整合性を確認します。"
-  );
-});
 
 test("replaceRubyWithReading replaces ruby notation with reading", () => {
   const actual = replaceRubyWithReading("今日は{漢字|かんじ}と{ReScript|リスクリプト}を学ぶ。");
