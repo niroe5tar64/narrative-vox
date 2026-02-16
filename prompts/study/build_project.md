@@ -28,9 +28,9 @@
 4. `song` は空トラック構成で最小値を埋める。
 5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` を適用する。
 6. `--speed-preset` 指定時は `speed_profiles` の値で `speedScale/pauseLengthScale/postPhonemeLength` を上書きする。
-7. `--intonation-scale-delta` 指定時は `intonationScale` に加算し、0未満は0にクランプする。
+7. `--intonation-scale` 指定時は `intonationScale` を上書きし、0未満は0にクランプする。
 8. 最後に Build Text `pause_length_ms` を秒換算して `postPhonemeLength` の下限を保証する（`--voicevox-url` 未指定時は自動解決）。
-9. 適用調整（`speed_preset` / `emotion` / `intonation_scale_delta`）は `E##_project_meta.json` に記録する。
+9. 適用調整（`speed_preset` / `emotion` / `intonation_scale`）は `E##_project_meta.json` に記録する。
 
 ## 実行
 

@@ -53,7 +53,7 @@ interface BuildProjectOptions {
   speedPreset?: string;
   speedProfilesPath?: string;
   emotion?: string;
-  intonationScaleDelta?: number;
+  intonationScale?: number;
 }
 
 interface BuildProjectResult {
@@ -298,7 +298,7 @@ export async function buildProject({
   speedPreset,
   speedProfilesPath,
   emotion,
-  intonationScaleDelta
+  intonationScale
 }: BuildProjectOptions): Promise<BuildProjectResult> {
   const resolvedVoicevoxTextPath = path.resolve(voicevoxTextJsonPath);
   const inferredRunDir = runDir
@@ -352,7 +352,7 @@ export async function buildProject({
     });
     let query = applyQueryDefaults(engineQuery, profile);
     query = applySpeedPreset(query, resolvedSpeedPreset);
-    query = applyProsodyAdjustments(query, { intonationScaleDelta });
+    query = applyProsodyAdjustments(query, { intonationScale });
     query = {
       ...query,
       postPhonemeLength: toPostPhonemeLength(query.postPhonemeLength, utterance.pause_length_ms)
@@ -402,8 +402,8 @@ export async function buildProject({
     adjustments: {
       ...(speedPreset ? { speed_preset: speedPreset } : {}),
       ...(emotion ? { emotion } : {}),
-      ...(typeof intonationScaleDelta === "number"
-        ? { intonation_scale_delta: intonationScaleDelta }
+      ...(typeof intonationScale === "number"
+        ? { intonation_scale: intonationScale }
         : {})
     }
   };

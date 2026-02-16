@@ -25,15 +25,15 @@ test("applyProsodyAdjustments returns original query when adjustment is undefine
   assert.equal(actual, baseQuery);
 });
 
-test("applyProsodyAdjustments returns original query when intonation delta is omitted", () => {
+test("applyProsodyAdjustments returns original query when intonationScale is omitted", () => {
   const adjustments: ProsodyAdjustments = {};
   const actual = applyProsodyAdjustments(baseQuery, adjustments);
   assert.equal(actual, baseQuery);
 });
 
-test("applyProsodyAdjustments adds intonationScaleDelta to intonationScale", () => {
-  const actual = applyProsodyAdjustments(baseQuery, { intonationScaleDelta: 0.05 });
-  assert.equal(actual.intonationScale, 1.05);
+test("applyProsodyAdjustments sets intonationScale when specified", () => {
+  const actual = applyProsodyAdjustments(baseQuery, { intonationScale: 0.05 });
+  assert.equal(actual.intonationScale, 0.05);
   assert.equal(actual.speedScale, baseQuery.speedScale);
 });
 
@@ -42,6 +42,6 @@ test("applyProsodyAdjustments clamps intonationScale to zero", () => {
     ...baseQuery,
     intonationScale: 0.3
   };
-  const actual = applyProsodyAdjustments(query, { intonationScaleDelta: -1 });
+  const actual = applyProsodyAdjustments(query, { intonationScale: -1 });
   assert.equal(actual.intonationScale, 0);
 });

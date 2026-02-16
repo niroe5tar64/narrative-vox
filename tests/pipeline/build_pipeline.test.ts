@@ -69,7 +69,7 @@ interface VoicevoxProjectMetaJsonTest {
   adjustments: {
     speed_preset?: string;
     emotion?: string;
-    intonation_scale_delta?: number;
+    intonation_scale?: number;
   };
 }
 
@@ -1220,7 +1220,7 @@ test("build-project rejects unknown speed-preset", async () => {
   );
 });
 
-test("build-project applies intonation-scale-delta and preserves interrogative accent flags", async () => {
+test("build-project applies intonation-scale and preserves interrogative accent flags", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -1278,7 +1278,7 @@ test("build-project applies intonation-scale-delta and preserves interrogative a
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
       voicevoxApiUrl,
-      intonationScaleDelta: 0.05,
+      intonationScale: 0.05,
       ...explicitVoiceOverrides
     });
     const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
@@ -1288,7 +1288,7 @@ test("build-project applies intonation-scale-delta and preserves interrogative a
 
     for (const audioKey of projectJson.talk.audioKeys) {
       const audioItem = projectJson.talk.audioItems[audioKey];
-      assert.equal(audioItem.query?.intonationScale, 1.05);
+      assert.equal(audioItem.query?.intonationScale, 0.05);
       const firstAccentPhrase = audioItem.query?.accentPhrases[0] as
         | { isInterrogative?: boolean }
         | undefined;
@@ -1296,11 +1296,11 @@ test("build-project applies intonation-scale-delta and preserves interrogative a
     }
 
     assert.equal(typeof projectMeta.generated_at, "string");
-    assert.equal(projectMeta.adjustments.intonation_scale_delta, 0.05);
+    assert.equal(projectMeta.adjustments.intonation_scale, 0.05);
   });
 });
 
-test("build-project clamps intonationScale to zero when intonation delta is negative", async () => {
+test("build-project clamps intonationScale to zero when intonation-scale is negative", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
   await mkdir(runDir, { recursive: true });
@@ -1358,7 +1358,7 @@ test("build-project clamps intonationScale to zero when intonation delta is nega
       runDir,
       profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
       voicevoxApiUrl,
-      intonationScaleDelta: -2,
+      intonationScale: -2,
       ...explicitVoiceOverrides
     });
     const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
@@ -1476,7 +1476,7 @@ test("build-project writes project meta sidecar with speed, emotion, and prosody
       emotion: "calm",
       speedPreset: "slow",
       speedProfilesPath,
-      intonationScaleDelta: 0.02,
+      intonationScale: 0.02,
       voicevoxApiUrl
     });
     const projectMeta = JSON.parse(
@@ -1486,7 +1486,7 @@ test("build-project writes project meta sidecar with speed, emotion, and prosody
     assert.deepEqual(projectMeta.adjustments, {
       speed_preset: "slow",
       emotion: "calm",
-      intonation_scale_delta: 0.02
+      intonation_scale: 0.02
     });
   });
 });

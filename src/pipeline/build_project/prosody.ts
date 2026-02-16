@@ -1,20 +1,20 @@
 import type { VoicevoxAudioQuery } from "../voicevox_engine.ts";
 
 export interface ProsodyAdjustments {
-  intonationScaleDelta?: number;
+  intonationScale?: number;
 }
 
 export function applyProsodyAdjustments(
   query: VoicevoxAudioQuery,
   adjustments: ProsodyAdjustments | undefined
 ): VoicevoxAudioQuery {
-  const intonationScaleDelta = adjustments?.intonationScaleDelta;
-  if (typeof intonationScaleDelta !== "number") {
+  const intonationScale = adjustments?.intonationScale;
+  if (typeof intonationScale !== "number") {
     return query;
   }
 
   return {
     ...query,
-    intonationScale: Math.max(0, query.intonationScale + intonationScaleDelta)
+    intonationScale: Math.max(0, intonationScale)
   };
 }
