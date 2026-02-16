@@ -124,6 +124,71 @@ async function withMockVoicevoxServer(
   }
 }
 
+function mockAudioQueryResponse(params?: {
+  snakeCase?: boolean;
+  isInterrogative?: boolean;
+  emptyAccentPhrases?: boolean;
+  overrides?: Record<string, unknown>;
+}): Record<string, unknown> {
+  const snakeCase = params?.snakeCase ?? false;
+  const isInterrogative = params?.isInterrogative ?? false;
+  const emptyAccentPhrases = params?.emptyAccentPhrases ?? false;
+  const overrides = params?.overrides ?? {};
+
+  const accentPhrases = emptyAccentPhrases
+    ? []
+    : [
+        {
+          moras: [
+            {
+              text: "テ",
+              consonant: "t",
+              consonantLength: 0.05,
+              vowel: "e",
+              vowelLength: 0.08,
+              pitch: 5.5
+            }
+          ],
+          accent: 1,
+          isInterrogative
+        }
+      ];
+  const accentPhrasesSnake = emptyAccentPhrases
+    ? []
+    : [
+        {
+          moras: [
+            {
+              text: "テ",
+              consonant: "t",
+              consonant_length: 0.05,
+              vowel: "e",
+              vowel_length: 0.08,
+              pitch: 5.5
+            }
+          ],
+          accent: 1,
+          pause_mora: null,
+          is_interrogative: isInterrogative
+        }
+      ];
+
+  return {
+    ...(snakeCase ? { accent_phrases: accentPhrasesSnake } : { accentPhrases }),
+    speedScale: 1.8,
+    pitchScale: -0.2,
+    intonationScale: 0.5,
+    volumeScale: 0.7,
+    pauseLengthScale: 0.9,
+    prePhonemeLength: 0.03,
+    postPhonemeLength: 0.04,
+    outputSamplingRate: 24000,
+    outputStereo: true,
+    kana: "",
+    ...overrides
+  };
+}
+
 test("build-text -> build-project pipeline works with sample script", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
@@ -152,34 +217,7 @@ test("build-text -> build-project pipeline works with sample script", async () =
     }
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -552,34 +590,7 @@ test("build-project applies --emotion style mapping from character map", async (
     }
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -745,34 +756,7 @@ test("build-project keeps --style-id priority over --emotion", async () => {
     }
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -933,34 +917,7 @@ test("build-project fills accentPhrases via VOICEVOX audio_query", async () => {
     requestedTexts.push(text);
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1042,34 +999,7 @@ test("build-project applies speed preset values after profile defaults", async (
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1139,34 +1069,7 @@ test("build-project keeps pause-length lower bound after speed preset overrides"
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1239,34 +1142,7 @@ test("build-project applies intonation-scale and preserves interrogative accent 
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: true
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse({ isInterrogative: true }))
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1319,34 +1195,7 @@ test("build-project clamps intonationScale to zero when intonation-scale is nega
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1433,34 +1282,7 @@ test("build-project writes project meta sidecar with speed, emotion, and prosody
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonantLength: 0.05,
-                vowel: "e",
-                vowelLength: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            isInterrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse())
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1510,35 +1332,7 @@ test("build-project supports snake_case audio_query response", async () => {
 
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accent_phrases: [
-          {
-            moras: [
-              {
-                text: "テ",
-                consonant: "t",
-                consonant_length: 0.05,
-                vowel: "e",
-                vowel_length: 0.08,
-                pitch: 5.5
-              }
-            ],
-            accent: 1,
-            pause_mora: null,
-            is_interrogative: false
-          }
-        ],
-        speedScale: 1.8,
-        pitchScale: -0.2,
-        intonationScale: 0.5,
-        volumeScale: 0.7,
-        pauseLengthScale: 0.9,
-        prePhonemeLength: 0.03,
-        postPhonemeLength: 0.04,
-        outputSamplingRate: 24000,
-        outputStereo: true,
-        kana: ""
-      })
+      JSON.stringify(mockAudioQueryResponse({ snakeCase: true }))
     );
   }, async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
@@ -1582,18 +1376,20 @@ test("build-project rejects empty accentPhrases from VOICEVOX audio_query", asyn
     }
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        accentPhrases: [],
-        speedScale: 1,
-        pitchScale: 0,
-        intonationScale: 1,
-        volumeScale: 1,
-        pauseLengthScale: 1,
-        prePhonemeLength: 0.1,
-        postPhonemeLength: 0.1,
-        outputSamplingRate: "engineDefault",
-        outputStereo: false
-      })
+      JSON.stringify(mockAudioQueryResponse({
+        emptyAccentPhrases: true,
+        overrides: {
+          speedScale: 1,
+          pitchScale: 0,
+          intonationScale: 1,
+          volumeScale: 1,
+          pauseLengthScale: 1,
+          prePhonemeLength: 0.1,
+          postPhonemeLength: 0.1,
+          outputSamplingRate: "engineDefault",
+          outputStereo: false
+        }
+      }))
     );
   }, async (voicevoxApiUrl) => {
     await assert.rejects(
