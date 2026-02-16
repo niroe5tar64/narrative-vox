@@ -35,6 +35,9 @@ artifacts/
 inputs/books/*/source/
 inputs/novels/*/source/
 
+# cloned OSS repositories (oss-dive genre)
+inputs/repos/*/
+
 # generated audio assets (copyright / size risk)
 *.wav
 *.mp3
