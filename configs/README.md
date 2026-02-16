@@ -1,8 +1,8 @@
 # Configs
 
-- `books/`: 書籍向け実行設定
-  - `<book-id>.example.json`: 共有用テンプレート
-  - `<book-id>.json`: ローカル実運用値（必要に応じて作成）
+- `projects/`: プロジェクト実行設定
+  - `<project-id>.example.json`: 共有用テンプレート
+  - `<project-id>.json`: ローカル実運用値（必要に応じて作成）
 - `novels/`: 小説向け実行設定
 - `characters/`: キャラクター定義（キー、表示名、VOICEVOX voice）
 - `voicevox/`: Build Text / Build Project 用の変換設定

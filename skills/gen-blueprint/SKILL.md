@@ -1,31 +1,31 @@
 ---
 name: gen-blueprint
-description: "book config を使って Blueprint（書籍全体設計JSON）を生成する。引数: [book-id]（例: /gen-blueprint introducing-rescript）"
+description: "project config を使って Blueprint（全体設計JSON）を生成する。引数: [project-id]（例: /gen-blueprint introducing-rescript）"
 ---
 
 # gen-blueprint
 
 ## 目的
 
-book config と参照ソースを入力として、書籍全体の設計図（Blueprint JSON）を LLM で生成し、バリデーション済みファイルとして保存する。
+project config と参照ソースを入力として、書籍全体の設計図（Blueprint JSON）を LLM で生成し、バリデーション済みファイルとして保存する。
 
 ## 実行手順
 
-### Step 1: book config 読み込み
+### Step 1: project config 読み込み
 
-1. `configs/books/$ARGUMENTS.json` を読み込む。
+1. `configs/projects/$ARGUMENTS.json` を読み込む。
 2. `GENRE` フィールドを確認する（例: `study`）。
 
 ### Step 2: プロンプト解決
 
 1. `prompts/{GENRE}/blueprint.md` を読み込む。
-2. `## Prompt` セクション以降のプレースホルダ `{{KEY}}` を book config の値で置換する。
+2. `## Prompt` セクション以降のプレースホルダ `{{KEY}}` を project config の値で置換する。
 3. ````json` コードブロック内のプレースホルダは置換しない（出力形式の例示のため）。
 4. 未解決プレースホルダが残っていればエラー報告して終了する。
 
 ### Step 3: ソースマテリアル読み込み
 
-1. book config の `SOURCE_MARKDOWN_PATHS` のグロブパターンでファイルを取得する。
+1. project config の `SOURCE_MARKDOWN_PATHS` のグロブパターンでファイルを取得する。
 2. 各ファイルの内容を添付コンテキストとして提供する。
 
 ### Step 4: LLM 実行
@@ -36,7 +36,7 @@ book config と参照ソースを入力として、書籍全体の設計図（Bl
 
 ### Step 5: 出力保存
 
-1. 出力先: `projects/{BOOK_ID}/run-YYYYMMDD-HHMM/blueprint/book_blueprint.json`
+1. 出力先: `projects/{PROJECT_ID}/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
    - `run-YYYYMMDD-HHMM` は現在日時で新規作成する。
    - 既存の run ディレクトリを上書きしない。
 2. JSON をフォーマットして保存する。

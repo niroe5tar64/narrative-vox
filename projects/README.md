@@ -3,7 +3,7 @@
 実行ごとの成果物を `run-YYYYMMDD-HHMM` 単位で保存する。
 
 例:
-- `stage1/book_blueprint.json`
+- `stage1/project_blueprint.json`
 - `stage2/E##_variables.json`
 - `stage3/E##_script.md`
 - `voicevox_text/E##_voicevox_text.json`

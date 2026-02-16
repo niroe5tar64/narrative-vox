@@ -17,7 +17,7 @@
 │   ├── audiobook/   # 小説向けプロンプト（整備中）
 │   └── shared/      # 共通ルール（整備中）
 ├── configs/
-│   ├── books/
+│   ├── projects/
 │   ├── novels/
 │   ├── characters/
 │   └── voicevox/
@@ -115,11 +115,11 @@ bun run build-audio -- \
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md
 
-# (補助) Promptテンプレートを book config で解決して出力
+# (補助) Promptテンプレートを project config で解決して出力
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step blueprint \
-  --book-config configs/books/introducing-rescript.example.json
+  --project-config configs/projects/introducing-rescript.example.json
 ```
 
 ## Prompt工程の実行方法（Blueprint / Variables / Script）
@@ -135,7 +135,7 @@ Phase 1（Blueprint / Variables / Script）は次のどちらかで実行しま�
 ```
 
 - Skill定義: `skills/gen-blueprint/SKILL.md`, `skills/gen-variables/SKILL.md`, `skills/gen-script/SKILL.md`
-- 出力先: `projects/<book-id>/run-YYYYMMDD-HHMM/{blueprint,variables,script}/...`
+- 出力先: `projects/<project-id>/run-YYYYMMDD-HHMM/{blueprint,variables,script}/...`
 
 2. `render-prompt` でテンプレートを解決し、任意のLLMに投入する
 
@@ -144,13 +144,13 @@ Phase 1（Blueprint / Variables / Script）は次のどちらかで実行しま�
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step blueprint \
-  --book-config configs/books/introducing-rescript.example.json
+  --project-config configs/projects/introducing-rescript.example.json
 
 # Variables Promptを解決（EPISODE_IDを上書き）
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step variables \
-  --book-config configs/books/introducing-rescript.example.json \
+  --project-config configs/projects/introducing-rescript.example.json \
   --episode-id E01
 ```
 

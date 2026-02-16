@@ -1,6 +1,6 @@
 ---
 name: gen-script
-description: "Episode Variables JSON を使って台本（Markdown）を生成する。引数: [book-id] [episode-id]（例: /gen-script introducing-rescript E01）"
+description: "Episode Variables JSON を使って台本（Markdown）を生成する。引数: [project-id] [episode-id]（例: /gen-script introducing-rescript E01）"
 ---
 
 # gen-script
@@ -11,20 +11,20 @@ Episode Variables JSON を入力として、固定構成 1〜8 の音声台本�
 
 ## 引数
 
-- `$0`: book-id（例: `introducing-rescript`）
+- `$0`: project-id（例: `introducing-rescript`）
 - `$1`: episode-id（例: `E01`）
 
 ## 実行手順
 
-### Step 1: book config 読み込み
+### Step 1: project config 読み込み
 
-1. `configs/books/$0.json` を読み込む。
+1. `configs/projects/$0.json` を読み込む。
 2. `GENRE` フィールドを確認する（例: `study`）。
 
 ### Step 2: Episode Variables 読み込み
 
-1. book config の `BOOK_BLUEPRINT_JSON_PATH` から run ディレクトリを推定する。
-2. `projects/{BOOK_ID}/{run-dir}/variables/{$1}_variables.json` を読み込む。
+1. project config の `PROJECT_BLUEPRINT_JSON_PATH` から run ディレクトリを推定する。
+2. `projects/{PROJECT_ID}/{run-dir}/variables/{$1}_variables.json` を読み込む。
 3. ファイルが存在しなければエラー報告して終了する。
 
 ### Step 3: プロンプト取得
@@ -40,7 +40,7 @@ Episode Variables JSON を入力として、固定構成 1〜8 の音声台本�
 
 ### Step 5: 出力保存
 
-1. 出力先: `projects/{BOOK_ID}/{run-dir}/script/{EPISODE_ID}_script.md`
+1. 出力先: `projects/{PROJECT_ID}/{run-dir}/script/{EPISODE_ID}_script.md`
    - Variables と同じ run ディレクトリを使用する。
 2. Markdown をそのまま保存する。
 

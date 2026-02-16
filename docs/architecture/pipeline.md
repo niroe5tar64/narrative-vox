@@ -13,18 +13,18 @@
 flowchart TB
   subgraph PromptFlow["Prompt入力前提 (Blueprint / Variables / Script)"]
     S["入力ソース<br/>inputs/books/\*/source/\*.md"]
-    BCFG["book config<br/>configs/books/${book-id}.json"]
+    PCFG["project config<br/>configs/projects/${project-id}.json"]
     P1["Blueprint Prompt<br/>prompts/study/blueprint.md"]
-    O1["blueprint/book_blueprint.json"]
+    O1["blueprint/project_blueprint.json"]
     P2["Variables Prompt<br/>prompts/study/episode_variables.md"]
     O2["variables/E##_variables.json"]
     P3["Script Prompt<br/>prompts/study/script_common_frame.md"]
     O3["script/E##_script.md"]
     S --> P1
-    BCFG --> P1
+    PCFG --> P1
     P1 --> O1
     O1 --> P2
-    BCFG --> P2
+    PCFG --> P2
     P2 --> O2
     O2 --> P3
     P3 --> O3
@@ -68,7 +68,7 @@ flowchart TB
   classDef cli fill:#d9edf7,stroke:#31708f,color:#1b4f72;
   classDef cfg fill:#f7f7f9,stroke:#777,color:#222;
   classDef out fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
-  class S,BCFG,P1,P2,P3 prompt;
+  class S,PCFG,P1,P2,P3 prompt;
   class C0,C1,C2,C3 cli;
   class CFG4,CFG5P,CFG5S,VXURL,VXAPI,VXSCRIPT cfg;
   class O1,O2,O3,O4,O5,O6 out;
@@ -81,7 +81,7 @@ flowchart TB
 | `prompts/study/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
 | `prompts/study/episode_variables.md` | Episode Variables | プロンプト入力前提 | エピソード変数JSONを生成 |
 | `prompts/study/script_common_frame.md` | Script | プロンプト入力前提 | 固定構成1-8の台本を生成 |
-| `configs/books/<book-id>.json` | Blueprint / Variables | プロンプト入力前提 | Promptのプレースホルダ値を供給 |
+| `configs/projects/<project-id>.json` | Blueprint / Variables | プロンプト入力前提 | Promptのプレースホルダ値を供給 |
 | `configs/voicevox/build_text_config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
 | `configs/voicevox/default_profile.json` | `build-project` | CLI操作前提 | 話者デフォルト値とqueryDefaults |
 | `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | `default_profile.json` 未作成時のフォールバック |
@@ -98,7 +98,7 @@ flowchart TB
 
 | コマンド | 必須入力 | 主な自動推論 | 出力 |
 | --- | --- | --- | --- |
-| `render-prompt` | `--genre`, `--step`, `--book-config` | なし（`variables` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
+| `render-prompt` | `--genre`, `--step`, `--project-config` | なし（`variables` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
 | `build-text` | `--script script/E##_script.md` | `--run-dir` は `.../run-.../script/...` なら推論。`--episode-id` 未指定時はファイル名 `E##_script.md` から推論。 | `voicevox_text/*.json`, `voicevox_text/*.txt`, `dict_candidates/*.csv` |
 | `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。profileは `default_profile.json` を優先し、なければ `.example.json`。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj` |
 | `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。圧縮は `--compressed-format` / `--compressed-bitrate-kbps` で変更可。 | `audio/E##.wav`, `audio/E##.(mp3|m4a|ogg)`, `audio/manifest.json` |
