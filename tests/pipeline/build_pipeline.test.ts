@@ -255,6 +255,104 @@ test("build-text does not emit speaker fallback warning when source lines omit s
   );
 });
 
+test("build-text applies reading dictionary entries to generated utterances", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "ReScriptで音声合成を試します。",
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const readingDictionaryPath = path.join(tempRoot, "reading_dictionary.json");
+  await writeFile(
+    readingDictionaryPath,
+    JSON.stringify(
+      {
+        version: 1,
+        entries: [
+          {
+            surface: "ReScript",
+            reading: "リスクリプト"
+          }
+        ]
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234",
+    readingDictionaryPath
+  });
+  const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  const utteranceTexts = textJson.utterances.map((utterance) => utterance.text);
+  assert.equal(utteranceTexts.some((text) => text.includes("リスクリプト")), true);
+  assert.equal(utteranceTexts.some((text) => text.includes("ReScript")), false);
+});
+
+test("build-text keeps ruby reading precedence over reading dictionary", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E01_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "{ReScript|リ・スクリプト}で検証します。",
+    ].join("\n"),
+    "utf-8"
+  );
+
+  const readingDictionaryPath = path.join(tempRoot, "reading_dictionary.json");
+  await writeFile(
+    readingDictionaryPath,
+    JSON.stringify(
+      {
+        version: 1,
+        entries: [
+          {
+            surface: "ReScript",
+            reading: "リスクリプト"
+          }
+        ]
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  const buildTextResult = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E01",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-1234",
+    readingDictionaryPath
+  });
+  const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
+
+  const utteranceTexts = textJson.utterances.map((utterance) => utterance.text);
+  assert.equal(utteranceTexts.some((text) => text.includes("リ・スクリプト")), true);
+  assert.equal(utteranceTexts.some((text) => text.includes("リスクリプト")), false);
+});
+
 test("build-project resolves character voices per utterance speaker_key", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");

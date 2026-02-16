@@ -14,7 +14,7 @@ type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "build-text":
-    "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+    "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--reading-dictionary <configs/voicevox/reading_dictionary.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
     "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>]",
   "build-audio":
@@ -68,7 +68,8 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      buildTextConfigPath: optionAsString(options, "build-text-config")
+      buildTextConfigPath: optionAsString(options, "build-text-config"),
+      readingDictionaryPath: optionAsString(options, "reading-dictionary")
     });
 
     console.log(
@@ -144,7 +145,8 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
-      buildTextConfigPath: optionAsString(options, "build-text-config")
+      buildTextConfigPath: optionAsString(options, "build-text-config"),
+      readingDictionaryPath: optionAsString(options, "reading-dictionary")
     });
 
     const result = await buildProject({

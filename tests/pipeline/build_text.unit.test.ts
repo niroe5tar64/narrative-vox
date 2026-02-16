@@ -1,12 +1,17 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 import {
+  applyReadingDictionary,
   collectRubyCandidates,
   collectTermCandidates,
   decidePauseLengthMs,
   evaluateSpeakability,
   inferReadingFromSurface,
+  loadReadingDictionary,
   normalizeScriptLine,
   replaceRubyWithReading,
   splitIntoSentences,
@@ -80,6 +85,39 @@ test("normalizeScriptLine keeps regular lines unchanged", () => {
 test("replaceRubyWithReading replaces ruby notation with reading", () => {
   const actual = replaceRubyWithReading("今日は{漢字|かんじ}と{ReScript|リスクリプト}を学ぶ。");
   assert.equal(actual, "今日はかんじとリスクリプトを学ぶ。");
+});
+
+test("applyReadingDictionary prefers longest surface match", () => {
+  const actual = applyReadingDictionary("型安全な型設計", {
+    version: 1,
+    entries: [
+      { surface: "型", reading: "かた" },
+      { surface: "型安全", reading: "かたあんぜん" }
+    ]
+  });
+  assert.equal(actual, "かたあんぜんなかた設計");
+});
+
+test("loadReadingDictionary rejects invalid schema", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const dictionaryPath = path.join(tempRoot, "reading_dictionary.json");
+  await writeFile(
+    dictionaryPath,
+    JSON.stringify(
+      {
+        version: 2,
+        entries: []
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
+  await assert.rejects(
+    () => loadReadingDictionary(dictionaryPath),
+    /Failed to load reading dictionary/
+  );
 });
 
 test("dictionary candidate extraction keeps ruby readings and token frequencies", () => {
