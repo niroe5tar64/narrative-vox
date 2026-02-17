@@ -11,4 +11,4 @@
   - `build-project`: voicevox_text json -> vvproj
   - `build-audio`: vvproj -> wav + compressed audio/audio manifest
   - `build-all`: build-text + build-project
-  - `check-run`: blueprint/variables/script validation
+  - `check-run`: blueprint/variables/script validation + build prerequisites preflight

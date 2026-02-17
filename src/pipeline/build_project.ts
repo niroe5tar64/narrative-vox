@@ -4,7 +4,8 @@ import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import type { VoicevoxTextData } from "../shared/types.ts";
 import { loadJson } from "../shared/json.ts";
-import { normalizeCharacterMap, type CharacterMap } from "../shared/characters.ts";
+import type { CharacterMap } from "../shared/characters.ts";
+import { resolveCharacterMap } from "../shared/character_map_resolver.ts";
 import {
   RawVoiceProfile,
   VoiceProfile,
@@ -83,20 +84,6 @@ async function resolveProfilePath(profilePath?: string): Promise<string> {
     throw new Error(
       `Voice profile not found: ${localDefault}. Create configs/voicevox/default_profile.json or pass --profile.`
     );
-  }
-}
-
-async function resolveCharacterMapPath(characterMapPath?: string): Promise<string | undefined> {
-  if (characterMapPath) {
-    return path.resolve(characterMapPath);
-  }
-
-  const localDefault = path.resolve("configs/voicevox/default_character_map.json");
-  try {
-    await access(localDefault);
-    return localDefault;
-  } catch {
-    return undefined;
   }
 }
 
@@ -311,7 +298,6 @@ export async function buildProject({
   }
   const resolvedRunDir = inferredRunDir;
   const resolvedProfilePath = await resolveProfilePath(profilePath);
-  const resolvedCharacterMapPath = await resolveCharacterMapPath(characterMapPath);
   const resolvedSpeedProfilesPath = await resolveSpeedProfilesPath(speedProfilesPath);
 
   const voicevoxTextData = await loadJson<VoicevoxTextData>(
@@ -320,9 +306,9 @@ export async function buildProject({
   );
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
-  const characterMap = resolvedCharacterMapPath
-    ? normalizeCharacterMap(await loadJson<unknown>(resolvedCharacterMapPath))
-    : undefined;
+  const { characterMap } = await resolveCharacterMap({
+    characterMapPath
+  });
   const speedProfiles = resolvedSpeedProfilesPath
     ? await loadSpeedProfiles(resolvedSpeedProfilesPath)
     : undefined;

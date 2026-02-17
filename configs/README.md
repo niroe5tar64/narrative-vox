@@ -8,7 +8,7 @@
 - `voicevox/`: Build Text / Build Project 用の変換設定
   - `default_profile.example.json`: 共有用テンプレート（`--profile` で明示指定して利用）
   - `default_profile.json`: 既定の profile（`--profile` 未指定時に使用、gitignore）
-  - `default_character_map.json`: character_key -> VOICEVOX voice 設定（任意・ローカル）
+  - `default_character_map.json`: character_key -> VOICEVOX voice 設定（任意・ローカル、未作成時は `characters/*.json` から自動構築）
   - `build_text_config.example.json`: Build Text 設定テンプレート
   - `build_text_config.json`: Build Text の既定設定（コミット対象）
   - `reading_dictionary.json`: Build Text の読み辞書

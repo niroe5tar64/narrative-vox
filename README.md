@@ -165,8 +165,9 @@ bun src/cli/main.ts render-prompt \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
+- `--character-map` 未指定時は `configs/voicevox/default_character_map.json` を優先し、未作成なら `configs/characters/*.json` から自動的に character map を構築します。
 - `--profile` 未指定時は `configs/voicevox/default_profile.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--profile configs/voicevox/default_profile.example.json` などを明示指定してください。
-- `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は `--character-map`（または `configs/voicevox/default_character_map.json`）が必須です。
+- `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は character map が必要です（`--character-map` 指定、`configs/voicevox/default_character_map.json`、または `configs/characters/*.json` からの自動構築）。
 - `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（profile の voice は自動適用されません）。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
 - `--emotion <key>` を指定すると、`character map` の `emotionStyles[character_key][key]` に従って `styleId` を切り替えます（`--style-id` 指定時はそちらを優先）。
@@ -189,6 +190,7 @@ bun src/cli/main.ts render-prompt \
   - `build-project`: `--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
   - `build-audio`: `--vvproj` が `.../run-.../voicevox_project/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
+- `check-run` は blueprint/variables/script の構造検証に加えて、build 前提条件（profile / character 解決 / speed preset / VOICEVOX 到達性）も事前検証します。
 
 ### VOICEVOX の利用可能キャラクターID確認
 

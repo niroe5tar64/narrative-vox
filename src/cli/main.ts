@@ -5,6 +5,7 @@ import { buildProject } from "../pipeline/build_project.ts";
 import { buildAudio } from "../pipeline/build_audio.ts";
 import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
+import { validateBuildPrerequisites } from "../quality/build_prerequisites.ts";
 import { renderPrompt } from "./render_prompt.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
 import type { CliOptions } from "../shared/cli_args.ts";
@@ -22,7 +23,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
-    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM>",
+    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>]",
   "prepare-run":
     "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":
@@ -61,6 +62,21 @@ function buildProjectOptions(options: CliOptions) {
     speedPreset: optionAsString(options, "speed-preset"),
     speedProfilesPath: optionAsString(options, "speed-profiles"),
     intonationScale: optionAsNumber(options, "intonation-scale")
+  };
+}
+
+function buildPrerequisiteOptionFields(options: CliOptions) {
+  return {
+    profilePath: optionAsString(options, "profile"),
+    characterMapPath: optionAsString(options, "character-map"),
+    characterKey: optionAsString(options, "character-key"),
+    engineId: optionAsString(options, "engine-id"),
+    speakerId: optionAsString(options, "speaker-id"),
+    styleId: optionAsNumber(options, "style-id"),
+    emotion: optionAsString(options, "emotion"),
+    voicevoxApiUrl: optionAsString(options, "voicevox-url"),
+    speedPreset: optionAsString(options, "speed-preset"),
+    speedProfilesPath: optionAsString(options, "speed-profiles")
   };
 }
 
@@ -143,9 +159,15 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     }
   },
   "build-all": async (options) => {
+    const scriptPath = ensureOption(options, "script", "build-all");
+    await validateBuildPrerequisites({
+      scriptPaths: [scriptPath],
+      ...buildPrerequisiteOptionFields(options)
+    });
+
     const runDir = optionAsString(options, "run-dir");
     const buildTextResult = await buildText({
-      scriptPath: ensureOption(options, "script", "build-all"),
+      scriptPath,
       runDir,
       projectId: optionAsString(options, "project-id"),
       runId: optionAsString(options, "run-id"),
@@ -170,7 +192,8 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   },
   "check-run": async (options) => {
     const result = await checkRun({
-      runDir: ensureOption(options, "run-dir", "check-run")
+      runDir: ensureOption(options, "run-dir", "check-run"),
+      ...buildPrerequisiteOptionFields(options)
     });
 
     console.log(

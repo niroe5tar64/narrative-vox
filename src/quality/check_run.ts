@@ -3,12 +3,23 @@ import path from "node:path";
 import { loadJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import { REQUIRED_SECTION_IDS, validateRequiredScriptStructure } from "../shared/script_structure.ts";
+import { validateBuildPrerequisites } from "./build_prerequisites.ts";
 
 const VARIABLES_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
 const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 
 export interface CheckRunOptions {
   runDir: string;
+  profilePath?: string;
+  characterMapPath?: string;
+  characterKey?: string;
+  engineId?: string;
+  speakerId?: string;
+  styleId?: number;
+  emotion?: string;
+  voicevoxApiUrl?: string;
+  speedPreset?: string;
+  speedProfilesPath?: string;
 }
 
 export interface CheckRunResult {
@@ -64,7 +75,19 @@ function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
   return baseIds.filter((id) => !compareSet.has(id));
 }
 
-export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunResult> {
+export async function checkRun({
+  runDir,
+  profilePath,
+  characterMapPath,
+  characterKey,
+  engineId,
+  speakerId,
+  styleId,
+  emotion,
+  voicevoxApiUrl,
+  speedPreset,
+  speedProfilesPath
+}: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
 
   const blueprintPath = path.join(resolvedRunDir, "blueprint", "project_blueprint.json");
@@ -87,6 +110,7 @@ export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunRes
   if (scriptFiles.length === 0) {
     throw new Error(`${toRelativePath(scriptDir)} has no E##_script.md files`);
   }
+  const scriptPaths: string[] = [];
   const scriptEpisodeIds = collectEpisodeIds(scriptFiles, SCRIPT_FILE_RE);
   for (const fileName of scriptFiles) {
     const match = fileName.match(SCRIPT_FILE_RE);
@@ -95,6 +119,7 @@ export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunRes
       continue;
     }
     const filePath = path.join(scriptDir, fileName);
+    scriptPaths.push(filePath);
     const scriptText = await readFile(filePath, "utf-8");
     ensureHasAllSections(scriptText, filePath, episodeId);
   }
@@ -108,6 +133,20 @@ export async function checkRun({ runDir }: CheckRunOptions): Promise<CheckRunRes
   if (extraInScript.length > 0) {
     throw new Error(`script has episodes not in variables: ${extraInScript.join(", ")}`);
   }
+
+  await validateBuildPrerequisites({
+    scriptPaths,
+    profilePath,
+    characterMapPath,
+    characterKey,
+    engineId,
+    speakerId,
+    styleId,
+    emotion,
+    voicevoxApiUrl,
+    speedPreset,
+    speedProfilesPath
+  });
 
   return {
     runDir: resolvedRunDir,
