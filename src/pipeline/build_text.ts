@@ -53,7 +53,6 @@ export { applyReadingDictionary, loadReadingDictionary } from "./build_text/read
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
 const SPEAKER_TAG_RE = /^\s*\[speaker:([a-z][a-z0-9_-]*)\]\s*/;
 const SPEAKER_TAG_PREFIX_RE = /^\s*\[speaker:/;
-const TOTAL_TIME_LINE_RE = /^\s*合計想定時間\s*:/;
 const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 
 function formatPercentage(value: number): string {
@@ -129,10 +128,6 @@ function buildUtterancesAndCandidates(
     if (sectionHeader) {
       currentSectionId = sectionHeader.id;
       currentSectionTitle = sectionHeader.title;
-      continue;
-    }
-
-    if (TOTAL_TIME_LINE_RE.test(rawLine)) {
       continue;
     }
 

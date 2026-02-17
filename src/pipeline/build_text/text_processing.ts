@@ -249,15 +249,9 @@ export function evaluateSpeakability(
 
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
 const INLINE_CODE_RE = /`([^`]+)`/g;
-const DURATION_NOTE_LINE_RE = /^\s*\(想定:\s*[0-9.]+分\)\s*$/;
-const DURATION_NOTE_SUFFIX_RE = /\(想定:\s*[0-9.]+分\)\s*$/;
 
 export function normalizeScriptLine(rawLine: string): string {
-  if (DURATION_NOTE_LINE_RE.test(rawLine)) {
-    return "";
-  }
-  const withoutDurationNote = rawLine.replace(DURATION_NOTE_SUFFIX_RE, "");
-  const withoutSilence = withoutDurationNote.replace(SILENCE_TAG_RE, "");
+  const withoutSilence = rawLine.replace(SILENCE_TAG_RE, "");
   const withoutInlineCode = withoutSilence.replace(INLINE_CODE_RE, "$1");
   return withoutInlineCode.replace(/\s+/g, " ").trim();
 }
