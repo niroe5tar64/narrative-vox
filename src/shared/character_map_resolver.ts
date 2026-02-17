@@ -1,4 +1,3 @@
-import { access } from "node:fs/promises";
 import path from "node:path";
 import {
   buildRunCharacters,
@@ -6,6 +5,7 @@ import {
   normalizeCharacterMap,
   type CharacterMap
 } from "./characters.ts";
+import { pathExists } from "./fs_utils.ts";
 import { loadJson } from "./json.ts";
 
 export interface ResolveCharacterMapOptions {
@@ -18,15 +18,6 @@ export interface ResolveCharacterMapOptions {
 export interface ResolvedCharacterMap {
   characterMap?: CharacterMap;
   source?: string;
-}
-
-async function pathExists(targetPath: string): Promise<boolean> {
-  try {
-    await access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function resolveCharacterMap(

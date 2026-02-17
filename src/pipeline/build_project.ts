@@ -1,11 +1,12 @@
-import { access, mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import type { VoicevoxTextData } from "../shared/types.ts";
-import { loadJson } from "../shared/json.ts";
 import type { CharacterMap } from "../shared/characters.ts";
 import { resolveCharacterMap } from "../shared/character_map_resolver.ts";
+import { resolveProfilePath, resolveSpeedProfilesPath } from "../shared/config_resolver.ts";
+import { loadJson } from "../shared/json.ts";
 import {
   RawVoiceProfile,
   VoiceProfile,
@@ -69,36 +70,6 @@ const MIN_VOICEVOX_PROJECT_APP_VERSION = "0.25.0";
 
 function toAudioKey(episodeId: string, utteranceId: string): string {
   return `${episodeId}_${utteranceId}`;
-}
-
-async function resolveProfilePath(profilePath?: string): Promise<string> {
-  if (profilePath) {
-    return path.resolve(profilePath);
-  }
-
-  const localDefault = path.resolve("configs/voicevox/default_profile.json");
-  try {
-    await access(localDefault);
-    return localDefault;
-  } catch {
-    throw new Error(
-      `Voice profile not found: ${localDefault}. Create configs/voicevox/default_profile.json or pass --profile.`
-    );
-  }
-}
-
-async function resolveSpeedProfilesPath(speedProfilesPath?: string): Promise<string | undefined> {
-  if (speedProfilesPath) {
-    return path.resolve(speedProfilesPath);
-  }
-
-  const localDefault = path.resolve("configs/voicevox/speed_profiles.json");
-  try {
-    await access(localDefault);
-    return localDefault;
-  } catch {
-    return undefined;
-  }
 }
 
 function inferRunDirFromVoicevoxTextJsonPath(voicevoxTextJsonPath: string): string | undefined {
@@ -307,7 +278,8 @@ export async function buildProject({
   const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
   const profile = normalizeVoiceProfile(rawProfile);
   const { characterMap } = await resolveCharacterMap({
-    characterMapPath
+    characterMapPath,
+    defaultCharacterKey: characterKey
   });
   const speedProfiles = resolvedSpeedProfilesPath
     ? await loadSpeedProfiles(resolvedSpeedProfilesPath)

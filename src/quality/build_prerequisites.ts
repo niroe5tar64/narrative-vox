@@ -1,7 +1,8 @@
-import { access, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { loadJson } from "../shared/json.ts";
 import { resolveCharacterMap } from "../shared/character_map_resolver.ts";
+import { resolveProfilePath, resolveSpeedProfilesPath } from "../shared/config_resolver.ts";
+import { loadJson } from "../shared/json.ts";
 import { normalizeVoiceProfile, type RawVoiceProfile } from "../shared/voice_profile.ts";
 import { resolveVoicevoxApiUrl } from "../pipeline/voicevox_engine.ts";
 import { loadSpeedProfiles } from "../pipeline/build_project/speed_profiles.ts";
@@ -60,50 +61,9 @@ async function ensureVoicevoxReachable(voicevoxApiUrl: string, timeoutMs = 2000)
     return;
   }
 
-  const speakersEndpoint = new URL("/speakers", voicevoxApiUrl);
-  if (await fetchReachability(speakersEndpoint, timeoutMs)) {
-    return;
-  }
-
   throw new Error(
     `VOICEVOX Engine is not reachable: ${voicevoxApiUrl}. Use --voicevox-url explicitly if needed.`
   );
-}
-
-async function pathExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function resolveProfilePath(profilePath?: string): Promise<string> {
-  if (profilePath) {
-    return path.resolve(profilePath);
-  }
-
-  const localDefault = path.resolve("configs/voicevox/default_profile.json");
-  if (await pathExists(localDefault)) {
-    return localDefault;
-  }
-
-  throw new Error(
-    `Voice profile not found: ${localDefault}. Create configs/voicevox/default_profile.json or pass --profile.`
-  );
-}
-
-async function resolveSpeedProfilesPath(speedProfilesPath?: string): Promise<string | undefined> {
-  if (speedProfilesPath) {
-    return path.resolve(speedProfilesPath);
-  }
-
-  const localDefault = path.resolve("configs/voicevox/speed_profiles.json");
-  if (await pathExists(localDefault)) {
-    return localDefault;
-  }
-  return undefined;
 }
 
 async function collectSpeakerKeys(scriptPaths: string[]): Promise<string[]> {
@@ -249,8 +209,8 @@ export async function validateBuildPrerequisites(
     scriptCount: options.scriptPaths.length,
     speakerKeys,
     resolvedProfilePath,
-    ...(resolvedCharacterMapSource ? { resolvedCharacterMapSource } : {}),
+    resolvedCharacterMapSource,
     resolvedVoicevoxApiUrl,
-    ...(resolvedSpeedProfilesPath ? { resolvedSpeedProfilesPath } : {})
+    resolvedSpeedProfilesPath
   };
 }
