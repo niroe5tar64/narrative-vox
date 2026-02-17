@@ -2,13 +2,14 @@
 
 ## 状態
 
-このリポジトリの Build Text / Build Project 実装と関連テストは、2026-02-11 時点で `.ts` へ移行済みです。
+このリポジトリの Build Text / Build Project / Build Audio 実装と関連テストは、2026-02-11 時点で `.ts` へ移行済みです。
 
 主要ファイル:
 
 - `src/cli/main.ts`
 - `src/pipeline/build_text.ts`
 - `src/pipeline/build_project.ts`
+- `src/pipeline/build_audio.ts`
 - `src/quality/schema_validator.ts`
 - `tests/pipeline/build_pipeline.test.ts`
 - `tests/pipeline/build_text.unit.test.ts`

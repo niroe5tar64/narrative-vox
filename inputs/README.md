@@ -4,3 +4,4 @@
 
 - `books/<book-id>/source/*`
 - `novels/<novel-id>/source/*`
+- `repos/<repo-name>/*`（oss-dive 用の clone 先）

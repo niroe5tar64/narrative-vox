@@ -5,7 +5,8 @@
 ## 入力
 
 - `voicevox_text/E##_voicevox_text.json`
-- `configs/voicevox/default_profile.json`（ローカル）または `configs/voicevox/default_profile.example.json`
+- `configs/voicevox/default_profile.json`（`--profile` 未指定時）
+- `--profile configs/voicevox/default_profile.example.json`（テンプレートを明示指定する場合）
 
 ## 出力
 
@@ -22,7 +23,7 @@
    - `--character-key` 指定時: 対応する `character map` エントリ
    - `utterances[*].speaker_key` がある場合: 対応する `character map` エントリ
    - `--emotion` 指定時: `character map` の `emotionStyles[character_key][emotion]` で `styleId` を上書き
-   - どちらもない場合: profile の voice
+   - どちらもない場合: `--engine-id` / `--speaker-id` / `--style-id` の3指定が必要
    - `speaker_key` または `--character-key` を使う場合、`character map` が未設定だとエラー
    - `--style-id` 指定時は emotion より優先して最終上書き
 4. `song` は空トラック構成で最小値を埋める。

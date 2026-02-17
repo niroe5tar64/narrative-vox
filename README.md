@@ -23,7 +23,8 @@
 │   └── voicevox/
 ├── inputs/
 │   ├── books/
-│   └── novels/
+│   ├── novels/
+│   └── repos/       # oss-dive 用の clone 先
 ├── projects/
 │   └── <book-or-novel-id>/run-YYYYMMDD-HHMM/
 │       ├── blueprint/
@@ -32,9 +33,7 @@
 │       ├── voicevox_text/
 │       ├── dict_candidates/
 │       ├── voicevox_project/
-│       ├── audio/
-│       ├── reports/
-│       └── logs/
+│       └── audio/
 ├── schemas/
 ├── src/
 ├── tests/
@@ -73,7 +72,6 @@
   - `projects/introducing-rescript/run-20260211-0000/voicevox_text/`
   - `projects/introducing-rescript/run-20260211-0000/dict_candidates/`
 - `projects/introducing-rescript/run-20260211-0000/voicevox_project/`
-- `projects/introducing-rescript/run-20260211-0000/reports/`
 - Build Text の Speakability 警告再現手順は `docs/architecture/build-text-speakability-checklist.md` を参照してください。
 
 詳細フローは `docs/architecture/pipeline.md` を参照。
@@ -104,6 +102,9 @@ bun run build-text -- \
 # 4) Build Text JSON から VOICEVOX project を生成
 bun run build-project -- \
   --voicevox-text-json projects/introducing-rescript/run-20260211-0000/voicevox_text/E01_voicevox_text.json \
+  --engine-id 074fc39e-678b-4c13-8916-ffca8d505d1d \
+  --speaker-id 7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff \
+  --style-id 67 \
   --voicevox-url http://voicevox-engine:50021
 
 # 5) Build Project `.vvproj` から VOICEVOX audio を生成（GUI操作不要）
@@ -115,7 +116,10 @@ bun run build-audio -- \
 
 # Build Text + Build Project を連続実行
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md
+  --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
+  --engine-id 074fc39e-678b-4c13-8916-ffca8d505d1d \
+  --speaker-id 7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff \
+  --style-id 67
 
 # (補助) Promptテンプレートを project config で解決して出力
 bun src/cli/main.ts render-prompt \
@@ -161,7 +165,9 @@ bun src/cli/main.ts render-prompt \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
-- `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は `--character-map`（または `configs/voicevox/default_character_map.json`）が必須です。どちらも使わない場合のみ profile の voice を使います。
+- `--profile` 未指定時は `configs/voicevox/default_profile.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--profile configs/voicevox/default_profile.example.json` などを明示指定してください。
+- `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は `--character-map`（または `configs/voicevox/default_character_map.json`）が必須です。
+- `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（profile の voice は自動適用されません）。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
 - `--emotion <key>` を指定すると、`character map` の `emotionStyles[character_key][key]` に従って `styleId` を切り替えます（`--style-id` 指定時はそちらを優先）。
 - `--build-text-config` は Build Text の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。

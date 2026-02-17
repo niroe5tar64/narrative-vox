@@ -33,12 +33,15 @@
 - 出力: `dict_candidates/E##_dict_candidates.csv`
 
 5. Build Project (voicevox text -> import)
-- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/default_profile.json`（ローカル）または `configs/voicevox/default_profile.example.json`
+- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/default_profile.json`（`--profile` 未指定時）
+- 代替入力: `--profile configs/voicevox/default_profile.example.json` を明示指定して実行
 - 出力: `voicevox_project/E##_voicevox_import.json`
 - 出力: `voicevox_project/E##.vvproj`
+- 出力: `voicevox_project/E##_project_meta.json`
 
-6. 品質確認
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/reports/quality_gate_report.md`
+6. Validation（任意）
+- `bun run check-run -- --run-dir projects/<project-id>/run-YYYYMMDD-HHMM`
+- Blueprint/Variables/Script を検証（レポートファイルは出力しない）
 
 ## 補助指示
 
@@ -78,6 +81,9 @@ bun src/cli/main.ts render-prompt -- \
 # Build Text + Build Project
 bun run build-all -- \
   --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
+  --engine-id 074fc39e-678b-4c13-8916-ffca8d505d1d \
+  --speaker-id 7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff \
+  --style-id 67 \
   --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 

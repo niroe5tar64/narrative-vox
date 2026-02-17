@@ -1,6 +1,6 @@
 # Build Text Speakability warning checklist
 
-このドキュメントは Phase5（軽微指摘対応）に向けて Build Text の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。`SpeakabilityWarningConfig` の閾値は `src/pipeline/build_text.ts` に定義されており、目的に応じて `quality_checks.speakability` の結果を確認します。
+このドキュメントは Phase5（軽微指摘対応）に向けて Build Text の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。しきい値は `configs/voicevox/build_text_config.json`（または `--build-text-config` 指定ファイル）で管理し、実装上の型定義は `src/pipeline/build_text/build_text_config.ts` の `SpeakabilityWarningConfig` を参照します。
 
 ## 警告条件と計測ポイント
 
@@ -41,7 +41,7 @@
 
 ## テストとの紐付け
 
-- `tests/pipeline/build_pipeline.test.ts` では `/tmp/nv-build-text-script/E04_script.md` を使って `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と Jira などの報告をリンクさせることで再現済みシナリオを維持できます。
+- `tests/pipeline/build_pipeline.test.ts` では一時 script を生成して `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と報告をリンクさせることで再現済みシナリオを維持できます。
 - `tests/pipeline/build_text.unit.test.ts` 系のユニットテストは `evaluateSpeakability`/`splitIntoSentences`/`decidePauseLengthMs` などの内部ロジックが期待どおりに動作し、`SpeakabilityWarningConfig.*` の各しきい値で警告をトリガーする前提を支えるため、変更を加える際は該当テストの入力値も見直してください。
 
 ## 警告別ドキュメント更新のたたき台
