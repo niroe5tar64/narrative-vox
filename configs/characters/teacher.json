@@ -4,12 +4,12 @@
   "description": "Teacher voice for explanations",
   "voice": {
     "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
-    "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+    "speakerId": "dda44ade-5f9c-4a3a-9d2c-2a976c7476d9",
     "styleId": 68
   },
   "emotionStyles": {
-    "calm": 67,
+    "calm": 68,
     "energetic": 68,
-    "serious": 70
+    "serious": 68
   }
 }

@@ -4,11 +4,11 @@
   "description": "Default narrator voice",
   "voice": {
     "engineId": "074fc39e-678b-4c13-8916-ffca8d505d1d",
-    "speakerId": "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
+    "speakerId": "04dbd989-32d0-40b4-9e71-17c920f2a8a9",
     "styleId": 67
   },
   "emotionStyles": {
     "calm": 67,
-    "energetic": 68
+    "energetic": 67
   }
 }
