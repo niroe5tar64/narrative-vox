@@ -65,6 +65,10 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 - `configs/voicevox/` — 音声プロファイル、キャラクターマップ、build-text設定（ポーズ・読み上げ適性閾値）、速度プロファイル、読み辞書
 - `configs/projects/*.json` — プロジェクト設定（ソースパス、エピソード数）
 
+## 開発方針
+
+- **後方互換は不要**: リリース前の個人開発プロダクトのため、既存データ形式・API・スキーマの後方互換を考慮する必要はない。破壊的変更は一括切替で行う。
+
 ## コミット規約
 
 Japanese Conventional Commits 形式: `<type>: <日本語subject>`（例: `feat: 音声合成パイプラインを追加`）。type: feat, fix, refactor, docs, style, test, chore, perf。コミット時は `/commit` スキル（`git-commit-ja-prefix`）を使用する。
