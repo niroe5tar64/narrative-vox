@@ -16,7 +16,7 @@ export interface RenderPromptResult {
 
 const STEP_FILE_MAP: Record<string, string> = {
   blueprint: "blueprint.md",
-  variables: "episode_variables.md",
+  material: "episode_material.md",
 };
 
 /**
@@ -87,7 +87,13 @@ export async function renderPrompt(options: RenderPromptOptions): Promise<Render
     readFile(options.projectConfigPath, "utf-8"),
   ]);
 
-  const config: Record<string, string> = JSON.parse(configRaw);
+  const rawConfig: Record<string, unknown> = JSON.parse(configRaw);
+  const config: Record<string, string> = {};
+  for (const [key, value] of Object.entries(rawConfig)) {
+    if (typeof value === "string") {
+      config[key] = value;
+    }
+  }
 
   // Override EPISODE_ID if provided
   if (options.episodeId) {

@@ -4,7 +4,7 @@ import path from "node:path";
 import { test } from "bun:test";
 
 const blueprintPromptPath = path.resolve("prompts/study/blueprint.md");
-const variablesPromptPath = path.resolve("prompts/study/episode_variables.md");
+const materialPromptPath = path.resolve("prompts/study/episode_material.md");
 const scriptPromptPath = path.resolve("prompts/study/script_common_frame.md");
 const studyReadmePath = path.resolve("prompts/study/README.md");
 const sampleProjectConfigPath = path.resolve("configs/projects/introducing-rescript.example.json");
@@ -27,23 +27,23 @@ function extractPlaceholders(markdown: string): string[] {
   return [...keys].sort();
 }
 
-test("variables prompt uses config-aligned placeholder names for source and audience", async () => {
-  const stage2Raw = await readFile(variablesPromptPath, "utf-8");
+test("material prompt uses config-aligned placeholder names for source and audience", async () => {
+  const materialRaw = await readFile(materialPromptPath, "utf-8");
 
   for (const retiredAlias of retiredStage2Aliases) {
-    assert.equal(stage2Raw.includes(retiredAlias), false, `found retired alias: ${retiredAlias}`);
+    assert.equal(materialRaw.includes(retiredAlias), false, `found retired alias: ${retiredAlias}`);
   }
 
   const expectedKeys = ["SOURCE_MARKDOWN_PATHS", "AUDIENCE_BACKGROUND", "AUDIENCE_LEVEL", "AUDIENCE_INTEREST"];
   for (const key of expectedKeys) {
-    assert.equal(stage2Raw.includes(`{{${key}}}`), true, `missing placeholder: ${key}`);
+    assert.equal(materialRaw.includes(`{{${key}}}`), true, `missing placeholder: ${key}`);
   }
 });
 
-test("study README key definitions are consistent with variables prompt naming", async () => {
-  const [readmeRaw, stage2Raw] = await Promise.all([
+test("study README key definitions are consistent with material prompt naming", async () => {
+  const [readmeRaw, materialRaw] = await Promise.all([
     readFile(studyReadmePath, "utf-8"),
-    readFile(variablesPromptPath, "utf-8")
+    readFile(materialPromptPath, "utf-8")
   ]);
 
   const expectedReadmeKeys = [
@@ -51,8 +51,7 @@ test("study README key definitions are consistent with variables prompt naming",
     "AUDIENCE_BACKGROUND",
     "AUDIENCE_LEVEL",
     "AUDIENCE_INTEREST",
-    "BASELINE_CONTEXT_OR_EMPTY",
-    "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY"
+    "BASELINE_CONTEXT_OR_EMPTY"
   ];
   for (const key of expectedReadmeKeys) {
     assert.equal(readmeRaw.includes(`\`${key}\``), true, `README missing key: ${key}`);
@@ -60,7 +59,7 @@ test("study README key definitions are consistent with variables prompt naming",
 
   for (const retiredAlias of retiredStage2Aliases) {
     assert.equal(readmeRaw.includes(retiredAlias), false, `README still references retired alias: ${retiredAlias}`);
-    assert.equal(stage2Raw.includes(retiredAlias), false, `variables prompt still references retired alias: ${retiredAlias}`);
+    assert.equal(materialRaw.includes(retiredAlias), false, `material prompt still references retired alias: ${retiredAlias}`);
   }
 });
 
@@ -71,10 +70,10 @@ test("project config has GENRE field", async () => {
   assert.ok((config.GENRE as string).length > 0, "GENRE field must not be empty");
 });
 
-test("blueprint/variables/script prompt placeholders can be resolved with sample project config", async () => {
-  const [stage1Raw, stage2Raw, stage3Raw, configRaw] = await Promise.all([
+test("blueprint/material/script prompt placeholders can be resolved with sample project config", async () => {
+  const [stage1Raw, materialRaw, stage3Raw, configRaw] = await Promise.all([
     readFile(blueprintPromptPath, "utf-8"),
-    readFile(variablesPromptPath, "utf-8"),
+    readFile(materialPromptPath, "utf-8"),
     readFile(scriptPromptPath, "utf-8"),
     readFile(sampleProjectConfigPath, "utf-8")
   ]);
@@ -82,7 +81,7 @@ test("blueprint/variables/script prompt placeholders can be resolved with sample
   const config = JSON.parse(configRaw) as Record<string, unknown>;
   const placeholders = new Set<string>([
     ...extractPlaceholders(stage1Raw),
-    ...extractPlaceholders(stage2Raw),
+    ...extractPlaceholders(materialRaw),
     ...extractPlaceholders(stage3Raw)
   ]);
   const unresolved = [...placeholders].filter((key) => !(key in config)).sort();

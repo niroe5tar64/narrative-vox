@@ -15,9 +15,9 @@ describe("resolvePromptTemplatePath", () => {
     assert.equal(result, path.resolve("prompts/study/blueprint.md"));
   });
 
-  test("returns correct path for variables step", () => {
-    const result = resolvePromptTemplatePath("study", "variables");
-    assert.equal(result, path.resolve("prompts/study/episode_variables.md"));
+  test("returns correct path for material step", () => {
+    const result = resolvePromptTemplatePath("study", "material");
+    assert.equal(result, path.resolve("prompts/study/episode_material.md"));
   });
 
   test("throws on unknown step", () => {
@@ -44,7 +44,7 @@ describe("resolvePromptTemplate", () => {
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
-  test("resolves all placeholders for episode_variables", () => {
+  test("resolves all placeholders for episode_material", () => {
     const template = [
       "# Header",
       "",
@@ -147,10 +147,10 @@ describe("renderPrompt", () => {
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
-  test("resolves variables template with project config and episodeId override", async () => {
+  test("resolves material template with project config and episodeId override", async () => {
     const result = await renderPrompt({
       genre: "study",
-      step: "variables",
+      step: "material",
       projectConfigPath: sampleProjectConfigPath,
       episodeId: "E99",
     });

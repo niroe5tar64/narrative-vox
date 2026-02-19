@@ -1,7 +1,5 @@
 import { SECTION_RE } from "./script_patterns.ts";
 
-export const REQUIRED_SECTION_IDS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
-
 export interface SectionHeader {
   id: number;
   title: string;
@@ -9,12 +7,6 @@ export interface SectionHeader {
 
 export interface ScriptStructureSummary {
   sectionIds: number[];
-  sectionOrder: number[];
-  duplicateSectionIds: number[];
-}
-
-export interface RequiredStructureValidation {
-  missingSectionIds: number[];
   sectionOrder: number[];
   duplicateSectionIds: number[];
 }
@@ -51,14 +43,5 @@ export function analyzeScriptStructure(scriptText: string): ScriptStructureSumma
     sectionIds: [...sectionIds].sort((a, b) => a - b),
     sectionOrder,
     duplicateSectionIds: [...duplicateSectionIds].sort((a, b) => a - b)
-  };
-}
-
-export function validateRequiredScriptStructure(scriptText: string): RequiredStructureValidation {
-  const summary = analyzeScriptStructure(scriptText);
-  return {
-    missingSectionIds: REQUIRED_SECTION_IDS.filter((id) => !summary.sectionIds.includes(id)),
-    sectionOrder: summary.sectionOrder,
-    duplicateSectionIds: summary.duplicateSectionIds
   };
 }

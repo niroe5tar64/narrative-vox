@@ -136,7 +136,7 @@ function buildUtterancesAndCandidates(
     if (!normalized) {
       continue;
     }
-    if (currentSectionId < 1 || currentSectionId > 8) {
+    if (currentSectionId < 1) {
       continue;
     }
     collectRubyCandidates(normalized, termCandidates);

@@ -41,83 +41,99 @@ async function withMockVoicevoxServer(
   }
 }
 
-function buildScriptFromSectionOrder(sectionOrder: number[]): string {
-  const sectionTitles: Record<number, string> = {
-    1: "オープニング",
-    2: "前提を呼び起こす",
-    3: "結論を先に提示",
-    4: "概念の最小モデル説明",
-    5: "構造の捉え方",
-    6: "思考を促す問いかけ",
-    7: "実務への接続",
-    8: "まとめ"
-  };
-  const lines: string[] = [];
-  for (const sectionId of sectionOrder) {
-    const title = sectionTitles[sectionId] ?? `セクション${sectionId}`;
-    lines.push(`${sectionId}. ${title}`);
-    lines.push(`${title}です。`);
-  }
-  return lines.join("\n");
-}
-
 function buildValidScript(): string {
-  return buildScriptFromSectionOrder([1, 2, 3, 4, 5, 6, 7, 8]);
-}
-
-function buildValidScriptWithMarkdownHeadings(): string {
   return [
     "## 1. オープニング",
     "導入です。",
     "## 2. 前提を呼び起こす",
     "前提です。",
     "## 3. 結論を先に提示",
-    "結論です。",
-    "## 4. 概念の最小モデル説明",
-    "説明です。",
-    "## 5. 構造の捉え方",
-    "整理します。",
-    "## 6. 思考を促す問いかけ",
-    "問いです。",
-    "## 7. 実務への接続",
-    "接続です。",
-    "## 8. まとめ",
-    "まとめです。"
+    "結論です。"
   ].join("\n");
 }
 
+function buildScriptWithManySections(): string {
+  const lines: string[] = [];
+  for (let i = 1; i <= 12; i++) {
+    lines.push(`## ${i}. セクション${i}`);
+    lines.push(`セクション${i}の内容です。`);
+  }
+  return lines.join("\n");
+}
+
+const sampleMaterial = {
+  schema_version: "1.0",
+  meta: {
+    project_id: "test",
+    episode_id: "E01",
+    episode_title: "テスト",
+    genre: "study",
+    audience: {
+      background: "テスト",
+      level: "テスト",
+      interest: "テスト"
+    }
+  },
+  sections: [
+    {
+      section_id: "S01",
+      section: "テスト1",
+      goal: "テスト",
+      elements: [
+        { element_id: "EL001", type: "theme_introduction", content: "テスト", importance: "must" }
+      ]
+    },
+    {
+      section_id: "S02",
+      section: "テスト2",
+      goal: "テスト",
+      elements: [
+        { element_id: "EL002", type: "concept", content: "テスト", importance: "must" }
+      ]
+    },
+    {
+      section_id: "S03",
+      section: "テスト3",
+      goal: "テスト",
+      elements: [
+        { element_id: "EL003", type: "takeaway", content: "テスト", importance: "must" }
+      ]
+    }
+  ],
+  quality_checks: {
+    source_coverage: "OK",
+    element_dependency_valid: "OK",
+    importance_distribution: { must: 3, should: 0, optional: 0 }
+  }
+};
+
 async function prepareMinimalRun(
-  variablesEpisodeIds: string[],
+  materialEpisodeIds: string[],
   scriptScripts: Record<string, string>
 ): Promise<string> {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-run-"));
   const runDir = path.join(tempRoot, "projects", "book", "run-20260211-9999");
 
   const blueprintDir = path.join(runDir, "blueprint");
-  const variablesDir = path.join(runDir, "variables");
+  const materialDir = path.join(runDir, "material");
   const scriptDir = path.join(runDir, "script");
   await mkdir(blueprintDir, { recursive: true });
-  await mkdir(variablesDir, { recursive: true });
+  await mkdir(materialDir, { recursive: true });
   await mkdir(scriptDir, { recursive: true });
 
   const blueprintRaw = await readFile(path.join(sampleRunDir, "blueprint", "project_blueprint.json"), "utf-8");
   await writeFile(path.join(blueprintDir, "project_blueprint.json"), blueprintRaw, "utf-8");
 
-  const variablesTemplate = JSON.parse(
-    await readFile(path.join(sampleRunDir, "variables", "E01_variables.json"), "utf-8")
-  ) as {
-    meta: { episode_id: string };
-  };
-  for (const episodeId of variablesEpisodeIds) {
+  for (const episodeId of materialEpisodeIds) {
     const data = {
-      ...variablesTemplate,
+      ...sampleMaterial,
       meta: {
-        ...variablesTemplate.meta,
+        ...sampleMaterial.meta,
         episode_id: episodeId
       }
     };
     await writeFile(
-      path.join(variablesDir, `${episodeId}_variables.json`),
+      path.join(materialDir, `${episodeId}_material.json`),
       `${JSON.stringify(data, null, 2)}\n`,
       "utf-8"
     );
@@ -150,14 +166,14 @@ test("checkRun accepts current sample run", async () => {
       voicevoxApiUrl
     });
 
-    assert.equal(result.variablesEpisodeCount > 0, true);
-    assert.equal(result.variablesEpisodeCount, result.scriptEpisodeCount);
+    assert.equal(result.materialEpisodeCount > 0, true);
+    assert.equal(result.materialEpisodeCount, result.scriptEpisodeCount);
     assert.equal(result.validatedEpisodeIds[0], "E01");
   });
 });
 
-test("checkRun accepts script without total-time line", async () => {
-  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+test("checkRun accepts script with any number of sections", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildScriptWithManySections() });
   await withMockVoicevoxServer((req, res) => {
     const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
     if (req.method === "GET" && requestUrl.pathname === "/version") {
@@ -180,7 +196,7 @@ test("checkRun accepts script without total-time line", async () => {
   });
 });
 
-test("checkRun rejects episode mismatch between variables and script", async () => {
+test("checkRun rejects episode mismatch between material and script", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: buildValidScript(),
     E02: buildValidScript()
@@ -188,35 +204,35 @@ test("checkRun rejects episode mismatch between variables and script", async () 
 
   await assert.rejects(
     () => checkRun({ runDir }),
-    /script has episodes not in variables: E02/
+    /script has episodes not in material: E02/
   );
 });
 
-test("checkRun rejects script with section order violation", async () => {
+test("checkRun rejects empty script", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
-    E01: buildScriptFromSectionOrder([1, 2, 4, 3, 5, 6, 7, 8])
+    E01: ""
   });
 
   await assert.rejects(
     () => checkRun({ runDir }),
-    /episode: E01[\s\S]*section order violation[\s\S]*1, 2, 4, 3, 5, 6, 7, 8/
+    /is empty/
   );
 });
 
-test("checkRun rejects script with duplicate section ID", async () => {
+test("checkRun rejects script without section headings", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
-    E01: buildScriptFromSectionOrder([1, 2, 2, 3, 4, 5, 6, 7, 8])
+    E01: "導入です。\n結論です。"
   });
 
   await assert.rejects(
     () => checkRun({ runDir }),
-    /episode: E01[\s\S]*duplicate section IDs: 2/
+    /has no section headings/
   );
 });
 
-test("checkRun accepts markdown heading style section lines", async () => {
+test("checkRun accepts script with markdown heading style section lines", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
-    E01: buildValidScriptWithMarkdownHeadings()
+    E01: buildValidScript()
   });
 
   await withMockVoicevoxServer((req, res) => {

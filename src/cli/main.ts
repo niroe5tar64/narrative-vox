@@ -197,9 +197,14 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     });
 
     console.log(
-      `Check run done: episodes=${result.validatedEpisodeIds.length}, variables=${result.variablesEpisodeCount}, script=${result.scriptEpisodeCount}`
+      `Check run done: episodes=${result.validatedEpisodeIds.length}, material=${result.materialEpisodeCount}, script=${result.scriptEpisodeCount}`
     );
     console.log(`- run: ${path.relative(process.cwd(), result.runDir)}`);
+    if (result.warnings.length > 0) {
+      for (const warning of result.warnings) {
+        console.log(`  [warning] ${warning}`);
+      }
+    }
   },
   "prepare-run": async (options) => {
     await runPrepareRun(options);

@@ -19,17 +19,17 @@ test("blueprint sample matches schema", async () => {
   await validateAgainstSchema(data, schemaPath);
 });
 
-test("variables samples match schema", async () => {
-  const variablesDir = path.join(sampleRunDir, "variables");
-  const schemaPath = path.resolve("schemas/episode-variables.schema.json");
-  const files = (await readdir(variablesDir))
-    .filter((name) => /^E[0-9]{2}_variables\.json$/.test(name))
+test("material samples match schema", async () => {
+  const materialDir = path.join(sampleRunDir, "material");
+  const schemaPath = path.resolve("schemas/episode-material.schema.json");
+  const files = (await readdir(materialDir))
+    .filter((name) => /^E[0-9]{2}_material\.json$/.test(name))
     .sort();
 
   assert.ok(files.length > 0);
 
   for (const fileName of files) {
-    const filePath = path.join(variablesDir, fileName);
+    const filePath = path.join(materialDir, fileName);
     const data = await loadJson<unknown>(filePath);
     await validateAgainstSchema(data, schemaPath);
   }

@@ -1,12 +1,14 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, access } from "node:fs/promises";
 import path from "node:path";
-import { loadJson } from "../shared/json.ts";
+import { loadJson, readJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
-import { REQUIRED_SECTION_IDS, validateRequiredScriptStructure } from "../shared/script_structure.ts";
 import { validateBuildPrerequisites } from "./build_prerequisites.ts";
 
-const VARIABLES_FILE_RE = /^(E[0-9]{2})_variables\.json$/;
+const MATERIAL_FILE_RE = /^(E[0-9]{2})_material\.json$/;
 const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
+const DIGEST_FILE_RE = /^(E[0-9]{2})_episode_digest\.json$/;
+const SECTION_HEADING_RE = /^\s*(?:#{1,6}\s*)?\d+\.\s+.+$/m;
+const SPEAKER_TAG_RE = /\[speaker:[a-z][a-z0-9_-]*\]/;
 
 export interface CheckRunOptions {
   runDir: string;
@@ -24,38 +26,14 @@ export interface CheckRunOptions {
 
 export interface CheckRunResult {
   runDir: string;
-  variablesEpisodeCount: number;
+  materialEpisodeCount: number;
   scriptEpisodeCount: number;
   validatedEpisodeIds: string[];
+  warnings: string[];
 }
 
 function toRelativePath(filePath: string): string {
   return path.relative(process.cwd(), filePath) || ".";
-}
-
-function ensureHasAllSections(scriptText: string, scriptPath: string, episodeId: string): void {
-  const validation = validateRequiredScriptStructure(scriptText);
-  const scriptRef = `${toRelativePath(scriptPath)} (episode: ${episodeId})`;
-  const missingSections = validation.missingSectionIds;
-  if (missingSections.length > 0) {
-    throw new Error(`${scriptRef} is missing required sections: ${missingSections.join(", ")}`);
-  }
-
-  if (validation.duplicateSectionIds.length > 0) {
-    throw new Error(
-      `${scriptRef} has duplicate section IDs: ${validation.duplicateSectionIds.join(", ")}`
-    );
-  }
-
-  const hasOrderViolation =
-    validation.sectionOrder.length !== REQUIRED_SECTION_IDS.length ||
-    validation.sectionOrder.some((id, index) => id !== REQUIRED_SECTION_IDS[index]);
-  if (hasOrderViolation) {
-    throw new Error(
-      `${scriptRef} has section order violation: found [${validation.sectionOrder.join(", ")}], expected [${REQUIRED_SECTION_IDS.join(", ")}]`
-    );
-  }
-
 }
 
 function collectEpisodeIds(fileNames: string[], pattern: RegExp): string[] {
@@ -75,6 +53,25 @@ function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
   return baseIds.filter((id) => !compareSet.has(id));
 }
 
+async function dirExists(dirPath: string): Promise<boolean> {
+  try {
+    await access(dirPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function ensureMinimalScriptStructure(scriptText: string, scriptPath: string, episodeId: string): void {
+  const scriptRef = `${toRelativePath(scriptPath)} (episode: ${episodeId})`;
+  if (scriptText.trim().length === 0) {
+    throw new Error(`${scriptRef} is empty`);
+  }
+  if (!SECTION_HEADING_RE.test(scriptText)) {
+    throw new Error(`${scriptRef} has no section headings (expected "## N. Title" format)`);
+  }
+}
+
 export async function checkRun({
   runDir,
   profilePath,
@@ -89,23 +86,26 @@ export async function checkRun({
   speedProfilesPath
 }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
+  const warnings: string[] = [];
 
+  // 1. Blueprint validation
   const blueprintPath = path.join(resolvedRunDir, "blueprint", "project_blueprint.json");
-  const variablesDir = path.join(resolvedRunDir, "variables");
-  const scriptDir = path.join(resolvedRunDir, "script");
-
   await loadJson<unknown>(blueprintPath, SchemaPaths.blueprint);
 
-  const variablesFiles = (await readdir(variablesDir)).filter((name) => VARIABLES_FILE_RE.test(name)).sort();
-  if (variablesFiles.length === 0) {
-    throw new Error(`${toRelativePath(variablesDir)} has no E##_variables.json files`);
+  // 2. Material validation
+  const materialDir = path.join(resolvedRunDir, "material");
+  const materialFiles = (await readdir(materialDir)).filter((name) => MATERIAL_FILE_RE.test(name)).sort();
+  if (materialFiles.length === 0) {
+    throw new Error(`${toRelativePath(materialDir)} has no E##_material.json files`);
   }
-  const variablesEpisodeIds = collectEpisodeIds(variablesFiles, VARIABLES_FILE_RE);
-  for (const fileName of variablesFiles) {
-    const filePath = path.join(variablesDir, fileName);
-    await loadJson<unknown>(filePath, SchemaPaths.episodeVariables);
+  const materialEpisodeIds = collectEpisodeIds(materialFiles, MATERIAL_FILE_RE);
+  for (const fileName of materialFiles) {
+    const filePath = path.join(materialDir, fileName);
+    await loadJson<unknown>(filePath, SchemaPaths.episodeMaterial);
   }
 
+  // 3. Script validation (minimal structure)
+  const scriptDir = path.join(resolvedRunDir, "script");
   const scriptFiles = (await readdir(scriptDir)).filter((name) => SCRIPT_FILE_RE.test(name)).sort();
   if (scriptFiles.length === 0) {
     throw new Error(`${toRelativePath(scriptDir)} has no E##_script.md files`);
@@ -121,19 +121,53 @@ export async function checkRun({
     const filePath = path.join(scriptDir, fileName);
     scriptPaths.push(filePath);
     const scriptText = await readFile(filePath, "utf-8");
-    ensureHasAllSections(scriptText, filePath, episodeId);
+    ensureMinimalScriptStructure(scriptText, filePath, episodeId);
   }
 
-  const missingInScript = diffEpisodes(variablesEpisodeIds, scriptEpisodeIds);
+  // 4. Material ↔ Script episode matching
+  const missingInScript = diffEpisodes(materialEpisodeIds, scriptEpisodeIds);
   if (missingInScript.length > 0) {
     throw new Error(`script is missing scripts for episodes: ${missingInScript.join(", ")}`);
   }
 
-  const extraInScript = diffEpisodes(scriptEpisodeIds, variablesEpisodeIds);
+  const extraInScript = diffEpisodes(scriptEpisodeIds, materialEpisodeIds);
   if (extraInScript.length > 0) {
-    throw new Error(`script has episodes not in variables: ${extraInScript.join(", ")}`);
+    throw new Error(`script has episodes not in material: ${extraInScript.join(", ")}`);
   }
 
+  // 5. Digest validation (optional — exists → validate)
+  const contextDir = path.join(resolvedRunDir, "context");
+  if (await dirExists(contextDir)) {
+    const contextFiles = (await readdir(contextDir)).filter((name) => DIGEST_FILE_RE.test(name)).sort();
+    for (const fileName of contextFiles) {
+      const filePath = path.join(contextDir, fileName);
+      const digest = await loadJson<{ episode_id?: string }>(filePath, SchemaPaths.episodeDigest);
+      const match = fileName.match(DIGEST_FILE_RE);
+      const fileEpisodeId = match?.[1];
+      if (fileEpisodeId && digest.episode_id && digest.episode_id !== fileEpisodeId) {
+        throw new Error(
+          `${toRelativePath(filePath)}: episode_id "${digest.episode_id}" does not match filename "${fileEpisodeId}"`
+        );
+      }
+    }
+
+    // Warn if E(N≥2) is missing E(N-1) digest
+    for (const episodeId of materialEpisodeIds) {
+      const episodeNum = Number.parseInt(episodeId.slice(1), 10);
+      if (episodeNum >= 2) {
+        const prevEpisodeId = `E${String(episodeNum - 1).padStart(2, "0")}`;
+        const prevDigestFile = `${prevEpisodeId}_episode_digest.json`;
+        const prevDigestPath = path.join(contextDir, prevDigestFile);
+        if (!(await dirExists(prevDigestPath))) {
+          warnings.push(
+            `${episodeId}: prior digest ${prevDigestFile} not found (continuity may be limited)`
+          );
+        }
+      }
+    }
+  }
+
+  // 6. Build prerequisites
   await validateBuildPrerequisites({
     scriptPaths,
     profilePath,
@@ -150,8 +184,9 @@ export async function checkRun({
 
   return {
     runDir: resolvedRunDir,
-    variablesEpisodeCount: variablesEpisodeIds.length,
+    materialEpisodeCount: materialEpisodeIds.length,
     scriptEpisodeCount: scriptEpisodeIds.length,
-    validatedEpisodeIds: variablesEpisodeIds
+    validatedEpisodeIds: materialEpisodeIds,
+    warnings
   };
 }
