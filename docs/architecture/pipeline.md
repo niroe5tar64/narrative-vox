@@ -1,25 +1,29 @@
 # Pipeline Architecture
 
-最終更新: 2026-02-16
+最終更新: 2026-02-20
 
 このリポジトリの音声データ生成は、次の2レイヤーで進みます。
 
-- Blueprint / Variables / Script: `prompts/study/*.md` を別LLMへ渡して生成する「プロンプト入力前提」工程
+- Blueprint / Material / Script / Digest: Skills (`/gen-*`) で LLM を使って生成する「プロンプト入力前提」工程
 - Build Text / Build Project / Build Audio: `bun run ...` で実行する「CLI操作前提」工程
 
 ## End-to-End Flow (Mermaid)
 
 ```mermaid
 flowchart TB
-  subgraph PromptFlow["Prompt入力前提 (Blueprint / Variables / Script)"]
+  subgraph PromptFlow["Layer 1: LLM駆動 (Blueprint / Material / Script / Digest)"]
     S["入力ソース<br/>inputs/books/\*/source/\*.md"]
     PCFG["project config<br/>configs/projects/${project-id}.json"]
-    P1["Blueprint Prompt<br/>prompts/study/blueprint.md"]
+    STY["content style<br/>configs/styles/${STYLE_ID}.json"]
+    CHR["characters<br/>configs/characters/*.json"]
+    P1["gen-blueprint"]
     O1["blueprint/project_blueprint.json"]
-    P2["Variables Prompt<br/>prompts/study/episode_variables.md"]
-    O2["variables/E##_variables.json"]
-    P3["Script Prompt<br/>prompts/study/script_common_frame.md"]
+    P2["gen-material"]
+    O2["material/E##_material.json"]
+    P3["gen-script"]
     O3["script/E##_script.md"]
+    P4["gen-digest"]
+    O4D["context/E##_episode_digest.json"]
     S --> P1
     PCFG --> P1
     P1 --> O1
@@ -27,10 +31,16 @@ flowchart TB
     PCFG --> P2
     P2 --> O2
     O2 --> P3
+    STY --> P3
+    CHR --> P3
+    O4D --> P3
     P3 --> O3
+    O3 --> P4
+    O2 --> P4
+    P4 --> O4D
   end
 
-  subgraph CliFlow["CLI操作前提 (Build Text / Build Project / Build Audio)"]
+  subgraph CliFlow["Layer 2: CLI操作前提 (Build Text / Build Project / Build Audio)"]
     C0["(任意) prepare-run<br/>bun run prepare-run"]
     C1["build-text<br/>bun run build-text"]
     C2["build-project<br/>bun run build-project"]
@@ -68,10 +78,10 @@ flowchart TB
   classDef cli fill:#d9edf7,stroke:#31708f,color:#1b4f72;
   classDef cfg fill:#f7f7f9,stroke:#777,color:#222;
   classDef out fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20;
-  class S,PCFG,P1,P2,P3 prompt;
+  class S,PCFG,STY,CHR,P1,P2,P3,P4 prompt;
   class C0,C1,C2,C3 cli;
   class CFG4,CFG5P,CFG5S,VXURL,VXAPI,VXSCRIPT cfg;
-  class O1,O2,O3,O4,O5,O6 out;
+  class O1,O2,O3,O4D,O4,O5,O6 out;
 ```
 
 ## 設定ファイル/入力方式の対応
@@ -79,9 +89,11 @@ flowchart TB
 | 項目 | 主に使う工程 | 前提 | 役割 |
 | --- | --- | --- | --- |
 | `prompts/study/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
-| `prompts/study/episode_variables.md` | Episode Variables | プロンプト入力前提 | エピソード変数JSONを生成 |
-| `prompts/study/script_common_frame.md` | Script | プロンプト入力前提 | 固定構成1-8の台本を生成 |
-| `configs/projects/<project-id>.json` | Blueprint / Variables | プロンプト入力前提 | Promptのプレースホルダ値を供給 |
+| `prompts/study/episode_material.md` | Episode Material | プロンプト入力前提 | エピソード素材JSONを生成 |
+| `prompts/study/script_common_frame.md` | Script | プロンプト入力前提 | 台本を生成（セクション数は演出層が決定） |
+| `configs/projects/<project-id>.json` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
+| `configs/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
+| `configs/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
 | `configs/voicevox/build_text_config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
 | `configs/voicevox/default_profile.json` | `build-project` | CLI操作前提 | `--profile` 未指定時に読み込む query/テンポ既定値 |
 | `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--profile` で明示指定 |
@@ -98,7 +110,7 @@ flowchart TB
 
 | コマンド | 必須入力 | 主な自動推論 | 出力 |
 | --- | --- | --- | --- |
-| `render-prompt` | `--genre`, `--step`, `--project-config` | なし（`variables` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
+| `render-prompt` | `--genre`, `--step`, `--project-config` | なし（`material` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
 | `build-text` | `--script script/E##_script.md` | `--run-dir` は `.../run-.../script/...` なら推論。`--episode-id` 未指定時はファイル名 `E##_script.md` から推論。 | `voicevox_text/*.json`, `voicevox_text/*.txt`, `dict_candidates/*.csv` |
 | `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。`--profile` 未指定時は `default_profile.json` を使用（未作成ならエラー）。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj`, `voicevox_project/*_project_meta.json` |
 | `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。圧縮は `--compressed-format` / `--compressed-bitrate-kbps` で変更可。 | `audio/E##.wav`, `audio/E##.(mp3|m4a|ogg)`, `audio/manifest.json` |
@@ -109,6 +121,6 @@ flowchart TB
 
 ## 現状ステータス
 
-- Blueprint / Variables / Script は prompt資産中心（`skills/gen-*` または別LLM運用）。
+- Blueprint / Material / Script / Digest は Skills (`/gen-blueprint`, `/gen-material`, `/gen-script`, `/gen-digest`) で LLM 生成。
 - Build Text / Build Project / Build Audio は `src/cli/main.ts` から実行可能。
-- `check-run` は Blueprint/Variables schema と Script 台本構造（1-8章）を検証する補助コマンド。
+- `check-run` は Blueprint/Material スキーマ、Digest スキーマ、Script 最低限構造、Style/Cast クロスバリデーションを検証する補助コマンド。

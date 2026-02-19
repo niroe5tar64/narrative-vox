@@ -9,12 +9,12 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 | 入力ソース | Markdownファイル (`SOURCE_MARKDOWN_PATHS`) | リポジトリ全体 (`REPO_ROOT_PATH`) |
 | 分析対象 | 書籍の章・節 | ディレクトリ・モジュール・ファイル |
 | テーマ指定 | 書籍構成に従う | `DEEP_DIVE_FOCUS` で方向性を指定 |
-| コード読み | 不要 | Blueprint/Variables生成時にClaudeがリポジトリを直接探索 |
+| コード読み | 不要 | Blueprint/Material生成時にClaudeがリポジトリを直接探索 |
 
 ## ファイル
 
 - `prompts/oss-dive/blueprint.md`
-- `prompts/oss-dive/episode_variables.md`
+- `prompts/oss-dive/episode_material.md`
 - `prompts/oss-dive/script_common_frame.md`
 - `configs/projects/<project-id>.json`
 - `configs/projects/oss-dive.example.json`
@@ -42,13 +42,13 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 - Claudeが `REPO_ROOT_PATH` を探索してリポジトリ全体像を把握
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
-2. Episode Variables
-- 入力: `episode_variables.md` + Blueprint 出力 + `EPISODE_ID`
+2. Episode Material
+- 入力: `episode_material.md` + Blueprint 出力 + `EPISODE_ID`
 - Claudeが `source_refs` のファイルパスから実際のコードを読む
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
 
 3. Script
-- 入力: `script_common_frame.md` + Episode Variables 出力
+- 入力: Material + Style + Cast + Characters + Digests
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text / Build Project / Build Audio
@@ -73,8 +73,9 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 
 ```text
 /gen-blueprint my-oss-project
-/gen-variables my-oss-project E01
+/gen-material my-oss-project E01
 /gen-script my-oss-project E01
+/gen-digest my-oss-project E01
 ```
 
 ## CLI 実行例

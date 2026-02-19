@@ -5,7 +5,7 @@
 ## ファイル
 
 - `prompts/study/blueprint.md`
-- `prompts/study/episode_variables.md`
+- `prompts/study/episode_material.md`
 - `prompts/study/script_common_frame.md`
 - `prompts/study/build_text.md`
 - `prompts/study/build_project.md`
@@ -18,12 +18,12 @@
 - 入力: `blueprint.md` + `configs/projects/<project-id>.json`
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
-2. Episode Variables
-- 入力: `episode_variables.md` + Blueprint 出力 + `EPISODE_ID`
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/variables/E##_variables.json`
+2. Episode Material
+- 入力: `episode_material.md` + Blueprint 出力 + `EPISODE_ID`
+- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
 
 3. Script
-- 入力: `script_common_frame.md` + Episode Variables 出力
+- 入力: Material + Style + Cast + Characters + Digests
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text (script -> voicevox text)
@@ -87,18 +87,20 @@ bun run build-all -- \
   --run-dir projects/introducing-rescript/run-20260211-0000
 ```
 
-## Skills 実行例（Blueprint / Variables / Script）
+## Skills 実行例（Blueprint / Material / Script / Digest）
 
 Prompt工程は Skills で連続実行できます。
 
 ```text
 /gen-blueprint introducing-rescript
-/gen-variables introducing-rescript E01
+/gen-material introducing-rescript E01
 /gen-script introducing-rescript E01
+/gen-digest introducing-rescript E01
 ```
 
 - Skill定義:
   - `skills/gen-blueprint/SKILL.md`
-  - `skills/gen-variables/SKILL.md`
+  - `skills/gen-material/SKILL.md`
   - `skills/gen-script/SKILL.md`
+  - `skills/gen-digest/SKILL.md`
 - Skills を使わない場合は、`render-prompt` で解決した Prompt を任意のLLMへ渡して実行してください。

@@ -6,10 +6,10 @@
 
 Narrative Vox は技術書・記事をナレーション台本に変換し、VOICEVOX で音声データを生成するツール。2層パイプライン構成:
 
-1. **Layer 1（LLM駆動）**: ブループリント → エピソード変数 → エピソード台本（Skills: `/gen-blueprint`, `/gen-variables`, `/gen-script`）
+1. **Layer 1（LLM駆動）**: ブループリント → 素材 → 台本 → ダイジェスト（Skills: `/gen-blueprint`, `/gen-material`, `/gen-script`, `/gen-digest`）
 2. **Layer 2（決定的CLI）**: `build-text` → `build-project` → `build-audio`
 
-データは実行ディレクトリ `projects/<project-id>/run-YYYYMMDD-HHMM/` 配下のサブフォルダ（blueprint/, variables/, script/, voicevox_text/, voicevox_project/, audio/）を通して流れる。
+データは実行ディレクトリ `projects/<project-id>/run-YYYYMMDD-HHMM/` 配下のサブフォルダ（blueprint/, material/, script/, context/, voicevox_text/, voicevox_project/, audio/）を通して流れる。
 
 ## コマンド
 

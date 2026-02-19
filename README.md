@@ -128,20 +128,21 @@ bun src/cli/main.ts render-prompt \
   --project-config configs/projects/introducing-rescript.example.json
 ```
 
-## Prompt工程の実行方法（Blueprint / Variables / Script）
+## Prompt工程の実行方法（Blueprint / Material / Script / Digest）
 
-Phase 1（Blueprint / Variables / Script）は次のどちらかで実行します。
+Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実行します。
 
 1. Skills で一気通貫に実行する（推奨）
 
 ```text
 /gen-blueprint introducing-rescript
-/gen-variables introducing-rescript E01
+/gen-material introducing-rescript E01
 /gen-script introducing-rescript E01
+/gen-digest introducing-rescript E01
 ```
 
-- Skill定義: `skills/gen-blueprint/SKILL.md`, `skills/gen-variables/SKILL.md`, `skills/gen-script/SKILL.md`
-- 出力先: `projects/<project-id>/run-YYYYMMDD-HHMM/{blueprint,variables,script}/...`
+- Skill定義: `skills/gen-blueprint/SKILL.md`, `skills/gen-material/SKILL.md`, `skills/gen-script/SKILL.md`, `skills/gen-digest/SKILL.md`
+- 出力先: `projects/<project-id>/run-YYYYMMDD-HHMM/{blueprint,material,script,context}/...`
 
 2. `render-prompt` でテンプレートを解決し、任意のLLMに投入する
 
