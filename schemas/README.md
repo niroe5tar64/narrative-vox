@@ -1,13 +1,23 @@
 # Schemas
 
-Blueprint / Variables / VOICEVOX 変換成果物のスキーマを配置する。
+パイプライン各ステージの成果物・設定ファイルのスキーマを配置する。
 
-現状:
+## Layer 1（LLM駆動）
 
-- `schemas/blueprint.schema.json`
-- `schemas/episode-variables.schema.json`
-- `schemas/voicevox-text.schema.json`
-- `schemas/voicevox-import.schema.json`
-- `schemas/voicevox-project-meta.schema.json`
-- `schemas/reading-dictionary.schema.json`
-- `schemas/speed-profiles.schema.json`
+- `schemas/blueprint.schema.json` — プロジェクト全体設計
+- `schemas/episode-material.schema.json` — 素材層の構造化データ
+- `schemas/episode-digest.schema.json` — エピソード間一貫性の中間表現
+
+## Layer 2（決定的CLI）
+
+- `schemas/voicevox-text.schema.json` — 発話データ
+- `schemas/voicevox-import.schema.json` — VOICEVOX プロジェクトインポートメタデータ
+- `schemas/voicevox-project-meta.schema.json` — VOICEVOX プロジェクトメタデータ
+
+## 設定ファイル
+
+- `schemas/content-style.schema.json` — コンテンツスタイル定義
+- `schemas/character.schema.json` — キャラクター定義（profile 含む）
+- `schemas/project-config.schema.json` — プロジェクト設定
+- `schemas/reading-dictionary.schema.json` — 読み辞書
+- `schemas/speed-profiles.schema.json` — 速度プロファイル

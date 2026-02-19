@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/episode-material.schema.json",
+  "title": "Episode Material",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "sections", "quality_checks"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "episode_id", "episode_title", "genre", "audience"],
+      "properties": {
+        "project_id": { "type": "string", "minLength": 1 },
+        "episode_id": { "type": "string", "pattern": "^E[0-9]{2}$" },
+        "episode_title": { "type": "string", "minLength": 1 },
+        "genre": { "type": "string", "minLength": 1 },
+        "audience": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["background", "level", "interest"],
+          "properties": {
+            "background": { "type": "string", "minLength": 1 },
+            "level": { "type": "string", "minLength": 1 },
+            "interest": { "type": "string", "minLength": 1 }
+          }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "comparison_mode": {
+          "type": "string",
+          "enum": ["with_baseline", "standalone"]
+        },
+        "baseline_context": { "type": "string" }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["section_id", "section", "goal", "elements"],
+        "properties": {
+          "section_id": { "type": "string", "pattern": "^S[0-9]{2}$" },
+          "section": { "type": "string", "minLength": 1 },
+          "goal": { "type": "string", "minLength": 1 },
+          "elements": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/element" }
+          }
+        }
+      }
+    },
+    "quality_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_coverage", "element_dependency_valid", "importance_distribution"],
+      "properties": {
+        "source_coverage": {
+          "type": "string",
+          "enum": ["OK", "NG"]
+        },
+        "element_dependency_valid": {
+          "type": "string",
+          "enum": ["OK", "NG"]
+        },
+        "importance_distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["must", "should", "optional"],
+          "properties": {
+            "must": { "type": "integer", "minimum": 1 },
+            "should": { "type": "integer", "minimum": 0 },
+            "optional": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["element_id", "type", "content", "importance"],
+      "properties": {
+        "element_id": { "type": "string", "pattern": "^EL[0-9]{3}$" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "theme_introduction",
+            "prerequisite",
+            "baseline_pattern",
+            "problem_statement",
+            "core_thesis",
+            "concept",
+            "capability",
+            "scope_boundary",
+            "structural_model",
+            "structural_comparison",
+            "decision_scenario",
+            "practical_benefit",
+            "process_impact",
+            "risk_assessment",
+            "guideline",
+            "code_example",
+            "analogy",
+            "takeaway"
+          ]
+        },
+        "content": { "type": "string", "minLength": 1 },
+        "importance": {
+          "type": "string",
+          "enum": ["must", "should", "optional"]
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^EL[0-9]{3}$" }
+        },
+        "source_ref": { "type": "string" },
+        "technical_terms": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

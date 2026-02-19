@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/episode-digest.schema.json",
+  "title": "Episode Digest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "episode_id",
+    "episode_title",
+    "content_summary",
+    "character_behavior",
+    "continuity"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "episode_id": {
+      "type": "string",
+      "pattern": "^E[0-9]{2}$"
+    },
+    "episode_title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_topics_covered", "key_conclusions", "terms_introduced"],
+      "properties": {
+        "core_topics_covered": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 7,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "key_conclusions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "terms_introduced": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "examples_used": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "scope_boundaries_stated": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "character_behavior": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["character_key", "utterance_count"],
+        "properties": {
+          "character_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "utterance_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "catchphrases_used": {
+            "type": "array",
+            "maxItems": 5,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "emotion_moments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["emotion", "context"],
+              "properties": {
+                "emotion": { "type": "string", "minLength": 1 },
+                "context": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "notable_speech_patterns": {
+            "type": "array",
+            "maxItems": 3,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["narrative_position", "open_threads"],
+      "properties": {
+        "narrative_position": {
+          "type": "string",
+          "enum": ["series_start", "early", "middle", "late", "finale"]
+        },
+        "open_threads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["thread", "promised_in"],
+            "properties": {
+              "thread": { "type": "string", "minLength": 1 },
+              "promised_in": { "type": "string", "pattern": "^E[0-9]{2}$" },
+              "target_episode": { "type": "string", "pattern": "^E[0-9]{2}$" }
+            }
+          }
+        },
+        "resolved_threads": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "listener_knowledge_state": {
+          "type": "array",
+          "maxItems": 15,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

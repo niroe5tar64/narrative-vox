@@ -70,8 +70,7 @@
           },
           "section_id": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 8
+            "minimum": 1
           },
           "section_title": {
             "type": "string",

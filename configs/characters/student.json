@@ -10,5 +10,27 @@
   "emotionStyles": {
     "calm": 69,
     "confused": 71
+  },
+  "profile": {
+    "gender": "female",
+    "age_range": "young_adult",
+    "knowledge_level": "intermediate",
+    "personality_traits": ["好奇心旺盛", "素直", "行動派"],
+    "speech_register": "polite_desu_masu",
+    "sentence_patterns": {
+      "typical_endings": ["ですか", "ですよね", "なんですね", "ということですか"],
+      "filler_words": ["えっと", "あー", "うーん"],
+      "catchphrases": ["なるほど", "それって"],
+      "forbidden_patterns": ["存じます", "ございます", "〜であると考えられる"]
+    },
+    "interaction_behavior": {
+      "explains_by": "concrete_examples",
+      "responds_to_questions_by": "direct_answer",
+      "emotion_range": "wide"
+    },
+    "topic_affinity": {
+      "enthusiastic_about": ["実装", "手を動かすこと", "ツール"],
+      "cautious_about": ["抽象理論", "数学的証明"]
+    }
   }
 }

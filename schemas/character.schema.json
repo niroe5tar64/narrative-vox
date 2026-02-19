@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/character.schema.json",
+  "title": "Character",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["key", "name", "description", "voice", "emotionStyles", "profile"],
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "voice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engineId", "speakerId", "styleId"],
+      "properties": {
+        "engineId": { "type": "string", "minLength": 1 },
+        "speakerId": { "type": "string", "minLength": 1 },
+        "styleId": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "emotionStyles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gender",
+        "age_range",
+        "knowledge_level",
+        "personality_traits",
+        "speech_register",
+        "sentence_patterns",
+        "interaction_behavior",
+        "topic_affinity"
+      ],
+      "properties": {
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "neutral"]
+        },
+        "age_range": {
+          "type": "string",
+          "enum": ["youth", "young_adult", "adult", "senior"]
+        },
+        "knowledge_level": {
+          "type": "string",
+          "enum": ["expert", "intermediate", "beginner", "curious_outsider"]
+        },
+        "personality_traits": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "speech_register": {
+          "type": "string",
+          "enum": ["formal_dearu", "polite_desu_masu", "casual_da", "mixed"]
+        },
+        "sentence_patterns": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "typical_endings",
+            "filler_words",
+            "catchphrases",
+            "forbidden_patterns"
+          ],
+          "properties": {
+            "typical_endings": {
+              "type": "array",
+              "maxItems": 8,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "filler_words": {
+              "type": "array",
+              "maxItems": 5,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "catchphrases": {
+              "type": "array",
+              "maxItems": 3,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "forbidden_patterns": {
+              "type": "array",
+              "maxItems": 10,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "interaction_behavior": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["explains_by", "responds_to_questions_by", "emotion_range"],
+          "properties": {
+            "explains_by": {
+              "type": "string",
+              "enum": ["logical_steps", "concrete_examples", "analogies", "contrast"]
+            },
+            "responds_to_questions_by": {
+              "type": "string",
+              "enum": ["direct_answer", "guided_discovery", "counter_question", "stepwise_breakdown"]
+            },
+            "emotion_range": {
+              "type": "string",
+              "enum": ["narrow", "moderate", "wide"]
+            }
+          }
+        },
+        "topic_affinity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enthusiastic_about", "cautious_about"],
+          "properties": {
+            "enthusiastic_about": {
+              "type": "array",
+              "maxItems": 5,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "cautious_about": {
+              "type": "array",
+              "maxItems": 5,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

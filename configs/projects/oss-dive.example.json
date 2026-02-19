@@ -13,7 +13,12 @@
   "PROJECT_BLUEPRINT_JSON_PATH": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
   "EPISODE_ID": "E01",
   "OUTPUT_BLUEPRINT_JSON": "projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
-  "OUTPUT_EPISODE_VARIABLES_JSON_PATTERN": "projects/example-oss-project/run-YYYYMMDD-HHMM/variables/E##_variables.json",
+  "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN": "projects/example-oss-project/run-YYYYMMDD-HHMM/material/E##_material.json",
   "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": "projects/example-oss-project/run-YYYYMMDD-HHMM/script/E##_script.md",
+  "STYLE_ID": "radio-talk",
+  "CAST": {
+    "lead": "teacher",
+    "questioner": "student"
+  },
   "NOTES": "REPO_ROOT_PATHにclone先を指定。DEEP_DIVE_FOCUSで深掘りの方向性を設定。SOURCE_MARKDOWN_PATHSは空文字で運用。"
 }

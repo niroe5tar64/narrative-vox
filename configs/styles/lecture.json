@@ -1,0 +1,46 @@
+{
+  "style_id": "lecture",
+  "style_name": "講義形式",
+  "description": "一人の講師が体系的に解説する独話形式",
+  "format": {
+    "speaker_mode": "monologue",
+    "speaker_count": 1,
+    "speaker_roles": [
+      { "role": "lead", "utterance_share": 1.0 }
+    ]
+  },
+  "pacing": {
+    "target_duration_minutes": { "min": 10, "max": 15 },
+    "utterance_length": {
+      "target_chars": 150,
+      "max_chars": 250
+    },
+    "section_transition_style": "explicit_heading",
+    "pause_between_sections_ms": 1200,
+    "reflection_pause_ms": 3000
+  },
+  "language": {
+    "formality": "formal",
+    "sentence_endings": "declarative",
+    "technical_term_treatment": "define_on_first_use",
+    "code_verbalization": "meaning_only"
+  },
+  "segment_structure": {
+    "chat_content_ratio": 0.0,
+    "opening_style": "direct_topic",
+    "closing_style": "summary_points",
+    "allow_tangent": false,
+    "repetition_strategy": "section_summaries"
+  },
+  "interaction": {
+    "question_frequency": "none",
+    "listener_address": "none",
+    "reaction_utterances": false
+  },
+  "content_treatment": {
+    "analogy_usage": "one_per_episode",
+    "example_density": "rich",
+    "humor_level": "none",
+    "emphasis_technique": "repetition"
+  }
+}

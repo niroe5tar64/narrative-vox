@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/project-config.schema.json",
+  "title": "Project Config",
+  "type": "object",
+  "required": [
+    "GENRE",
+    "PROJECT_ID",
+    "PROJECT_TITLE",
+    "SOURCE_MARKDOWN_PATHS",
+    "AUDIENCE_BACKGROUND",
+    "AUDIENCE_LEVEL",
+    "AUDIENCE_INTEREST",
+    "BASELINE_CONTEXT_OR_EMPTY",
+    "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY",
+    "PROJECT_BLUEPRINT_JSON_PATH",
+    "EPISODE_ID",
+    "OUTPUT_BLUEPRINT_JSON",
+    "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN",
+    "OUTPUT_EPISODE_SCRIPT_MD_PATTERN",
+    "STYLE_ID",
+    "CAST"
+  ],
+  "properties": {
+    "GENRE": {
+      "type": "string",
+      "minLength": 1
+    },
+    "PROJECT_ID": {
+      "type": "string",
+      "minLength": 1
+    },
+    "PROJECT_TITLE": {
+      "type": "string",
+      "minLength": 1
+    },
+    "SOURCE_MARKDOWN_PATHS": {
+      "type": "string"
+    },
+    "AUDIENCE_BACKGROUND": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AUDIENCE_LEVEL": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AUDIENCE_INTEREST": {
+      "type": "string",
+      "minLength": 1
+    },
+    "BASELINE_CONTEXT_OR_EMPTY": {
+      "type": "string"
+    },
+    "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": {
+      "type": "string"
+    },
+    "PROJECT_BLUEPRINT_JSON_PATH": {
+      "type": "string",
+      "minLength": 1
+    },
+    "EPISODE_ID": {
+      "type": "string",
+      "pattern": "^E[0-9]{2}$"
+    },
+    "OUTPUT_BLUEPRINT_JSON": {
+      "type": "string",
+      "minLength": 1
+    },
+    "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN": {
+      "type": "string",
+      "minLength": 1
+    },
+    "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": {
+      "type": "string",
+      "minLength": 1
+    },
+    "STYLE_ID": {
+      "type": "string",
+      "minLength": 1
+    },
+    "CAST": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      }
+    },
+    "NOTES": {
+      "type": "string"
+    },
+    "REPO_ROOT_PATH": {
+      "type": "string"
+    },
+    "DEEP_DIVE_FOCUS": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

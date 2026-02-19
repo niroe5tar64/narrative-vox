@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "project_id": "introducing-rescript",
+    "episode_id": "E01",
+    "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
+    "genre": "study",
+    "audience": {
+      "background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
+      "level": "ReScript初学者〜中級手前",
+      "interest": "型安全、設計の見通し、保守性、実務での採用判断"
+    },
+    "source_refs": [
+      "inputs/books/introducing-rescript/source/00_Introduction.md",
+      "inputs/books/introducing-rescript/source/01_Chapter-1.md"
+    ],
+    "comparison_mode": "with_baseline",
+    "baseline_context": "TypeScriptでの実装・設計パターン"
+  },
+  "sections": [
+    {
+      "section_id": "S01",
+      "section": "式中心モデルの基礎",
+      "goal": "ReScriptの式中心評価モデルとTypeScriptの文中心モデルの根本的な違いを理解させる",
+      "elements": [
+        {
+          "element_id": "EL001",
+          "type": "theme_introduction",
+          "content": "ReScriptの式中心モデルと静的型検査がTypeScript開発者にもたらす価値。",
+          "importance": "must",
+          "source_ref": "Ch.0 Introduction"
+        },
+        {
+          "element_id": "EL002",
+          "type": "prerequisite",
+          "content": "TypeScript/JavaScriptでの基本的な型、関数、条件分岐の理解。",
+          "importance": "must"
+        },
+        {
+          "element_id": "EL003",
+          "type": "baseline_pattern",
+          "content": "JavaScript/TypeScriptでは式と文が混在する。",
+          "importance": "must",
+          "depends_on": ["EL002"],
+          "technical_terms": ["truthy", "falsy"]
+        }
+      ]
+    },
+    {
+      "section_id": "S02",
+      "section": "型システムと推論",
+      "goal": "ReScriptの型推論と厳格な型区別がコンパイル時安全性をどう保証するか理解させる",
+      "elements": [
+        {
+          "element_id": "EL004",
+          "type": "core_thesis",
+          "content": "式中心モデルと静的型検査を前提に、型推論を活用する。",
+          "importance": "must",
+          "depends_on": ["EL003"]
+        },
+        {
+          "element_id": "EL005",
+          "type": "concept",
+          "content": "値評価、型整合性、数値演算と条件分岐の安全な基礎ルール。",
+          "importance": "must",
+          "depends_on": ["EL004"],
+          "technical_terms": ["型推論", "type inference"]
+        }
+      ]
+    },
+    {
+      "section_id": "S03",
+      "section": "構造比較と実務適用",
+      "goal": "TypeScriptとReScriptの設計思想の対比から実務での採用判断材料を提供する",
+      "elements": [
+        {
+          "element_id": "EL006",
+          "type": "structural_comparison",
+          "content": "TypeScript/JavaScriptの柔軟だが実行時依存のモデルとReScriptの式中心・厳格型モデルの対比。",
+          "importance": "must",
+          "depends_on": ["EL003", "EL004"]
+        },
+        {
+          "element_id": "EL007",
+          "type": "takeaway",
+          "content": "具体的な関数型設計テクニックと実務移行手順の詳細は次回以降で扱う。",
+          "importance": "must"
+        }
+      ]
+    }
+  ],
+  "quality_checks": {
+    "source_coverage": "OK",
+    "element_dependency_valid": "OK",
+    "importance_distribution": {
+      "must": 7,
+      "should": 0,
+      "optional": 0
+    }
+  }
+}
