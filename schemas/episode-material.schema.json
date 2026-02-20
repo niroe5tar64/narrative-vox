@@ -60,6 +60,19 @@
         }
       }
     },
+    "technical_terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "reading"],
+        "properties": {
+          "term": { "type": "string", "minLength": 1 },
+          "reading": { "type": "string", "minLength": 1 },
+          "note": { "type": "string" }
+        }
+      }
+    },
     "quality_checks": {
       "type": "object",
       "additionalProperties": false,

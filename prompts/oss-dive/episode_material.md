@@ -92,6 +92,14 @@ OSSコード解析では `structural_model`、`code_example`、`capability` を�
 
 ### technical_terms 抽出基準
 
+`technical_terms` は 2 段構造で管理します。
+
+**要素レベル（element 内 `technical_terms: string[]`）**
+各 element の `technical_terms` に、その要素で登場する技術用語名だけを列挙する（追跡用）。
+
+**トップレベル（`technical_terms: [{term, reading, note}]`）**
+エピソード全体で登場する技術用語を集約し、VOICEVOX 読み辞書候補として `reading`（カタカナ）と `note` を付与する。
+
 - **含める**: OSS 固有のクラス名・関数名・アルゴリズム名、技術用語（英語・カタカナ）、略語
   - 例: `ViterbiBuilder`、`DoubleArray`、`MeCab辞書フォーマット`、`トライ木`
 - **含めない**: 一般的なプログラミング用語（関数、変数、クラス、`if`、`for`）

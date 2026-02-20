@@ -112,7 +112,15 @@
 
 ### technical_terms 抽出基準
 
-以下に該当する用語を `technical_terms` に含める:
+`technical_terms` は 2 段構造で管理します。
+
+**要素レベル（element 内 `technical_terms: string[]`）**
+各 element の `technical_terms` に、その要素で登場する技術用語名だけを列挙する（追跡用）。
+
+**トップレベル（`technical_terms: [{term, reading, note}]`）**
+エピソード全体で登場する技術用語を集約し、VOICEVOX 読み辞書候補として `reading`（カタカナ）と `note` を付与する。
+
+以下に該当する用語をトップレベルに含める:
 
 - **英語の技術用語**: VOICEVOX が日本語読みを誤る可能性がある（例: `ReScript`, `variant`, `pattern matching`）
 - **略語**: 読み方が自明でない（例: `AST`, `FFI`, `GADT`）
@@ -198,7 +206,41 @@
   "schema_version": "1.0",
   "meta": {
     "project_id": "{{PROJECT_ID}}",
-    "episode_id": "{{EPISODE_ID}}"
+    "episode_id": "{{EPISODE_ID}}",
+    "episode_title": "",
+    "genre": "study",
+    "audience": {
+      "background": "{{AUDIENCE_BACKGROUND}}",
+      "level": "{{AUDIENCE_LEVEL}}",
+      "interest": "{{AUDIENCE_INTEREST}}"
+    },
+    "source_refs": [],
+    "comparison_mode": "with_baseline | standalone",
+    "baseline_context": "{{BASELINE_CONTEXT_OR_EMPTY}}"
+  },
+  "sections": [
+    {
+      "section_id": "S01",
+      "section": "",
+      "goal": "",
+      "elements": []
+    }
+  ],
+  "technical_terms": [
+    {
+      "term": "",
+      "reading": "",
+      "note": ""
+    }
+  ],
+  "quality_checks": {
+    "source_coverage": "OK | NG",
+    "element_dependency_valid": "OK | NG",
+    "importance_distribution": {
+      "must": 0,
+      "should": 0,
+      "optional": 0
+    }
   }
 }
 ```
