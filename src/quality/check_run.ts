@@ -32,6 +32,15 @@ export interface CheckRunResult {
   warnings: string[];
 }
 
+interface BlueprintEpisodePlanItem {
+  episode_id: string;
+  prerequisite_episodes?: string[];
+}
+
+interface BlueprintForCheckRun {
+  episode_plan: BlueprintEpisodePlanItem[];
+}
+
 function toRelativePath(filePath: string): string {
   return path.relative(process.cwd(), filePath) || ".";
 }
@@ -72,6 +81,111 @@ function ensureMinimalScriptStructure(scriptText: string, scriptPath: string, ep
   }
 }
 
+function findEpisodeDependencyCycle(dependencies: Map<string, string[]>): string[] | undefined {
+  const visitState = new Map<string, 0 | 1 | 2>();
+  const stack: string[] = [];
+
+  const visit = (episodeId: string): string[] | undefined => {
+    const state = visitState.get(episodeId) ?? 0;
+    if (state === 1) {
+      const cycleStart = stack.indexOf(episodeId);
+      if (cycleStart >= 0) {
+        return [...stack.slice(cycleStart), episodeId];
+      }
+      return [episodeId, episodeId];
+    }
+    if (state === 2) {
+      return undefined;
+    }
+
+    visitState.set(episodeId, 1);
+    stack.push(episodeId);
+
+    for (const dependencyId of dependencies.get(episodeId) ?? []) {
+      const cycle = visit(dependencyId);
+      if (cycle) {
+        return cycle;
+      }
+    }
+
+    stack.pop();
+    visitState.set(episodeId, 2);
+    return undefined;
+  };
+
+  for (const episodeId of dependencies.keys()) {
+    const cycle = visit(episodeId);
+    if (cycle) {
+      return cycle;
+    }
+  }
+
+  return undefined;
+}
+
+function validateEpisodePrerequisites(
+  blueprint: BlueprintForCheckRun,
+  blueprintPath: string
+): void {
+  const episodeIds = blueprint.episode_plan.map((episode) => episode.episode_id);
+  const episodeIdSet = new Set(episodeIds);
+  const dependencies = new Map<string, string[]>();
+
+  for (const episode of blueprint.episode_plan) {
+    const prerequisites = episode.prerequisite_episodes ?? [];
+    const seen = new Set<string>();
+    const duplicatePrerequisites: string[] = [];
+    const missingEpisodeIds: string[] = [];
+
+    for (const prerequisiteEpisodeId of prerequisites) {
+      if (seen.has(prerequisiteEpisodeId)) {
+        duplicatePrerequisites.push(prerequisiteEpisodeId);
+      } else {
+        seen.add(prerequisiteEpisodeId);
+      }
+
+      if (prerequisiteEpisodeId === episode.episode_id) {
+        throw new Error(
+          `${toRelativePath(
+            blueprintPath
+          )}: episode_plan "${episode.episode_id}" cannot list itself in prerequisite_episodes`
+        );
+      }
+
+      if (!episodeIdSet.has(prerequisiteEpisodeId)) {
+        missingEpisodeIds.push(prerequisiteEpisodeId);
+      }
+    }
+
+    if (duplicatePrerequisites.length > 0) {
+      const duplicateList = [...new Set(duplicatePrerequisites)].join(", ");
+      throw new Error(
+        `${toRelativePath(
+          blueprintPath
+        )}: episode_plan "${episode.episode_id}" has duplicate prerequisite_episodes: ${duplicateList}`
+      );
+    }
+
+    if (missingEpisodeIds.length > 0) {
+      const missingList = [...new Set(missingEpisodeIds)].join(", ");
+      throw new Error(
+        `${toRelativePath(
+          blueprintPath
+        )}: episode_plan "${episode.episode_id}" references missing prerequisite_episodes: ${missingList}`
+      );
+    }
+
+    dependencies.set(episode.episode_id, prerequisites);
+  }
+
+  const cycle = findEpisodeDependencyCycle(dependencies);
+  if (cycle) {
+    throw new Error(
+      `${toRelativePath(blueprintPath)}: episode_plan prerequisite_episodes has a cycle: ${cycle.join(" -> ")}`
+    );
+  }
+}
+
 export async function checkRun({
   runDir,
   profilePath,
@@ -90,7 +204,8 @@ export async function checkRun({
 
   // 1. Blueprint validation
   const blueprintPath = path.join(resolvedRunDir, "blueprint", "project_blueprint.json");
-  await loadJson<unknown>(blueprintPath, SchemaPaths.blueprint);
+  const blueprint = await loadJson<BlueprintForCheckRun>(blueprintPath, SchemaPaths.blueprint);
+  validateEpisodePrerequisites(blueprint, blueprintPath);
 
   // 2. Material validation
   const materialDir = path.join(resolvedRunDir, "material");

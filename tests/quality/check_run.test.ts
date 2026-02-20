@@ -146,6 +146,23 @@ async function prepareMinimalRun(
   return runDir;
 }
 
+async function updateBlueprintEpisodePlan(
+  runDir: string,
+  updater: (
+    episodePlan: Array<Record<string, unknown>>
+  ) => Array<Record<string, unknown>>
+): Promise<void> {
+  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
+  const raw = await readFile(blueprintPath, "utf-8");
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const episodePlan = parsed.episode_plan;
+  if (!Array.isArray(episodePlan)) {
+    throw new Error("blueprint.episode_plan must be an array");
+  }
+  parsed.episode_plan = updater(episodePlan as Array<Record<string, unknown>>);
+  await writeFile(blueprintPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf-8");
+}
+
 test("checkRun accepts current sample run", async () => {
   await withMockVoicevoxServer((req, res) => {
     const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -255,4 +272,102 @@ test("checkRun accepts script with markdown heading style section lines", async 
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
   });
+});
+
+test("checkRun rejects self-referenced prerequisite_episodes", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript()
+  });
+
+  await updateBlueprintEpisodePlan(runDir, (episodePlan) =>
+    episodePlan.map((episode) => {
+      if (episode.episode_id === "E01") {
+        return {
+          ...episode,
+          prerequisite_episodes: ["E01"]
+        };
+      }
+      return episode;
+    })
+  );
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /cannot list itself in prerequisite_episodes/
+  );
+});
+
+test("checkRun rejects duplicate prerequisite_episodes", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript()
+  });
+
+  await updateBlueprintEpisodePlan(runDir, (episodePlan) =>
+    episodePlan.map((episode) => {
+      if (episode.episode_id === "E02") {
+        return {
+          ...episode,
+          prerequisite_episodes: ["E01", "E01"]
+        };
+      }
+      return episode;
+    })
+  );
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /has duplicate prerequisite_episodes: E01/
+  );
+});
+
+test("checkRun rejects prerequisite_episodes that reference missing episodes", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript()
+  });
+
+  await updateBlueprintEpisodePlan(runDir, (episodePlan) =>
+    episodePlan.map((episode) => {
+      if (episode.episode_id === "E01") {
+        return {
+          ...episode,
+          prerequisite_episodes: ["E99"]
+        };
+      }
+      return episode;
+    })
+  );
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /references missing prerequisite_episodes: E99/
+  );
+});
+
+test("checkRun rejects cyclic prerequisite_episodes", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript()
+  });
+
+  await updateBlueprintEpisodePlan(runDir, (episodePlan) =>
+    episodePlan.map((episode) => {
+      if (episode.episode_id === "E01") {
+        return {
+          ...episode,
+          prerequisite_episodes: ["E02"]
+        };
+      }
+      if (episode.episode_id === "E02") {
+        return {
+          ...episode,
+          prerequisite_episodes: ["E01"]
+        };
+      }
+      return episode;
+    })
+  );
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /prerequisite_episodes has a cycle: E01 -> E02 -> E01|prerequisite_episodes has a cycle: E02 -> E01 -> E02/
+  );
 });
