@@ -52,7 +52,7 @@ export {
 export { applyReadingDictionary, loadReadingDictionary } from "./build_text/reading_dictionary.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
-const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
+const speakabilityChecklistPath = "docs/architecture/build-text-speakability-checklist.md";
 
 function formatPercentage(value: number): string {
   return `${Math.round(value * 1000) / 10}%`;
@@ -179,21 +179,21 @@ function buildQualityChecks(
   }
   if (speakability.score < warningThresholds.scoreThreshold) {
     warnings.push(
-      `Speakability score is low (score=${speakability.score}/100, threshold=${warningThresholds.scoreThreshold}). Refer to ${phase5GuidanceRelativePath} to correlate with SpeakabilityWarningConfig.scoreThreshold guidance.`
+      `Speakability score is low (score=${speakability.score}/100, threshold=${warningThresholds.scoreThreshold}). Refer to ${speakabilityChecklistPath} for SpeakabilityWarningConfig.scoreThreshold guidance.`
     );
   }
   if (speakability.terminal_punctuation_ratio < warningThresholds.minTerminalPunctuationRatio) {
     warnings.push(
       `Terminal punctuation is infrequent (${formatPercentage(
         speakability.terminal_punctuation_ratio
-      )}, threshold=${warningThresholds.minTerminalPunctuationRatio}). Add clearer sentence endings and see ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio context.`
+      )}, threshold=${warningThresholds.minTerminalPunctuationRatio}). Add clearer sentence endings. See ${speakabilityChecklistPath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio guidance.`
     );
   }
   if (speakability.long_utterance_ratio > warningThresholds.maxLongUtteranceRatio) {
     warnings.push(
       `Long utterance ratio is high (${formatPercentage(
         speakability.long_utterance_ratio
-      )}, threshold=${warningThresholds.maxLongUtteranceRatio}). Split longer lines and consult ${phase5GuidanceRelativePath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
+      )}, threshold=${warningThresholds.maxLongUtteranceRatio}). Split longer lines. See ${speakabilityChecklistPath} for SpeakabilityWarningConfig.maxLongUtteranceRatio guidance.`
     );
   }
   return {
