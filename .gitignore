@@ -45,6 +45,9 @@ inputs/repos/*/
 *.flac
 *.ogg
 
+# Claude Code
+.claude/settings.local.json
+
 # local config variants (secrets / machine-specific)
 configs/**/*.local.json
 configs/**/*.local.yaml
