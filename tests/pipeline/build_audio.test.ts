@@ -630,6 +630,152 @@ test("build-audio converts merged wav to mp3 when ffmpeg succeeds", async () => 
   });
 });
 
+test("build-audio partial failure: first utterance fails at audio_query, second succeeds", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5FixtureMultiple(false);
+
+  let audioQueryCallCount = 0;
+  await withMockVoicevoxServer((req, res) => {
+    if (respondHealthCheck(req, res)) {
+      return;
+    }
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+
+    if (req.method === "POST" && requestUrl.pathname === "/audio_query") {
+      audioQueryCallCount += 1;
+      if (audioQueryCallCount === 1) {
+        res.writeHead(400, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "bad request for first utterance" }));
+        return;
+      }
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify(sampleQuery(0)));
+      return;
+    }
+
+    if (req.method === "POST" && requestUrl.pathname === "/synthesis") {
+      res.writeHead(200, { "content-type": "audio/wav" });
+      res.end(buildMockWav([100, 200, 300, 400]));
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not found" }));
+  }, async (voicevoxApiUrl) => {
+    const result = await buildAudioWithoutCompression({
+      stage5VvprojPath,
+      runDir,
+      voicevoxApiUrl
+    });
+
+    assert.equal(result.successCount, 1);
+    assert.equal(result.failureCount, 1);
+    assert.equal(result.failures[0]?.audioKey, "E01_U001");
+    assert.equal(result.failures[0]?.stage, "audio_query");
+    assert.equal(result.failures[0]?.statusCode, 400);
+    assert.equal(typeof result.mergedWavPath, "string", "merged WAV should still be written for successful segments");
+
+    const manifest = JSON.parse(await readFile(result.manifestPath, "utf-8")) as BuildAudioManifest;
+    assert.equal(manifest.summary.total, 2);
+    assert.equal(manifest.summary.succeeded, 1);
+    assert.equal(manifest.summary.failed, 1);
+    assert.equal(manifest.utterances[0]?.status, "failed");
+    assert.equal(manifest.utterances[0]?.error?.stage, "audio_query");
+    assert.equal(manifest.utterances[1]?.status, "succeeded");
+    assert.equal(typeof manifest.output.merged_wav_path, "string");
+  });
+});
+
+test("build-audio partial failure: synthesis fails for second utterance, first succeeds", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5FixtureMultiple(true);
+
+  let synthesisCallCount = 0;
+  await withMockVoicevoxServer((req, res) => {
+    if (respondHealthCheck(req, res)) {
+      return;
+    }
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+
+    if (req.method === "POST" && requestUrl.pathname === "/synthesis") {
+      synthesisCallCount += 1;
+      if (synthesisCallCount === 1) {
+        res.writeHead(200, { "content-type": "audio/wav" });
+        res.end(buildMockWav([10, 20, 30, 40]));
+        return;
+      }
+      res.writeHead(503, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "service unavailable" }));
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not found" }));
+  }, async (voicevoxApiUrl) => {
+    const result = await buildAudioWithoutCompression({
+      stage5VvprojPath,
+      runDir,
+      voicevoxApiUrl
+    });
+
+    assert.equal(result.successCount, 1);
+    assert.equal(result.failureCount, 1);
+    assert.equal(result.failures[0]?.audioKey, "E01_U002");
+    assert.equal(result.failures[0]?.stage, "synthesis");
+    assert.equal(result.failures[0]?.statusCode, 503);
+    assert.equal(typeof result.mergedWavPath, "string", "merged WAV should contain the one successful segment");
+
+    const manifest = JSON.parse(await readFile(result.manifestPath, "utf-8")) as BuildAudioManifest;
+    assert.equal(manifest.summary.total, 2);
+    assert.equal(manifest.summary.succeeded, 1);
+    assert.equal(manifest.summary.failed, 1);
+    assert.equal(manifest.utterances[0]?.status, "succeeded");
+    assert.equal(manifest.utterances[1]?.status, "failed");
+    assert.equal(manifest.utterances[1]?.error?.stage, "synthesis");
+    assert.equal(manifest.utterances[1]?.error?.status_code, 503);
+    assert.equal(typeof manifest.output.merged_wav_path, "string");
+  });
+});
+
+test("build-audio all utterances fail: no merged WAV is written", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5FixtureMultiple(false);
+
+  await withMockVoicevoxServer((req, res) => {
+    if (respondHealthCheck(req, res)) {
+      return;
+    }
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+
+    if (req.method === "POST" && requestUrl.pathname === "/audio_query") {
+      res.writeHead(500, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "internal server error" }));
+      return;
+    }
+
+    res.writeHead(404, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "not found" }));
+  }, async (voicevoxApiUrl) => {
+    const result = await buildAudioWithoutCompression({
+      stage5VvprojPath,
+      runDir,
+      voicevoxApiUrl
+    });
+
+    assert.equal(result.successCount, 0);
+    assert.equal(result.failureCount, 2);
+    assert.equal(result.mergedWavPath, undefined, "no merged WAV should be written when all utterances fail");
+    assert.equal(result.compressedAudioPath, undefined);
+    assert.equal(result.compression.status, "disabled");
+
+    const manifest = JSON.parse(await readFile(result.manifestPath, "utf-8")) as BuildAudioManifest;
+    assert.equal(manifest.summary.total, 2);
+    assert.equal(manifest.summary.succeeded, 0);
+    assert.equal(manifest.summary.failed, 2);
+    assert.equal(manifest.output.merged_wav_path, undefined);
+    assert.equal(manifest.compression.status, "disabled");
+    assert.equal(manifest.utterances[0]?.status, "failed");
+    assert.equal(manifest.utterances[1]?.status, "failed");
+  });
+});
+
 test("build-audio records compression failure when ffmpeg exits with error", async () => {
   const { runDir, stage5VvprojPath } = await createStage5Fixture(true);
   const ffmpegPath = await createMockFfmpegScript({
