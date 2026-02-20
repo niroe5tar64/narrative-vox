@@ -3,6 +3,7 @@ import path from "node:path";
 import { validateAgainstSchema } from "../quality/schema_validator.ts";
 import { parseSectionHeader } from "../shared/script_structure.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
+import { hasSpeakerTagPrefix, parseSpeakerTag } from "../shared/speaker_tag.ts";
 import type { VoicevoxTextData, VoicevoxTextQualityChecks, VoicevoxTextUtterance } from "../shared/types.ts";
 import {
   splitIntoSentences,
@@ -51,8 +52,6 @@ export {
 export { applyReadingDictionary, loadReadingDictionary } from "./build_text/reading_dictionary.ts";
 
 const RUBY_RE = /\{([^|{}]+)\|([^{}]+)\}/g;
-const SPEAKER_TAG_RE = /^\s*\[speaker:([a-z][a-z0-9_-]*)\]\s*/;
-const SPEAKER_TAG_PREFIX_RE = /^\s*\[speaker:/;
 const phase5GuidanceRelativePath = "docs/phase5-speakability-guidance.md";
 
 function formatPercentage(value: number): string {
@@ -91,15 +90,15 @@ export function replaceRubyWithReading(text: string): string {
 }
 
 function extractSpeakerTag(rawLine: string): { speakerKey?: string; content: string } {
-  const match = rawLine.match(SPEAKER_TAG_RE);
-  if (match?.[1]) {
+  const speakerTag = parseSpeakerTag(rawLine);
+  if (speakerTag) {
     return {
-      speakerKey: match[1],
-      content: rawLine.slice(match[0].length)
+      speakerKey: speakerTag.speakerKey,
+      content: rawLine.slice(speakerTag.tagLength)
     };
   }
 
-  if (SPEAKER_TAG_PREFIX_RE.test(rawLine)) {
+  if (hasSpeakerTagPrefix(rawLine)) {
     throw new Error(
       `Invalid speaker tag format: "${rawLine.trim()}". Expected: [speaker:<key>] at line start.`
     );

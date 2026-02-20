@@ -2,12 +2,15 @@ import { readdir, readFile, access } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
+import { parseSectionHeader } from "../shared/script_structure.ts";
+import { hasSpeakerTagPrefix, parseSpeakerTag } from "../shared/speaker_tag.ts";
 import { validateBuildPrerequisites } from "./build_prerequisites.ts";
 
 const MATERIAL_FILE_RE = /^(E[0-9]{2})_material\.json$/;
 const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 const DIGEST_FILE_RE = /^(E[0-9]{2})_episode_digest\.json$/;
-const SECTION_HEADING_RE = /^\s*(?:#{1,6}\s*)?\d+\.\s+.+$/m;
+
+type SpeakerMode = "monologue" | "dialogue" | "panel";
 
 export interface CheckRunOptions {
   runDir: string;
@@ -52,6 +55,10 @@ interface ProjectConfigForCheckRun {
 
 interface ContentStyleForCheckRun {
   style_id: string;
+  format: {
+    speaker_mode: SpeakerMode;
+    speaker_count: number;
+  };
 }
 
 function toRelativePath(filePath: string): string {
@@ -89,8 +96,57 @@ function ensureMinimalScriptStructure(scriptText: string, scriptPath: string, ep
   if (scriptText.trim().length === 0) {
     throw new Error(`${scriptRef} is empty`);
   }
-  if (!SECTION_HEADING_RE.test(scriptText)) {
+  let hasSectionHeading = false;
+  for (const line of scriptText.split(/\r?\n/)) {
+    if (parseSectionHeader(line)) {
+      hasSectionHeading = true;
+      break;
+    }
+  }
+  if (!hasSectionHeading) {
     throw new Error(`${scriptRef} has no section headings (expected "## N. Title" format)`);
+  }
+}
+
+function validateScriptSpeakerStructure(
+  scriptText: string,
+  scriptPath: string,
+  episodeId: string,
+  contentStyle: ContentStyleForCheckRun
+): void {
+  const scriptRef = `${toRelativePath(scriptPath)} (episode: ${episodeId})`;
+  const speakerKeys = new Set<string>();
+  const lines = scriptText.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    if (line.trim().length === 0) {
+      continue;
+    }
+    if (parseSectionHeader(line)) {
+      continue;
+    }
+
+    const speakerTag = parseSpeakerTag(line);
+    if (!speakerTag) {
+      if (hasSpeakerTagPrefix(line)) {
+        throw new Error(
+          `${scriptRef}:${i + 1} has invalid [speaker:<key>] format for style "${contentStyle.style_id}" (${contentStyle.format.speaker_mode})`
+        );
+      }
+      throw new Error(
+        `${scriptRef}:${i + 1} requires [speaker:<key>] at line start for style "${contentStyle.style_id}" (${contentStyle.format.speaker_mode})`
+      );
+    }
+
+    speakerKeys.add(speakerTag.speakerKey);
+  }
+
+  if (speakerKeys.size !== contentStyle.format.speaker_count) {
+    const speakerList = [...speakerKeys].sort().join(", ") || "(none)";
+    throw new Error(
+      `${scriptRef} has ${speakerKeys.size} unique speaker keys (${speakerList}), but style "${contentStyle.style_id}" (${contentStyle.format.speaker_mode}) requires speaker_count=${contentStyle.format.speaker_count}`
+    );
   }
 }
 
@@ -301,6 +357,7 @@ export async function checkRun({
     scriptPaths.push(filePath);
     const scriptText = await readFile(filePath, "utf-8");
     ensureMinimalScriptStructure(scriptText, filePath, episodeId);
+    validateScriptSpeakerStructure(scriptText, filePath, episodeId, contentStyle);
   }
 
   // 4. Material ↔ Script episode matching

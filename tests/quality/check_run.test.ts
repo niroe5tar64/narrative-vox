@@ -45,19 +45,20 @@ async function withMockVoicevoxServer(
 function buildValidScript(): string {
   return [
     "## 1. オープニング",
-    "導入です。",
+    "[speaker:teacher] 導入です。",
     "## 2. 前提を呼び起こす",
-    "前提です。",
+    "[speaker:student] 前提です。",
     "## 3. 結論を先に提示",
-    "結論です。"
+    "[speaker:teacher] 結論です。"
   ].join("\n");
 }
 
 function buildScriptWithManySections(): string {
   const lines: string[] = [];
   for (let i = 1; i <= 12; i++) {
+    const speakerKey = i % 2 === 0 ? "student" : "teacher";
     lines.push(`## ${i}. セクション${i}`);
-    lines.push(`セクション${i}の内容です。`);
+    lines.push(`[speaker:${speakerKey}] セクション${i}の内容です。`);
   }
   return lines.join("\n");
 }
@@ -295,6 +296,152 @@ test("checkRun accepts script with markdown heading style section lines", async 
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
   });
+});
+
+test("checkRun rejects dialogue script lines without speaker tags", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 導入です。",
+      "## 2. 前提を呼び起こす",
+      "この行はspeakerタグがありません。"
+    ].join("\n")
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /requires \[speaker:<key>\] at line start/
+  );
+});
+
+test("checkRun rejects invalid speaker tag format", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:Teacher] 導入です。",
+      "## 2. 前提を呼び起こす",
+      "[speaker:student] 前提です。"
+    ].join("\n")
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /invalid \[speaker:<key>\] format/
+  );
+});
+
+test("checkRun rejects speaker_count mismatch for dialogue style", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 導入です。",
+      "## 2. 前提を呼び起こす",
+      "[speaker:teacher] 前提です。",
+      "## 3. 結論を先に提示",
+      "[speaker:teacher] 結論です。"
+    ].join("\n")
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /requires speaker_count=2/
+  );
+});
+
+test("checkRun rejects speaker_count mismatch for monologue style", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+
+  const baseConfig = JSON.parse(
+    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+  ) as Record<string, unknown>;
+  const tempConfig = {
+    ...baseConfig,
+    PROJECT_ID: projectId,
+    STYLE_ID: "lecture"
+  };
+
+  await writeFile(projectConfigPath, `${JSON.stringify(tempConfig, null, 2)}\n`, "utf-8");
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      /requires speaker_count=1/
+    );
+  } finally {
+    await rm(projectConfigPath, { force: true });
+  }
+});
+
+test("checkRun accepts monologue style with one speaker key", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 導入です。",
+      "## 2. 前提を呼び起こす",
+      "[speaker:teacher] 前提です。",
+      "## 3. 結論を先に提示",
+      "[speaker:teacher] 結論です。"
+    ].join("\n")
+  });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+
+  const baseConfig = JSON.parse(
+    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+  ) as Record<string, unknown>;
+  const tempConfig = {
+    ...baseConfig,
+    PROJECT_ID: projectId,
+    STYLE_ID: "lecture"
+  };
+
+  await writeFile(projectConfigPath, `${JSON.stringify(tempConfig, null, 2)}\n`, "utf-8");
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await withMockVoicevoxServer((req, res) => {
+      const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+      if (req.method === "GET" && requestUrl.pathname === "/version") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end('"0.25.1"');
+        return;
+      }
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+    }, async (voicevoxApiUrl) => {
+      const result = await checkRun({
+        runDir,
+        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        voicevoxApiUrl
+      });
+      assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
+    });
+  } finally {
+    await rm(projectConfigPath, { force: true });
+  }
 });
 
 test("checkRun rejects self-referenced prerequisite_episodes", async () => {

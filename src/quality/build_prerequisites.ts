@@ -3,11 +3,10 @@ import path from "node:path";
 import { resolveCharacterMap } from "../shared/character_map_resolver.ts";
 import { resolveProfilePath, resolveSpeedProfilesPath } from "../shared/config_resolver.ts";
 import { loadJson } from "../shared/json.ts";
+import { parseSpeakerTag } from "../shared/speaker_tag.ts";
 import { normalizeVoiceProfile, type RawVoiceProfile } from "../shared/voice_profile.ts";
 import { resolveVoicevoxApiUrl } from "../pipeline/voicevox_engine.ts";
 import { loadSpeedProfiles } from "../pipeline/build_project/speed_profiles.ts";
-
-const SPEAKER_TAG_RE = /^\s*\[speaker:([a-z][a-z0-9_-]*)\]\s*/;
 
 export interface BuildPrerequisiteOptions {
   scriptPaths: string[];
@@ -71,9 +70,9 @@ async function collectSpeakerKeys(scriptPaths: string[]): Promise<string[]> {
   for (const scriptPath of scriptPaths) {
     const text = await readFile(path.resolve(scriptPath), "utf-8");
     for (const line of text.split(/\r?\n/)) {
-      const match = line.match(SPEAKER_TAG_RE);
-      if (match?.[1]) {
-        keys.add(match[1]);
+      const speakerTag = parseSpeakerTag(line);
+      if (speakerTag) {
+        keys.add(speakerTag.speakerKey);
       }
     }
   }
