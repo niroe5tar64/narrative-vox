@@ -121,12 +121,22 @@ OSSコード解析では `structural_model`、`code_example`、`capability` を�
   "schema_version": "1.0",
   "meta": {
     "project_id": "{{PROJECT_ID}}",
-    "episode_id": "{{EPISODE_ID}}"
+    "episode_id": "{{EPISODE_ID}}",
+    "episode_title": "",
+    "genre": "oss-dive",
+    "audience": {
+      "background": "{{AUDIENCE_BACKGROUND}}",
+      "level": "{{AUDIENCE_LEVEL}}",
+      "interest": "{{AUDIENCE_INTEREST}}"
+    },
+    "source_refs": [],
+    "comparison_mode": "standalone"
   },
   "sections": [
     {
       "section_id": "S01",
-      "section_title": "",
+      "section": "",
+      "goal": "",
       "elements": [
         {
           "element_id": "EL001",
