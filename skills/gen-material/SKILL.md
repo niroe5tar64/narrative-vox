@@ -49,7 +49,9 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 
 1. Step 3 で解決済みの `## Prompt` 以降をシステムプロンプトとして使用する。
 2. Blueprint JSON 全体を添付コンテキストとして提供する。
-3. `SOURCE_MARKDOWN_PATHS` のグロブパターンでソースファイルも添付する。
+3. ソースファイルの添付（GENRE による分岐）:
+   - `study`: `SOURCE_MARKDOWN_PATHS` のグロブパターンでファイルを取得して添付する。
+   - `oss-dive`: Blueprint の `episode_plan[$1].source_refs` に列挙されたパスを `REPO_ROOT_PATH` 配下で解決して添付する。
 4. 出力は JSON のみ。
 5. 素材層の要素は18種の type enum:
    `theme_introduction`, `prerequisite`, `baseline_pattern`, `problem_statement`, `core_thesis`, `concept`, `capability`, `scope_boundary`, `structural_model`, `structural_comparison`, `decision_scenario`, `practical_benefit`, `process_impact`, `risk_assessment`, `guideline`, `code_example`, `analogy`, `takeaway`
