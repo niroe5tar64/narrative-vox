@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { readJson } from "./json.ts";
+import { loadJson } from "./json.ts";
+import { SchemaPaths } from "./schema_paths.ts";
 
 export interface CharacterVoice {
   engineId: string;
@@ -160,7 +161,10 @@ export async function loadCharacterDefinitions(dirPath: string): Promise<Charact
 
   for (const fileName of jsonFiles) {
     const filePath = path.join(resolvedDir, fileName);
-    const raw = (await readJson(filePath)) as Record<string, unknown>;
+    const raw = (await loadJson<Record<string, unknown>>(
+      filePath,
+      SchemaPaths.character
+    )) as Record<string, unknown>;
     const key = normalizeCharacterKey(String(raw.key ?? ""), `${fileName}.key`);
     const voice = raw.voice;
     if (!isRecord(voice)) {

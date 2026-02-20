@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { test } from "bun:test";
@@ -64,7 +65,7 @@ function buildScriptWithManySections(): string {
 const sampleMaterial = {
   schema_version: "1.0",
   meta: {
-    project_id: "test",
+    project_id: "introducing-rescript",
     episode_id: "E01",
     episode_title: "テスト",
     genre: "study",
@@ -144,6 +145,28 @@ async function prepareMinimalRun(
   }
 
   return runDir;
+}
+
+async function updateMaterialFiles(
+  runDir: string,
+  updater: (
+    data: Record<string, unknown>,
+    context: { fileName: string; episodeId: string }
+  ) => Record<string, unknown>
+): Promise<void> {
+  const materialDir = path.join(runDir, "material");
+  const materialFiles = (await readdir(materialDir))
+    .filter((name) => name.endsWith("_material.json"))
+    .sort();
+
+  for (const fileName of materialFiles) {
+    const episodeId = fileName.replace("_material.json", "");
+    const filePath = path.join(materialDir, fileName);
+    const raw = await readFile(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const updated = updater(parsed, { fileName, episodeId });
+    await writeFile(filePath, `${JSON.stringify(updated, null, 2)}\n`, "utf-8");
+  }
 }
 
 async function updateBlueprintEpisodePlan(
@@ -370,4 +393,139 @@ test("checkRun rejects cyclic prerequisite_episodes", async () => {
     () => checkRun({ runDir }),
     /prerequisite_episodes has a cycle: E01 -> E02 -> E01|prerequisite_episodes has a cycle: E02 -> E01 -> E02/
   );
+});
+
+test("checkRun rejects inconsistent project_id across material files", async () => {
+  const runDir = await prepareMinimalRun(
+    ["E01", "E02"],
+    { E01: buildValidScript(), E02: buildValidScript() }
+  );
+
+  await updateMaterialFiles(runDir, (data, context) => {
+    if (context.episodeId !== "E02") {
+      return data;
+    }
+    const meta = (data.meta ?? {}) as Record<string, unknown>;
+    return {
+      ...data,
+      meta: {
+        ...meta,
+        project_id: "kuromoji"
+      }
+    };
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /has inconsistent project_id values:/
+  );
+});
+
+test("checkRun rejects missing project config for material project_id", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const missingProjectId = `missing-project-${randomUUID()}`;
+
+  await updateMaterialFiles(runDir, (data) => {
+    const meta = (data.meta ?? {}) as Record<string, unknown>;
+    return {
+      ...data,
+      meta: {
+        ...meta,
+        project_id: missingProjectId
+      }
+    };
+  });
+
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    new RegExp(`Project config not found for project_id "${missingProjectId}"`)
+  );
+});
+
+test("checkRun rejects missing style definition referenced by STYLE_ID", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const missingStyleId = `tmp-style-missing-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+
+  const baseConfig = JSON.parse(
+    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+  ) as Record<string, unknown>;
+  const tempConfig = {
+    ...baseConfig,
+    PROJECT_ID: projectId,
+    STYLE_ID: missingStyleId
+  };
+
+  await writeFile(projectConfigPath, `${JSON.stringify(tempConfig, null, 2)}\n`, "utf-8");
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      new RegExp(`Style definition not found for STYLE_ID "${missingStyleId}"`)
+    );
+  } finally {
+    await rm(projectConfigPath, { force: true });
+  }
+});
+
+test("checkRun rejects STYLE_ID and content-style style_id mismatch", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const styleId = `tmp-style-${randomUUID()}`;
+  const differentStyleId = `different-style-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const stylePath = path.resolve("configs", "styles", `${styleId}.json`);
+
+  const baseConfig = JSON.parse(
+    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+  ) as Record<string, unknown>;
+  const baseStyle = JSON.parse(
+    await readFile(path.resolve("configs/styles/radio-talk.json"), "utf-8")
+  ) as Record<string, unknown>;
+
+  const tempConfig = {
+    ...baseConfig,
+    PROJECT_ID: projectId,
+    STYLE_ID: styleId
+  };
+  const tempStyle = {
+    ...baseStyle,
+    style_id: differentStyleId
+  };
+
+  await writeFile(projectConfigPath, `${JSON.stringify(tempConfig, null, 2)}\n`, "utf-8");
+  await writeFile(stylePath, `${JSON.stringify(tempStyle, null, 2)}\n`, "utf-8");
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      new RegExp(`style_id "${differentStyleId}" does not match STYLE_ID "${styleId}"`)
+    );
+  } finally {
+    await rm(projectConfigPath, { force: true });
+    await rm(stylePath, { force: true });
+  }
 });

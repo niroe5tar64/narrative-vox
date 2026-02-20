@@ -6,6 +6,28 @@ import path from "node:path";
 import { resolveCharacterMap } from "../../src/shared/character_map_resolver.ts";
 
 const ENGINE_ID = "074fc39e-678b-4c13-8916-ffca8d505d1d";
+const SAMPLE_PROFILE = {
+  gender: "neutral",
+  age_range: "adult",
+  knowledge_level: "expert",
+  personality_traits: ["論理的"],
+  speech_register: "polite_desu_masu",
+  sentence_patterns: {
+    typical_endings: ["です"],
+    filler_words: [],
+    catchphrases: [],
+    forbidden_patterns: []
+  },
+  interaction_behavior: {
+    explains_by: "logical_steps",
+    responds_to_questions_by: "direct_answer",
+    emotion_range: "narrow"
+  },
+  topic_affinity: {
+    enthusiastic_about: [],
+    cautious_about: []
+  }
+} as const;
 
 test("resolveCharacterMap uses explicit character-map path first", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-char-map-"));
@@ -32,11 +54,17 @@ test("resolveCharacterMap uses explicit character-map path first", async () => {
     path.join(charsDir, "narrator.json"),
     JSON.stringify({
       key: "narrator",
+      name: "Narrator",
+      description: "Fallback narrator",
       voice: {
         engineId: ENGINE_ID,
         speakerId: "speaker-fallback",
         styleId: 2
-      }
+      },
+      emotionStyles: {
+        calm: 2
+      },
+      profile: SAMPLE_PROFILE
     }),
     "utf-8"
   );
@@ -60,6 +88,8 @@ test("resolveCharacterMap falls back to character definitions when map file is a
     path.join(charsDir, "narrator.json"),
     JSON.stringify({
       key: "narrator",
+      name: "Narrator",
+      description: "Definition narrator",
       voice: {
         engineId: ENGINE_ID,
         speakerId: "speaker-from-def",
@@ -67,7 +97,8 @@ test("resolveCharacterMap falls back to character definitions when map file is a
       },
       emotionStyles: {
         calm: 3
-      }
+      },
+      profile: SAMPLE_PROFILE
     }),
     "utf-8"
   );

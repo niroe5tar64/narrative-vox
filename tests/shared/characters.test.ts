@@ -10,6 +10,29 @@ import {
   buildRunCharacters
 } from "../../src/shared/characters.ts";
 
+const sampleCharacterProfile = {
+  gender: "neutral",
+  age_range: "adult",
+  knowledge_level: "expert",
+  personality_traits: ["論理的"],
+  speech_register: "polite_desu_masu",
+  sentence_patterns: {
+    typical_endings: ["です"],
+    filler_words: [],
+    catchphrases: [],
+    forbidden_patterns: []
+  },
+  interaction_behavior: {
+    explains_by: "logical_steps",
+    responds_to_questions_by: "direct_answer",
+    emotion_range: "narrow"
+  },
+  topic_affinity: {
+    enthusiastic_about: [],
+    cautious_about: []
+  }
+} as const;
+
 test("normalizeCharacterMap rejects non-object root", () => {
   assert.throws(() => normalizeCharacterMap("bad"), /Character map root must be an object/);
   assert.throws(() => normalizeCharacterMap(null), /Character map root must be an object/);
@@ -138,7 +161,8 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
       emotionStyles: {
         calm: 67,
         energetic: 68
-      }
+      },
+      profile: sampleCharacterProfile
     }),
     "utf-8"
   );
@@ -148,11 +172,16 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
     JSON.stringify({
       key: "teacher",
       name: "先生",
+      description: "Teacher voice",
       voice: {
         engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
         speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
         styleId: 68
-      }
+      },
+      emotionStyles: {
+        calm: 68
+      },
+      profile: sampleCharacterProfile
     }),
     "utf-8"
   );
@@ -169,7 +198,37 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
   });
   assert.equal(defs[1].key, "teacher");
   assert.equal(defs[1].name, "先生");
+  assert.equal(defs[1].description, "Teacher voice");
   assert.equal(defs[1].voice.styleId, 68);
+});
+
+test("loadCharacterDefinitions rejects schema-invalid character file", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-chars-"));
+  const charsDir = path.join(tempDir, "characters");
+  await mkdir(charsDir, { recursive: true });
+
+  await writeFile(
+    path.join(charsDir, "bad.json"),
+    JSON.stringify({
+      key: "bad",
+      name: "Bad",
+      description: "Missing required profile",
+      voice: {
+        engineId: "e",
+        speakerId: "s",
+        styleId: 1
+      },
+      emotionStyles: {
+        calm: 1
+      }
+    }),
+    "utf-8"
+  );
+
+  await assert.rejects(
+    () => loadCharacterDefinitions(charsDir),
+    /Schema validation failed \(character\.schema\.json\)/
+  );
 });
 
 test("loadCharacterDefinitions rejects invalid emotionStyles values", async () => {
@@ -181,6 +240,8 @@ test("loadCharacterDefinitions rejects invalid emotionStyles values", async () =
     path.join(charsDir, "bad.json"),
     JSON.stringify({
       key: "bad",
+      name: "Bad",
+      description: "Bad style id",
       voice: {
         engineId: "e",
         speakerId: "s",
@@ -188,7 +249,8 @@ test("loadCharacterDefinitions rejects invalid emotionStyles values", async () =
       },
       emotionStyles: {
         calm: 0
-      }
+      },
+      profile: sampleCharacterProfile
     }),
     "utf-8"
   );

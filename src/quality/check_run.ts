@@ -1,6 +1,6 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import path from "node:path";
-import { loadJson, readJson } from "../shared/json.ts";
+import { loadJson } from "../shared/json.ts";
 import { SchemaPaths } from "../shared/schema_paths.ts";
 import { validateBuildPrerequisites } from "./build_prerequisites.ts";
 
@@ -8,7 +8,6 @@ const MATERIAL_FILE_RE = /^(E[0-9]{2})_material\.json$/;
 const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 const DIGEST_FILE_RE = /^(E[0-9]{2})_episode_digest\.json$/;
 const SECTION_HEADING_RE = /^\s*(?:#{1,6}\s*)?\d+\.\s+.+$/m;
-const SPEAKER_TAG_RE = /\[speaker:[a-z][a-z0-9_-]*\]/;
 
 export interface CheckRunOptions {
   runDir: string;
@@ -39,6 +38,20 @@ interface BlueprintEpisodePlanItem {
 
 interface BlueprintForCheckRun {
   episode_plan: BlueprintEpisodePlanItem[];
+}
+
+interface EpisodeMaterialForCheckRun {
+  meta: {
+    project_id: string;
+  };
+}
+
+interface ProjectConfigForCheckRun {
+  STYLE_ID: string;
+}
+
+interface ContentStyleForCheckRun {
+  style_id: string;
 }
 
 function toRelativePath(filePath: string): string {
@@ -214,9 +227,60 @@ export async function checkRun({
     throw new Error(`${toRelativePath(materialDir)} has no E##_material.json files`);
   }
   const materialEpisodeIds = collectEpisodeIds(materialFiles, MATERIAL_FILE_RE);
+  const materialProjectIds = new Set<string>();
   for (const fileName of materialFiles) {
     const filePath = path.join(materialDir, fileName);
-    await loadJson<unknown>(filePath, SchemaPaths.episodeMaterial);
+    const material = await loadJson<EpisodeMaterialForCheckRun>(
+      filePath,
+      SchemaPaths.episodeMaterial
+    );
+    materialProjectIds.add(material.meta.project_id);
+  }
+
+  if (materialProjectIds.size !== 1) {
+    throw new Error(
+      `${toRelativePath(materialDir)} has inconsistent project_id values: ${[
+        ...materialProjectIds
+      ].join(", ")}`
+    );
+  }
+  const [projectId] = [...materialProjectIds];
+  if (!projectId) {
+    throw new Error(`${toRelativePath(materialDir)} has no project_id in material metadata`);
+  }
+
+  // 2.5 Project config + content style validation
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  if (!(await dirExists(projectConfigPath))) {
+    throw new Error(
+      `Project config not found for project_id "${projectId}": ${toRelativePath(
+        projectConfigPath
+      )}`
+    );
+  }
+  const projectConfig = await loadJson<ProjectConfigForCheckRun>(
+    projectConfigPath,
+    SchemaPaths.projectConfig
+  );
+  const styleConfigId = projectConfig.STYLE_ID;
+  const stylePath = path.resolve("configs", "styles", `${styleConfigId}.json`);
+  if (!(await dirExists(stylePath))) {
+    throw new Error(
+      `Style definition not found for STYLE_ID "${styleConfigId}": ${toRelativePath(
+        stylePath
+      )}`
+    );
+  }
+  const contentStyle = await loadJson<ContentStyleForCheckRun>(
+    stylePath,
+    SchemaPaths.contentStyle
+  );
+  if (contentStyle.style_id !== styleConfigId) {
+    throw new Error(
+      `${toRelativePath(
+        stylePath
+      )}: style_id "${contentStyle.style_id}" does not match STYLE_ID "${styleConfigId}"`
+    );
   }
 
   // 3. Script validation (minimal structure)
