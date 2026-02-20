@@ -589,6 +589,45 @@ test("checkRun rejects missing project config for material project_id", async ()
   );
 });
 
+test("checkRun rejects schema-invalid project config", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+
+  await writeFile(
+    projectConfigPath,
+    `${JSON.stringify(
+      {
+        PROJECT_ID: projectId,
+        STYLE_ID: "radio-talk"
+      },
+      null,
+      2
+    )}\n`,
+    "utf-8"
+  );
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      /Schema validation failed \(project-config\.schema\.json\)/
+    );
+  } finally {
+    await rm(projectConfigPath, { force: true });
+  }
+});
+
 test("checkRun rejects missing style definition referenced by STYLE_ID", async () => {
   const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
   const projectId = `tmp-project-${randomUUID()}`;
@@ -624,6 +663,47 @@ test("checkRun rejects missing style definition referenced by STYLE_ID", async (
     );
   } finally {
     await rm(projectConfigPath, { force: true });
+  }
+});
+
+test("checkRun rejects schema-invalid content style", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const projectId = `tmp-project-${randomUUID()}`;
+  const styleId = `tmp-style-${randomUUID()}`;
+  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const stylePath = path.resolve("configs", "styles", `${styleId}.json`);
+
+  const baseConfig = JSON.parse(
+    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+  ) as Record<string, unknown>;
+  const tempConfig = {
+    ...baseConfig,
+    PROJECT_ID: projectId,
+    STYLE_ID: styleId
+  };
+
+  await writeFile(projectConfigPath, `${JSON.stringify(tempConfig, null, 2)}\n`, "utf-8");
+  await writeFile(stylePath, `${JSON.stringify({ style_id: styleId }, null, 2)}\n`, "utf-8");
+
+  try {
+    await updateMaterialFiles(runDir, (data) => {
+      const meta = (data.meta ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        meta: {
+          ...meta,
+          project_id: projectId
+        }
+      };
+    });
+
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      /Schema validation failed \(content-style\.schema\.json\)/
+    );
+  } finally {
+    await rm(projectConfigPath, { force: true });
+    await rm(stylePath, { force: true });
   }
 });
 

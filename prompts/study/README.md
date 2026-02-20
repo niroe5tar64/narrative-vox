@@ -41,7 +41,7 @@
 
 6. Validation（任意）
 - `bun run check-run -- --run-dir projects/<project-id>/run-YYYYMMDD-HHMM`
-- Blueprint/Variables/Script を検証（レポートファイルは出力しない）
+- Blueprint/Material/Script を検証（レポートファイルは出力しない）
 
 ## 補助指示
 
@@ -49,7 +49,7 @@
 
 `上記Prompt内の {{PLACEHOLDER}} は、添付したproject-config JSONの同名キーで解決してから実行してください。`
 
-Episode Variablesで回を切り替える場合は以下を追加します。
+Episode Materialで回を切り替える場合は以下を追加します。
 
 `今回は EPISODE_ID=E02 として実行してください。`
 

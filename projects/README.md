@@ -4,7 +4,7 @@
 
 例:
 - `blueprint/project_blueprint.json`
-- `variables/E##_variables.json`
+- `material/E##_material.json`
 - `script/E##_script.md`
 - `voicevox_text/E##_voicevox_text.json`
 - `voicevox_text/E##_voicevox.txt`

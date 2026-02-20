@@ -13,7 +13,7 @@
 ```text
 .
 ├── prompts/
-│   ├── study/       # 技術資料向けプロンプト (Blueprint / Variables / Script / Build Text / Build Project)
+│   ├── study/       # 技術資料向けプロンプト (Blueprint / Material / Script / Build Text / Build Project)
 │   ├── audiobook/   # 小説向けプロンプト（整備中）
 │   └── shared/      # 共通ルール（整備中）
 ├── configs/
@@ -28,7 +28,7 @@
 ├── projects/
 │   └── <book-or-novel-id>/run-YYYYMMDD-HHMM/
 │       ├── blueprint/
-│       ├── variables/
+│       ├── material/
 │       ├── script/
 │       ├── voicevox_text/
 │       ├── dict_candidates/
@@ -46,7 +46,7 @@
 ## 現在の実装スコープ
 
 - Blueprint: 書籍全体 Blueprint JSON 生成
-- Episode Variables: エピソード変数 JSON 生成
+- Episode Material: エピソード素材 JSON 生成
 - Script: 固定フレーム台本生成
 - Build Text: `script.md` から `voicevox_text.json / voicevox.txt / dict_candidates.csv` 生成
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
@@ -67,7 +67,7 @@
 - 入力ソース: `inputs/books/introducing-rescript/source/`
 - 参照 run（2026-02-11）:
   - `projects/introducing-rescript/run-20260211-0000/blueprint/`
-  - `projects/introducing-rescript/run-20260211-0000/variables/`
+  - `projects/introducing-rescript/run-20260211-0000/material/`
   - `projects/introducing-rescript/run-20260211-0000/script/`
   - `projects/introducing-rescript/run-20260211-0000/voicevox_text/`
   - `projects/introducing-rescript/run-20260211-0000/dict_candidates/`
@@ -89,7 +89,7 @@ TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migratio
 bun run prepare-run -- \
   --source-run-dir projects/introducing-rescript/run-20260211-0000
 
-# 2) Blueprint/Variables/Script 生成物を検証する（Blueprint/VariablesはJSON Schema、Scriptは台本形式）
+# 2) Blueprint/Material/Script 生成物を検証する（Blueprint/MaterialはJSON Schema、Scriptは台本形式）
 bun run check-run -- \
   --run-dir projects/introducing-rescript/run-20260211-0000
 
@@ -152,10 +152,10 @@ bun src/cli/main.ts render-prompt \
   --step blueprint \
   --project-config configs/projects/introducing-rescript.example.json
 
-# Variables Promptを解決（EPISODE_IDを上書き）
+# Material Promptを解決（EPISODE_IDを上書き）
 bun src/cli/main.ts render-prompt \
   --genre study \
-  --step variables \
+  --step material \
   --project-config configs/projects/introducing-rescript.example.json \
   --episode-id E01
 ```
@@ -184,13 +184,13 @@ bun src/cli/main.ts render-prompt \
 - `build-audio` は WAV 連結後に `ffmpeg` で圧縮音声を生成します（既定: `mp3` / `128kbps`）。
 - `build-audio` の圧縮設定は `--compressed-format mp3|m4a|ogg|none` と `--compressed-bitrate-kbps <num>` で上書きできます。
 - 圧縮を有効化する場合は `ffmpeg` が必要です。`--ffmpeg-path <path>` で実行ファイルの場所を明示できます。
-- `bun run prepare-run` は `blueprint` / `variables` / `script` を新 run に複製します。
+- `bun run prepare-run` は `blueprint` / `material` / `script` を新 run に複製します。
 - `build-text` / `build-project` / `build-audio` / `build-all` の `--run-dir` は任意です。
   - `build-text` / `build-all`: `--script` が `.../run-.../script/...` 配下なら自動推論
   - `build-project`: `--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
   - `build-audio`: `--vvproj` が `.../run-.../voicevox_project/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
-- `check-run` は blueprint/variables/script の構造検証に加えて、build 前提条件（profile / character 解決 / speed preset / VOICEVOX 到達性）も事前検証します。
+- `check-run` は blueprint/material/script の構造検証に加えて、build 前提条件（profile / character 解決 / speed preset / VOICEVOX 到達性）も事前検証します。
 
 ### VOICEVOX の利用可能キャラクターID確認
 

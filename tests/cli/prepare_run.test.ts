@@ -35,30 +35,44 @@ test("findLatestRunDir chooses newest run id", async () => {
   assert.equal(latest, path.join(projectDir, "run-20260211-0905"));
 });
 
-test("cloneRunDirectories copies blueprint/variables/script into target run", async () => {
+test("cloneRunDirectories copies blueprint/material/script into target run", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-new-run-"));
   const sourceRunDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0000");
   const runDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0100");
 
   await mkdir(path.join(sourceRunDir, "blueprint"), { recursive: true });
-  await mkdir(path.join(sourceRunDir, "variables"), { recursive: true });
+  await mkdir(path.join(sourceRunDir, "material"), { recursive: true });
   await mkdir(path.join(sourceRunDir, "script"), { recursive: true });
 
   await writeFile(path.join(sourceRunDir, "blueprint", "project_blueprint.json"), '{"ok":true}\n', "utf-8");
-  await writeFile(path.join(sourceRunDir, "variables", "E01_variables.json"), '{"ok":true}\n', "utf-8");
+  await writeFile(path.join(sourceRunDir, "material", "E01_material.json"), '{"ok":true}\n', "utf-8");
   await writeFile(path.join(sourceRunDir, "script", "E01_script.md"), "1. 見出し\n本文\n", "utf-8");
 
   await cloneRunDirectories({ sourceRunDir, runDir });
 
   const blueprint = await readFile(path.join(runDir, "blueprint", "project_blueprint.json"), "utf-8");
-  const variables = await readFile(path.join(runDir, "variables", "E01_variables.json"), "utf-8");
+  const material = await readFile(path.join(runDir, "material", "E01_material.json"), "utf-8");
   const script = await readFile(path.join(runDir, "script", "E01_script.md"), "utf-8");
   assert.equal(blueprint, '{"ok":true}\n');
-  assert.equal(variables, '{"ok":true}\n');
+  assert.equal(material, '{"ok":true}\n');
   assert.equal(script, "1. 見出し\n本文\n");
 
   await assert.rejects(
     () => cloneRunDirectories({ sourceRunDir, runDir }),
     /Target run directory already exists/
+  );
+});
+
+test("cloneRunDirectories fails when required material stage is missing", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-new-run-"));
+  const sourceRunDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0000");
+  const runDir = path.join(tempRoot, "projects", "book-a", "run-20260211-0100");
+
+  await mkdir(path.join(sourceRunDir, "blueprint"), { recursive: true });
+  await mkdir(path.join(sourceRunDir, "script"), { recursive: true });
+
+  await assert.rejects(
+    () => cloneRunDirectories({ sourceRunDir, runDir }),
+    /Required stage directory not found: .*\/material$/
   );
 });

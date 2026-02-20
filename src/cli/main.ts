@@ -27,7 +27,7 @@ const usageByCommand: Record<CommandName, string> = {
   "prepare-run":
     "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":
-    "Usage:\n  bun src/cli/main.ts render-prompt --genre <genre> --step <blueprint|variables> --project-config <configs/projects/ID.json> [--episode-id E##]"
+    "Usage:\n  bun src/cli/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/projects/ID.json> [--episode-id E##]"
 };
 
 function printUsage(command?: string) {

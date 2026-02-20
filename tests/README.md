@@ -13,12 +13,12 @@ pipeline / quality / voicevox のテストを配置する。
 - `tests/pipeline/build_pipeline.test.ts`
 - `tests/pipeline/build_text.unit.test.ts`
 - `tests/quality/check_run.test.ts`
-- `tests/quality/blueprint_variables_schema.test.ts`
+- `tests/quality/blueprint_material_schema.test.ts`
 - `tests/quality/voicevox_schema.test.ts`
 - `tests/cli/prepare_run.test.ts`
 
 fixture 運用:
 
 - 共有前提データは `projects/*/run-*` ではなく `tests/fixtures/sample-run` を使う。
-- fixture 更新時は blueprint/variables/script/voicevox_text/voicevox_project の整合を保ち、変更後に `bun run test` を実行して `ENOENT` が出ないことを確認する。
+- fixture 更新時は blueprint/material/script/voicevox_text/voicevox_project の整合を保ち、変更後に `bun run test` を実行して `ENOENT` が出ないことを確認する。
 - fixture の内容・方針は `tests/fixtures/README.md` を参照する。

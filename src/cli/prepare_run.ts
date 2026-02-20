@@ -10,7 +10,7 @@ import { RUN_ID_RE, makeRunIdNow, validateRunId } from "../shared/run_id.ts";
 
 export { makeRunIdNow, validateRunId };
 
-const STAGES_TO_COPY = ["blueprint", "variables", "script"] as const;
+const STAGES_TO_COPY = ["blueprint", "material", "script"] as const;
 
 interface CloneRunOptions {
 	sourceRunDir: string;
@@ -66,7 +66,7 @@ function printUsage() {
 Behavior:
   - Missing arguments are asked interactively when TTY is available.
   - Default values can be overridden by --default-* options.
-  - Copies blueprint/variables/script from source run into target run directory.
+  - Copies blueprint/material/script from source run into target run directory.
 `);
 }
 
