@@ -1542,7 +1542,7 @@ test("build-text falls back to built-in defaults when build-text config path is 
   const builtInConfigPath = path.join(tempRoot, "built-in-build_text_config.json");
   await writeFile(
     builtInConfigPath,
-    `${JSON.stringify(DEFAULT_BUILD_TEXT_CONFIG, null, 2)}\n`,
+    `${JSON.stringify({ version: 1, ...DEFAULT_BUILD_TEXT_CONFIG }, null, 2)}\n`,
     "utf-8"
   );
 
@@ -1689,6 +1689,7 @@ test("build-text applies build-text config values to pause and warning threshold
     customConfigPath,
     JSON.stringify(
       {
+        version: 1,
         speakability: {
           warningThresholds: {
             scoreThreshold: 101,

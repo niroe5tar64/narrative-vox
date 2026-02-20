@@ -1,5 +1,6 @@
 import path from "node:path";
-import { readJson } from "../../shared/json.ts";
+import { loadJson } from "../../shared/json.ts";
+import { SchemaPaths } from "../../shared/schema_paths.ts";
 import {
   PauseConfig,
   SpeakabilityConfig,
@@ -22,6 +23,7 @@ export interface BuildTextConfig {
 }
 
 interface RawBuildTextConfig {
+  version?: number;
   speakability?: {
     warningThresholds?: {
       scoreThreshold?: number | string;
@@ -104,7 +106,7 @@ export function normalizeBuildTextConfig(raw?: RawBuildTextConfig): BuildTextCon
   const scoring = raw?.speakability?.scoring;
   const pause = raw?.pause;
 
-  return {
+  const result: BuildTextConfig = {
     speakability: {
       warningThresholds: {
         scoreThreshold: requireFiniteNumber(warningThresholds?.scoreThreshold, "speakability.warningThresholds.scoreThreshold"),
@@ -154,12 +156,20 @@ export function normalizeBuildTextConfig(raw?: RawBuildTextConfig): BuildTextCon
       }
     }
   };
+
+  if (result.pause.minMs > result.pause.maxMs) {
+    throw new Error(
+      `Build-text config pause.minMs (${result.pause.minMs}) must be <= pause.maxMs (${result.pause.maxMs})`
+    );
+  }
+
+  return result;
 }
 
 export async function loadBuildTextConfig(configPath: string): Promise<BuildTextConfig> {
   const resolvedPath = path.resolve(configPath);
   try {
-    const raw = (await readJson(resolvedPath)) as RawBuildTextConfig;
+    const raw = await loadJson<RawBuildTextConfig>(resolvedPath, SchemaPaths.buildTextConfig);
     return normalizeBuildTextConfig(raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

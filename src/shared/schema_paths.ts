@@ -14,5 +14,6 @@ export const SchemaPaths = {
   voicevoxProjectImport: path.join(SCHEMAS_DIR, "voicevox-import.schema.json"),
   voicevoxProjectMeta: path.join(SCHEMAS_DIR, "voicevox-project-meta.schema.json"),
   readingDictionary: path.join(SCHEMAS_DIR, "reading-dictionary.schema.json"),
-  speedProfiles: path.join(SCHEMAS_DIR, "speed-profiles.schema.json")
+  speedProfiles: path.join(SCHEMAS_DIR, "speed-profiles.schema.json"),
+  buildTextConfig: path.join(SCHEMAS_DIR, "build-text-config.schema.json")
 } as const;

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/build-text-config.schema.json",
+  "title": "BuildTextConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "speakability", "pause"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "speakability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warningThresholds", "scoring"],
+      "properties": {
+        "warningThresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scoreThreshold", "minTerminalPunctuationRatio", "maxLongUtteranceRatio"],
+          "properties": {
+            "scoreThreshold": { "type": "number", "minimum": 0 },
+            "minTerminalPunctuationRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "maxLongUtteranceRatio": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "scoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "targetAverageChars",
+            "averagePenaltyFactor",
+            "averagePenaltyMax",
+            "longRatioWeight",
+            "punctuationWeight"
+          ],
+          "properties": {
+            "targetAverageChars": { "type": "number", "minimum": 0 },
+            "averagePenaltyFactor": { "type": "number", "minimum": 0 },
+            "averagePenaltyMax": { "type": "number", "minimum": 0 },
+            "longRatioWeight": { "type": "number", "minimum": 0 },
+            "punctuationWeight": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "pause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minMs", "maxMs", "bases", "lengthBonus", "penalties"],
+      "properties": {
+        "minMs": { "type": "number", "minimum": 0 },
+        "maxMs": { "type": "number", "minimum": 0 },
+        "bases": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["default", "strongEnding", "fullStop", "clauseEnd"],
+          "properties": {
+            "default": { "type": "number", "minimum": 0 },
+            "strongEnding": { "type": "number", "minimum": 0 },
+            "fullStop": { "type": "number", "minimum": 0 },
+            "clauseEnd": { "type": "number", "minimum": 0 }
+          }
+        },
+        "lengthBonus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["step", "increment", "max"],
+          "properties": {
+            "step": { "type": "number", "minimum": 0 },
+            "increment": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 0 }
+          }
+        },
+        "penalties": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["conjunction", "continuation"],
+          "properties": {
+            "conjunction": { "type": "number", "minimum": 0 },
+            "continuation": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}
