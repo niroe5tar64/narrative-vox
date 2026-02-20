@@ -140,7 +140,7 @@ Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実�
 /gen-digest introducing-rescript E01
 ```
 
-- Skill定義: `skills/gen-blueprint/SKILL.md`, `skills/gen-material/SKILL.md`, `skills/gen-script/SKILL.md`, `skills/gen-digest/SKILL.md`
+- Skill定義: `tools/skills/gen-blueprint/SKILL.md`, `tools/skills/gen-material/SKILL.md`, `tools/skills/gen-script/SKILL.md`, `tools/skills/gen-digest/SKILL.md`
 - 出力先: `projects/<project-id>/run-YYYYMMDD-HHMM/{blueprint,material,script,context}/...`
 
 2. `render-prompt` でテンプレートを解決し、任意のLLMに投入する

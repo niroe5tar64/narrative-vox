@@ -1,9 +1,9 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import path from "node:path";
-import { loadJson } from "../shared/json.ts";
-import { SchemaPaths } from "../shared/schema_paths.ts";
-import { parseSectionHeader } from "../shared/script_structure.ts";
-import { hasSpeakerTagPrefix, parseSpeakerTag } from "../shared/speaker_tag.ts";
+import { loadJson } from "../infra/json.ts";
+import { SchemaPaths } from "../infra/schema_paths.ts";
+import { parseSectionHeader } from "../domain/script_structure.ts";
+import { hasSpeakerTagPrefix, parseSpeakerTag } from "../domain/speaker_tag.ts";
 import { validateBuildPrerequisites } from "./build_prerequisites.ts";
 
 const MATERIAL_FILE_RE = /^(E[0-9]{2})_material\.json$/;

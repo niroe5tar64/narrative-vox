@@ -99,8 +99,8 @@ Prompt工程は Skills で連続実行できます。
 ```
 
 - Skill定義:
-  - `skills/gen-blueprint/SKILL.md`
-  - `skills/gen-material/SKILL.md`
-  - `skills/gen-script/SKILL.md`
-  - `skills/gen-digest/SKILL.md`
+  - `tools/skills/gen-blueprint/SKILL.md`
+  - `tools/skills/gen-material/SKILL.md`
+  - `tools/skills/gen-script/SKILL.md`
+  - `tools/skills/gen-digest/SKILL.md`
 - Skills を使わない場合は、`render-prompt` で解決した Prompt を任意のLLMへ渡して実行してください。

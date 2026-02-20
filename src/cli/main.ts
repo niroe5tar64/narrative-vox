@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 import path from "node:path";
-import { buildText } from "../pipeline/build_text.ts";
-import { buildProject } from "../pipeline/build_project.ts";
-import { buildAudio } from "../pipeline/build_audio.ts";
+import { buildText } from "../app/build_text.ts";
+import { buildProject } from "../app/build_project.ts";
+import { buildAudio } from "../app/build_audio.ts";
 import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
 import { validateBuildPrerequisites } from "../quality/build_prerequisites.ts";
 import { renderPrompt } from "./render_prompt.ts";
-import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "../shared/cli_args.ts";
-import type { CliOptions } from "../shared/cli_args.ts";
+import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "./cli_args.ts";
+import type { CliOptions } from "./cli_args.ts";
 
 type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run" | "render-prompt";
 type CommandHandler = (options: CliOptions) => Promise<void>;

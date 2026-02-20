@@ -1,6 +1,6 @@
 # Tests
 
-pipeline / quality / voicevox のテストを配置する。
+`integration` / `unit` / `fixtures` の責務でテストを配置する。
 
 実行方針:
 
@@ -10,12 +10,12 @@ pipeline / quality / voicevox のテストを配置する。
 
 現状の主なテスト:
 
-- `tests/pipeline/build_pipeline.test.ts`
-- `tests/pipeline/build_text.unit.test.ts`
-- `tests/quality/check_run.test.ts`
-- `tests/quality/blueprint_material_schema.test.ts`
-- `tests/quality/voicevox_schema.test.ts`
-- `tests/cli/prepare_run.test.ts`
+- `tests/integration/app/build_pipeline.test.ts`
+- `tests/integration/app/build_text.unit.test.ts`
+- `tests/integration/quality/check_run.test.ts`
+- `tests/integration/quality/blueprint_material_schema.test.ts`
+- `tests/integration/quality/voicevox_schema.test.ts`
+- `tests/integration/cli/prepare_run.test.ts`
 
 fixture 運用:
 

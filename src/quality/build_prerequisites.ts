@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { resolveCharacterMap } from "../shared/character_map_resolver.ts";
-import { resolveProfilePath, resolveSpeedProfilesPath } from "../shared/config_resolver.ts";
-import { loadJson } from "../shared/json.ts";
-import { parseSpeakerTag } from "../shared/speaker_tag.ts";
-import { normalizeVoiceProfile, type RawVoiceProfile } from "../shared/voice_profile.ts";
-import { resolveVoicevoxApiUrl } from "../pipeline/voicevox_engine.ts";
-import { loadSpeedProfiles } from "../pipeline/build_project/speed_profiles.ts";
+import { resolveCharacterMap } from "../infra/character_map_resolver.ts";
+import { resolveProfilePath, resolveSpeedProfilesPath } from "../infra/config_resolver.ts";
+import { loadJson } from "../infra/json.ts";
+import { parseSpeakerTag } from "../domain/speaker_tag.ts";
+import { normalizeVoiceProfile, type RawVoiceProfile } from "../domain/voice_profile.ts";
+import { resolveVoicevoxApiUrl } from "../infra/voicevox_engine.ts";
+import { loadSpeedProfiles } from "../app/build_project/speed_profiles.ts";
 
 export interface BuildPrerequisiteOptions {
   scriptPaths: string[];

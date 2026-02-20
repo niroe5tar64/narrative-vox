@@ -3,10 +3,10 @@ import { cp, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
-import { parseCliArgs, optionAsString } from "../shared/cli_args.ts";
-import type { CliOptions } from "../shared/cli_args.ts";
-import { pathExists } from "../shared/fs_utils.ts";
-import { RUN_ID_RE, makeRunIdNow, validateRunId } from "../shared/run_id.ts";
+import { parseCliArgs, optionAsString } from "./cli_args.ts";
+import type { CliOptions } from "./cli_args.ts";
+import { pathExists } from "../infra/fs_utils.ts";
+import { RUN_ID_RE, makeRunIdNow, validateRunId } from "../domain/run_id.ts";
 
 export { makeRunIdNow, validateRunId };
 
