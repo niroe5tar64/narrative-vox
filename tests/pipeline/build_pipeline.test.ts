@@ -189,6 +189,83 @@ function mockAudioQueryResponse(params?: {
   };
 }
 
+interface AudioQueryHandlerContext {
+  requestUrl: URL;
+  text: string;
+  callCount: number;
+}
+
+function createAudioQueryHandler(options?: {
+  statusCode?: number;
+  responseBody?: Record<string, unknown>;
+  responseFactory?: (context: AudioQueryHandlerContext) => Record<string, unknown>;
+  maxCalls?: number;
+  onAudioQuery?: (context: AudioQueryHandlerContext) => void;
+}): (req: IncomingMessage, res: ServerResponse) => void {
+  let callCount = 0;
+
+  return (req, res) => {
+    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+      return;
+    }
+
+    callCount += 1;
+    const text = requestUrl.searchParams.get("text") ?? "";
+    const context: AudioQueryHandlerContext = {
+      requestUrl,
+      text,
+      callCount
+    };
+    options?.onAudioQuery?.(context);
+
+    if (options?.maxCalls !== undefined && callCount > options.maxCalls) {
+      res.writeHead(500, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({
+          error: `audio_query called too many times: ${callCount} > ${options.maxCalls}`
+        })
+      );
+      return;
+    }
+
+    const statusCode = options?.statusCode ?? 200;
+    const responseBody = options?.responseFactory
+      ? options.responseFactory(context)
+      : options?.responseBody ?? mockAudioQueryResponse();
+    res.writeHead(statusCode, { "content-type": "application/json" });
+    res.end(JSON.stringify(responseBody));
+  };
+}
+
+test("audio_query mock helper supports status code and max call controls", async () => {
+  await withMockVoicevoxServer(
+    createAudioQueryHandler({
+      statusCode: 201,
+      maxCalls: 1,
+      responseBody: { ok: true }
+    }),
+    async (voicevoxApiUrl) => {
+      const first = await fetch(
+        `${voicevoxApiUrl}/audio_query?text=first&speaker=1`,
+        { method: "POST" }
+      );
+      assert.equal(first.status, 201);
+      assert.deepEqual(await first.json(), { ok: true });
+
+      const second = await fetch(
+        `${voicevoxApiUrl}/audio_query?text=second&speaker=1`,
+        { method: "POST" }
+      );
+      assert.equal(second.status, 500);
+      const secondJson = await second.json() as { error?: string };
+      assert.match(secondJson.error ?? "", /called too many times/);
+    }
+  );
+});
+
 test("build-text -> build-project pipeline works with sample script", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");
@@ -208,18 +285,7 @@ test("build-text -> build-project pipeline works with sample script", async () =
   assert.equal(textJson.quality_checks.speakability.score >= 0, true);
   assert.equal(textJson.quality_checks.speakability.score <= 100, true);
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -581,18 +647,7 @@ test("build-project applies --emotion style mapping from character map", async (
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -747,18 +802,7 @@ test("build-project keeps --style-id priority over --emotion", async () => {
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -905,21 +949,11 @@ test("build-project fills accentPhrases via VOICEVOX audio_query", async () => {
   const textJson = JSON.parse(await readFile(buildTextResult.voicevoxTextJsonPath, "utf-8")) as VoicevoxTextJsonTest;
 
   const requestedTexts: string[] = [];
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
+  await withMockVoicevoxServer(createAudioQueryHandler({
+    onAudioQuery: ({ text }) => {
+      requestedTexts.push(text);
     }
-
-    const text = requestUrl.searchParams.get("text") ?? "";
-    requestedTexts.push(text);
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  }), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -989,19 +1023,7 @@ test("build-project applies speed preset values after profile defaults", async (
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1059,19 +1081,7 @@ test("build-project keeps pause-length lower bound after speed preset overrides"
     textJson.utterances.map((utterance) => [utterance.utterance_id, utterance] as const)
   );
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1132,19 +1142,9 @@ test("build-project applies intonation-scale and preserves interrogative accent 
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse({ isInterrogative: true }))
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler({
+    responseBody: mockAudioQueryResponse({ isInterrogative: true })
+  }), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1185,19 +1185,7 @@ test("build-project clamps intonationScale to zero when intonation-scale is nega
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1272,19 +1260,7 @@ test("build-project writes project meta sidecar with speed, emotion, and prosody
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse())
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler(), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1322,19 +1298,9 @@ test("build-project supports snake_case audio_query response", async () => {
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse({ snakeCase: true }))
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler({
+    responseBody: mockAudioQueryResponse({ snakeCase: true })
+  }), async (voicevoxApiUrl) => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
@@ -1367,31 +1333,22 @@ test("build-project rejects empty accentPhrases from VOICEVOX audio_query", asyn
     runId: "run-20260211-1234"
   });
 
-  await withMockVoicevoxServer((req, res) => {
-    const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (req.method !== "POST" || requestUrl.pathname !== "/audio_query") {
-      res.writeHead(404, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "not found" }));
-      return;
-    }
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(
-      JSON.stringify(mockAudioQueryResponse({
-        emptyAccentPhrases: true,
-        overrides: {
-          speedScale: 1,
-          pitchScale: 0,
-          intonationScale: 1,
-          volumeScale: 1,
-          pauseLengthScale: 1,
-          prePhonemeLength: 0.1,
-          postPhonemeLength: 0.1,
-          outputSamplingRate: "engineDefault",
-          outputStereo: false
-        }
-      }))
-    );
-  }, async (voicevoxApiUrl) => {
+  await withMockVoicevoxServer(createAudioQueryHandler({
+    responseBody: mockAudioQueryResponse({
+      emptyAccentPhrases: true,
+      overrides: {
+        speedScale: 1,
+        pitchScale: 0,
+        intonationScale: 1,
+        volumeScale: 1,
+        pauseLengthScale: 1,
+        prePhonemeLength: 0.1,
+        postPhonemeLength: 0.1,
+        outputSamplingRate: "engineDefault",
+        outputStereo: false
+      }
+    })
+  }), async (voicevoxApiUrl) => {
     await assert.rejects(
       () =>
         buildProject({
