@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VOICEVOX User Dictionary",
+  "type": "object",
+  "required": ["version", "words"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["surface", "pronunciation"],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pronunciation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accent_type": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "word_type": {
+            "type": "string",
+            "enum": ["PROPER_NOUN", "COMMON_NOUN", "VERB", "ADJECTIVE", "SUFFIX"],
+            "default": "PROPER_NOUN"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "default": 5
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

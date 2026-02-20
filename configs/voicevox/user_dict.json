@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "words": [
+    {
+      "surface": "ReScript",
+      "pronunciation": "リスクリプト",
+      "accent_type": 3,
+      "word_type": "PROPER_NOUN",
+      "priority": 5
+    }
+  ]
+}

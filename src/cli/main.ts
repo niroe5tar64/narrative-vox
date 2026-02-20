@@ -7,10 +7,12 @@ import { runPrepareRun } from "./prepare_run.ts";
 import { checkRun } from "../quality/check_run.ts";
 import { validateBuildPrerequisites } from "../quality/build_prerequisites.ts";
 import { renderPrompt } from "./render_prompt.ts";
+import { syncUserDict } from "../app/dict_sync.ts";
+import { resolveVoicevoxApiUrl } from "../infra/voicevox_engine.ts";
 import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "./cli_args.ts";
 import type { CliOptions } from "./cli_args.ts";
 
-type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run" | "render-prompt";
+type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run" | "render-prompt" | "dict-sync";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
@@ -27,7 +29,9 @@ const usageByCommand: Record<CommandName, string> = {
   "prepare-run":
     "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":
-    "Usage:\n  bun src/cli/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/projects/ID.json> [--episode-id E##]"
+    "Usage:\n  bun src/cli/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/projects/ID.json> [--episode-id E##]",
+  "dict-sync":
+    "Usage:\n  bun src/cli/main.ts dict-sync [--voicevox-url <http://127.0.0.1:50021>] [--dict <configs/voicevox/user_dict.json>]"
 };
 
 function printUsage(command?: string) {
@@ -44,6 +48,7 @@ function printUsage(command?: string) {
   ${usageByCommand["check-run"].replace("Usage:\n  ", "")}
   ${usageByCommand["prepare-run"].replace("Usage:\n  ", "")}
   ${usageByCommand["render-prompt"].replace("Usage:\n  ", "")}
+  ${usageByCommand["dict-sync"].replace("Usage:\n  ", "")}
 `);
 }
 
@@ -218,6 +223,21 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     });
 
     process.stdout.write(result.resolvedPrompt);
+  },
+  "dict-sync": async (options) => {
+    const apiUrl = await resolveVoicevoxApiUrl(optionAsString(options, "voicevox-url"));
+    const result = await syncUserDict({
+      apiUrl,
+      dictPath: optionAsString(options, "dict"),
+    });
+
+    console.log(`Dict sync done: deleted=${result.deleted}, added=${result.added}`);
+    if (result.errors.length > 0) {
+      for (const err of result.errors) {
+        console.log(`  [error] ${err}`);
+      }
+      throw new Error(`dict-sync completed with ${result.errors.length} error(s)`);
+    }
   },
 };
 

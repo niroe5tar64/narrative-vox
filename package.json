@@ -13,6 +13,7 @@
     "voicevox:up": "bash tools/scripts/voicevox-up.sh",
     "voicevox:down": "bash tools/scripts/voicevox-down.sh",
     "voicevox:check": "bash tools/scripts/voicevox-check.sh",
+    "voicevox:dict-sync": "bun src/cli/main.ts dict-sync",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },
