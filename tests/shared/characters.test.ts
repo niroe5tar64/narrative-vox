@@ -39,6 +39,21 @@ test("normalizeCharacterMap rejects non-object root", () => {
   assert.throws(() => normalizeCharacterMap(42), /Character map root must be an object/);
 });
 
+test("normalizeCharacterMap rejects missing characters field", () => {
+  assert.throws(
+    () => normalizeCharacterMap({}),
+    /Character map characters must be an object/
+  );
+  assert.throws(
+    () => normalizeCharacterMap({ characters: null }),
+    /Character map characters must be an object/
+  );
+  assert.throws(
+    () => normalizeCharacterMap({ characters: "bad" }),
+    /Character map characters must be an object/
+  );
+});
+
 test("normalizeCharacterMap parses valid character map", () => {
   const result = normalizeCharacterMap({
     defaultCharacterKey: "narrator",

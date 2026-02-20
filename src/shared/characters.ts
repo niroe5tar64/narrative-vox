@@ -97,7 +97,10 @@ export function normalizeCharacterMap(raw: unknown): CharacterMap {
   const charactersRaw = raw.characters;
   const emotionStylesRaw = raw.emotionStyles;
 
-  const charactersRecord = isRecord(charactersRaw) ? charactersRaw : {};
+  if (!isRecord(charactersRaw)) {
+    throw new Error("Character map characters must be an object");
+  }
+  const charactersRecord = charactersRaw;
   const characters: Record<string, CharacterVoice> = {};
 
   for (const [rawKey, rawVoice] of Object.entries(charactersRecord)) {

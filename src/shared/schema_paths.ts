@@ -8,6 +8,7 @@ export const SchemaPaths = {
   episodeDigest: path.join(SCHEMAS_DIR, "episode-digest.schema.json"),
   contentStyle: path.join(SCHEMAS_DIR, "content-style.schema.json"),
   character: path.join(SCHEMAS_DIR, "character.schema.json"),
+  characterMap: path.join(SCHEMAS_DIR, "character-map.schema.json"),
   projectConfig: path.join(SCHEMAS_DIR, "project-config.schema.json"),
   voicevoxText: path.join(SCHEMAS_DIR, "voicevox-text.schema.json"),
   voicevoxProjectImport: path.join(SCHEMAS_DIR, "voicevox-import.schema.json"),

@@ -115,6 +115,38 @@ test("resolveCharacterMap falls back to character definitions when map file is a
   assert.equal(resolved.characterMap?.emotionStyles?.narrator.calm, 3);
 });
 
+test("resolveCharacterMap rejects character map file missing characters field", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-char-map-"));
+  const mapPath = path.join(tempDir, "bad_character_map.json");
+
+  await writeFile(
+    mapPath,
+    JSON.stringify({ defaultCharacterKey: "narrator" }),
+    "utf-8"
+  );
+
+  await assert.rejects(
+    () => resolveCharacterMap({ characterMapPath: mapPath }),
+    /Schema validation failed \(character-map\.schema\.json\)/
+  );
+});
+
+test("resolveCharacterMap rejects character map file with empty characters object", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-char-map-"));
+  const mapPath = path.join(tempDir, "empty_characters_map.json");
+
+  await writeFile(
+    mapPath,
+    JSON.stringify({ characters: {} }),
+    "utf-8"
+  );
+
+  await assert.rejects(
+    () => resolveCharacterMap({ characterMapPath: mapPath }),
+    /Schema validation failed \(character-map\.schema\.json\)/
+  );
+});
+
 test("resolveCharacterMap returns empty result when no sources are available", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-char-map-"));
   const missingMapPath = path.join(tempDir, "missing_character_map.json");

@@ -7,6 +7,7 @@ import {
 } from "./characters.ts";
 import { pathExists } from "./fs_utils.ts";
 import { loadJson } from "./json.ts";
+import { SchemaPaths } from "./schema_paths.ts";
 
 export interface ResolveCharacterMapOptions {
   characterMapPath?: string;
@@ -28,7 +29,7 @@ export async function resolveCharacterMap(
     : undefined;
   if (explicitCharacterMapPath) {
     return {
-      characterMap: normalizeCharacterMap(await loadJson<unknown>(explicitCharacterMapPath)),
+      characterMap: normalizeCharacterMap(await loadJson<unknown>(explicitCharacterMapPath, SchemaPaths.characterMap)),
       source: explicitCharacterMapPath
     };
   }
@@ -38,7 +39,7 @@ export async function resolveCharacterMap(
   );
   if (await pathExists(defaultCharacterMapPath)) {
     return {
-      characterMap: normalizeCharacterMap(await loadJson<unknown>(defaultCharacterMapPath)),
+      characterMap: normalizeCharacterMap(await loadJson<unknown>(defaultCharacterMapPath, SchemaPaths.characterMap)),
       source: defaultCharacterMapPath
     };
   }

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/character-map.schema.json",
+  "title": "CharacterMap",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["characters"],
+  "properties": {
+    "defaultCharacterKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "minLength": 1
+    },
+    "characters": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["engineId", "speakerId", "styleId"],
+        "properties": {
+          "engineId": { "type": "string", "minLength": 1 },
+          "speakerId": { "type": "string", "minLength": 1 },
+          "styleId": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "emotionStyles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
