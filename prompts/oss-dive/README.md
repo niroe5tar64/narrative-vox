@@ -34,6 +34,7 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 ```
 
 3. config の `REPO_ROOT_PATH` / `DEEP_DIVE_FOCUS` / `PROJECT_ID` 等を編集する。
+4. `STYLE_ID` は当面 `radio-talk` を使用する（`code-walkthrough` は設計時の仮名残りとして廃止）。
 
 ## 実行順
 
@@ -68,6 +69,11 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 - `EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY`
 - `PROJECT_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
+
+## スタイル運用方針
+
+- oss-dive のデフォルトスタイルは `radio-talk`。
+- `STYLE_ID` は将来拡張可能だが、`configs/styles/<style_id>.json` に実体がある値のみ使用する。
 
 ## Skills 実行例
 
