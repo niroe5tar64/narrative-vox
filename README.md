@@ -30,6 +30,7 @@
 │       ├── blueprint/
 │       ├── material/
 │       ├── script/
+│       ├── context/
 │       ├── voicevox_text/
 │       ├── dict_candidates/
 │       ├── voicevox_project/
@@ -69,6 +70,7 @@
   - `projects/introducing-rescript/run-20260211-0000/blueprint/`
   - `projects/introducing-rescript/run-20260211-0000/material/`
   - `projects/introducing-rescript/run-20260211-0000/script/`
+  - `projects/introducing-rescript/run-20260211-0000/context/`
   - `projects/introducing-rescript/run-20260211-0000/voicevox_text/`
   - `projects/introducing-rescript/run-20260211-0000/dict_candidates/`
 - `projects/introducing-rescript/run-20260211-0000/voicevox_project/`
