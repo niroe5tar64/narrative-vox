@@ -5,6 +5,11 @@ import { requestIdMiddleware } from "./middleware/request-id.ts";
 import type { AppVariables } from "./types.ts";
 import { configsRouter } from "./routes/configs.ts";
 import { voicevoxProxyRouter } from "./routes/voicevox-proxy.ts";
+import {
+  pipelineRouter,
+  pipelineWsRoute,
+  pipelineWebsocket,
+} from "./routes/pipeline.ts";
 
 const app = new Hono<{ Variables: AppVariables }>();
 
@@ -26,6 +31,10 @@ if (config.allowedOrigin) {
 
 app.route("/api/configs", configsRouter);
 app.route("/api/voicevox", voicevoxProxyRouter);
+app.route("/api/pipeline", pipelineRouter);
+
+// WS: Pipeline リアルタイムログ
+app.get("/ws/pipeline/:jobId", pipelineWsRoute);
 
 app.get("/api/health", (c) => {
   return c.json({
@@ -42,6 +51,7 @@ app.get("/", (c) => {
 
 Bun.serve({
   fetch: app.fetch,
+  websocket: pipelineWebsocket,
   hostname: config.host,
   port: config.port,
 });
