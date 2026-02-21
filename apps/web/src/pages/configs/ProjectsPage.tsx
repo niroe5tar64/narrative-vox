@@ -295,8 +295,8 @@ export function ProjectsPage() {
                       : "hover:bg-slate-100",
                   )}
                 >
-                  <div className="font-medium">{proj.PROJECT_TITLE}</div>
-                  <div className="text-xs opacity-60">{proj.PROJECT_ID}</div>
+                  <div className="font-medium">{proj.PROJECT_ID}</div>
+                  <div className="text-xs opacity-60">{proj.PROJECT_TITLE}</div>
                 </button>
               );
             })}
