@@ -46,6 +46,65 @@ export type UserDictWord = {
 };
 export type UserDict = { version: number; words: UserDictWord[] };
 
+// ===== Runs =====
+
+export type RunItem = {
+  projectId: string;
+  runId: string;
+  createdAt: string;
+};
+
+export type RunListResult = {
+  items: RunItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type TreeNode =
+  | { name: string; type: "file"; path: string }
+  | { name: string; type: "dir"; children: TreeNode[] };
+
+export type Utterance = {
+  utterance_id: string;
+  section_id?: number;
+  section_title?: string;
+  speaker_key?: string;
+  text: string;
+  pause_length_ms: number;
+  [key: string]: unknown;
+};
+
+export type VoicevoxText = {
+  utterances: Utterance[];
+  [key: string]: unknown;
+};
+
+export type UtteranceUpdate = {
+  utterance_id: string;
+  text?: string;
+  pause_length_ms?: number;
+};
+
+export type FileResult = {
+  content: string;
+  etag: string | null;
+};
+
+export type ManifestUtterance = {
+  audio_key: string;
+  text: string;
+  status: string;
+  [key: string]: unknown;
+};
+
+export type ManifestData = {
+  meta?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  utterances?: ManifestUtterance[];
+  [key: string]: unknown;
+};
+
 export type LogEntry = {
   type: "stdout" | "stderr" | "system";
   data: string;
@@ -153,5 +212,72 @@ export const api = {
       }),
     cancel: (jobId: string) =>
       apiFetch<JobCancelResult>(`/pipeline/${jobId}/cancel`, { method: "POST" }),
+  },
+
+  runs: {
+    list: (params?: { projectId?: string; page?: number; pageSize?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.projectId) q.set("projectId", params.projectId);
+      if (params?.page !== undefined) q.set("page", String(params.page));
+      if (params?.pageSize !== undefined) q.set("pageSize", String(params.pageSize));
+      const qs = q.toString();
+      return apiFetch<RunListResult>(`/runs${qs ? `?${qs}` : ""}`);
+    },
+
+    tree: (projectId: string, runId: string) =>
+      apiFetch<{ tree: TreeNode }>(`/runs/${projectId}/${runId}/tree`),
+
+    getFile: async (projectId: string, runId: string, filePath: string): Promise<FileResult> => {
+      const res = await fetch(
+        `/api/runs/${projectId}/${runId}/file?path=${encodeURIComponent(filePath)}`,
+      );
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        throw new ApiError(
+          res.status,
+          (json.title as string | undefined) ?? "Unknown error",
+          json.detail as string | undefined,
+        );
+      }
+      const content = await res.text();
+      const etag = res.headers.get("ETag");
+      return { content, etag };
+    },
+
+    saveFile: async (
+      projectId: string,
+      runId: string,
+      filePath: string,
+      utterances: UtteranceUpdate[],
+      etag: string,
+    ): Promise<FileResult> => {
+      const res = await fetch(
+        `/api/runs/${projectId}/${runId}/file?path=${encodeURIComponent(filePath)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "If-Match": etag },
+          body: JSON.stringify({ utterances }),
+        },
+      );
+      if (!res.ok) {
+        const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        throw new ApiError(
+          res.status,
+          (json.title as string | undefined) ?? "Unknown error",
+          json.detail as string | undefined,
+        );
+      }
+      const content = await res.text();
+      const newEtag = res.headers.get("ETag");
+      return { content, etag: newEtag };
+    },
+  },
+
+  editor: {
+    open: (path: string) =>
+      apiFetch<{ opened: boolean; path: string }>("/editor/open", {
+        method: "POST",
+        body: JSON.stringify({ path }),
+      }),
   },
 };

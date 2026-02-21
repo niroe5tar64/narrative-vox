@@ -7,7 +7,8 @@ import { ProjectsPage } from "@/pages/configs/ProjectsPage";
 import { StylesPage } from "@/pages/configs/StylesPage";
 import { VoicevoxPage } from "@/pages/configs/VoicevoxPage";
 import { PipelinePage } from "@/pages/pipeline/PipelinePage";
-import { PagePlaceholder } from "@/pages/page-placeholder";
+import { RunDetailPage } from "@/pages/runs/RunDetailPage";
+import { RunsPage } from "@/pages/runs/RunsPage";
 
 const router = createBrowserRouter([
   {
@@ -41,13 +42,11 @@ const router = createBrowserRouter([
       },
       {
         path: "runs",
-        element: (
-          <PagePlaceholder
-            path="/runs"
-            title="Runs"
-            description="run一覧、成果物閲覧、検証実行を行うページ。"
-          />
-        ),
+        element: <RunsPage />,
+      },
+      {
+        path: "runs/:projectId/:runId",
+        element: <RunDetailPage />,
       },
       {
         path: "*",
