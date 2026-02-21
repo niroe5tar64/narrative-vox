@@ -6,6 +6,7 @@ import { DictionariesPage } from "@/pages/configs/DictionariesPage";
 import { ProjectsPage } from "@/pages/configs/ProjectsPage";
 import { StylesPage } from "@/pages/configs/StylesPage";
 import { VoicevoxPage } from "@/pages/configs/VoicevoxPage";
+import { PipelinePage } from "@/pages/pipeline/PipelinePage";
 import { PagePlaceholder } from "@/pages/page-placeholder";
 
 const router = createBrowserRouter([
@@ -36,13 +37,7 @@ const router = createBrowserRouter([
       },
       {
         path: "pipeline",
-        element: (
-          <PagePlaceholder
-            path="/pipeline"
-            title="Pipeline"
-            description="build-text / build-project / build-audio の実行コンソール。"
-          />
-        ),
+        element: <PipelinePage />,
       },
       {
         path: "runs",

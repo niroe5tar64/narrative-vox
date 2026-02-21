@@ -46,6 +46,28 @@ export type UserDictWord = {
 };
 export type UserDict = { version: number; words: UserDictWord[] };
 
+export type LogEntry = {
+  type: "stdout" | "stderr" | "system";
+  data: string;
+  ts: string;
+  seq: number;
+  code?: number;
+  cancelled?: boolean;
+};
+
+export type JobStartResult = {
+  jobId: string;
+  command: string;
+  args: string[];
+  startedAt: string;
+};
+
+export type JobCancelResult = {
+  jobId: string;
+  status: string;
+  cancelled: boolean;
+};
+
 // ===== Error =====
 
 export class ApiError extends Error {
@@ -121,5 +143,15 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+  },
+
+  pipeline: {
+    run: (command: string, args: string[]) =>
+      apiFetch<JobStartResult>("/pipeline/run", {
+        method: "POST",
+        body: JSON.stringify({ command, args }),
+      }),
+    cancel: (jobId: string) =>
+      apiFetch<JobCancelResult>(`/pipeline/${jobId}/cancel`, { method: "POST" }),
   },
 };
