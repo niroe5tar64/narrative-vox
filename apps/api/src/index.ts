@@ -10,6 +10,8 @@ import {
   pipelineWsRoute,
   pipelineWebsocket,
 } from "./routes/pipeline.ts";
+import { runsRouter } from "./routes/files.ts";
+import { editorRouter } from "./routes/editor.ts";
 
 const app = new Hono<{ Variables: AppVariables }>();
 
@@ -23,8 +25,8 @@ if (config.allowedOrigin) {
     cors({
       origin: config.allowedOrigin,
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "X-Request-Id"],
-      exposeHeaders: ["X-Request-Id"],
+      allowHeaders: ["Content-Type", "X-Request-Id", "If-Match"],
+      exposeHeaders: ["X-Request-Id", "ETag"],
     }),
   );
 }
@@ -32,6 +34,8 @@ if (config.allowedOrigin) {
 app.route("/api/configs", configsRouter);
 app.route("/api/voicevox", voicevoxProxyRouter);
 app.route("/api/pipeline", pipelineRouter);
+app.route("/api/runs", runsRouter);
+app.route("/api/editor", editorRouter);
 
 // WS: Pipeline リアルタイムログ
 app.get("/ws/pipeline/:jobId", pipelineWsRoute);
