@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2 } from "lucide-react";
 
-import { ApiError, api, type CharacterConfig, type GenreConfig, type ProjectConfig } from "@/api/client";
+import { ApiError, api, type CharacterConfig, type GenreConfig, type ProjectConfig, type StyleConfig } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,7 +174,7 @@ export function ProjectsPage() {
   });
 
   const genres = genresData?.items ?? [];
-  const styles = stylesData?.items ?? [];
+  const styles = (stylesData?.items ?? []) as StyleConfig[];
   const charKeys = (chars?.items as CharacterConfig[] | undefined)?.map((c) => c.key) ?? [];
 
   // Determine extra_fields for the currently selected genre
@@ -247,12 +247,13 @@ export function ProjectsPage() {
     patch({ GENRE_ID: genreId, REPO_ROOT_PATH: "", DEEP_DIVE_FOCUS: "" });
   }
 
-  function addCastRow() {
-    patch({ castRows: [...form.castRows, { role: "", charKey: charKeys[0] ?? "" }] });
-  }
-
-  function removeCastRow(i: number) {
-    patch({ castRows: form.castRows.filter((_, idx) => idx !== i) });
+  function changeStyle(styleId: string) {
+    const style = styles.find((s) => s.style_id === styleId);
+    const newCastRows = (style?.format.speaker_roles ?? []).map((sr) => {
+      const existing = form.castRows.find((r) => r.role === sr.role);
+      return { role: sr.role, charKey: existing?.charKey ?? charKeys[0] ?? "" };
+    });
+    patch({ STYLE_ID: styleId, castRows: newCastRows });
   }
 
   function updateCastRow(i: number, p: Partial<CastRow>) {
@@ -359,7 +360,7 @@ export function ProjectsPage() {
                   <select
                     className={selectClass}
                     value={form.STYLE_ID}
-                    onChange={(e) => patch({ STYLE_ID: e.target.value })}
+                    onChange={(e) => changeStyle(e.target.value)}
                   >
                     <option value="">-- 選択 --</option>
                     {styles.map((s) => (
@@ -466,56 +467,46 @@ export function ProjectsPage() {
               />
             </Field>
 
-            {/* CAST */}
-            <fieldset className="rounded-md border border-slate-200 p-4">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                CAST
-              </legend>
-              <div className="space-y-2">
-                {form.castRows.map((row, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static order
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={row.role}
-                      onChange={(e) => updateCastRow(i, { role: e.target.value })}
-                      placeholder="role (e.g. lead)"
-                      className="w-32"
-                    />
-                    {charKeys.length > 0 ? (
-                      <select
-                        className="h-9 flex-1 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                        value={row.charKey}
-                        onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
-                      >
-                        {charKeys.map((k) => (
-                          <option key={k} value={k}>
-                            {k}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
+            {/* CAST — STYLE_ID 選択後のみ表示 */}
+            {form.STYLE_ID && (
+              <fieldset className="rounded-md border border-slate-200 p-4">
+                <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  CAST
+                </legend>
+                <div className="space-y-2">
+                  {form.castRows.map((row, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static order
+                    <div key={i} className="flex items-center gap-2">
                       <Input
-                        value={row.charKey}
-                        onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
-                        placeholder="character key"
-                        className="flex-1"
+                        value={row.role}
+                        readOnly
+                        className="w-32 bg-slate-50 text-slate-500"
                       />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeCastRow(i)}
-                      className="text-slate-400 hover:text-red-500"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <Button variant="secondary" size="sm" onClick={addCastRow}>
-                  <Plus className="h-4 w-4" />
-                  Add role
-                </Button>
-              </div>
-            </fieldset>
+                      {charKeys.length > 0 ? (
+                        <select
+                          className="h-9 flex-1 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                          value={row.charKey}
+                          onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
+                        >
+                          {charKeys.map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          value={row.charKey}
+                          onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
+                          placeholder="character key"
+                          className="flex-1"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </fieldset>
+            )}
 
             <Field label="NOTES">
               <Textarea

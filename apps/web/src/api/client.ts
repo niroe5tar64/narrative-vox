@@ -36,6 +36,16 @@ export type ProjectConfig = {
   NOTES?: string;
 };
 
+export type StyleConfig = {
+  style_id: string;
+  style_name: string;
+  format: {
+    speaker_mode: string;
+    speaker_count: number;
+    speaker_roles: { role: string; utterance_share: number }[];
+  };
+};
+
 export type SpeakerStyle = { name: string; id: number; type: string };
 export type Speaker = { name: string; speaker_uuid: string; styles: SpeakerStyle[] };
 export type VoicevoxStatus = { status: "running"; version: string };
@@ -200,7 +210,7 @@ export const api = {
   },
 
   styles: {
-    list: () => apiFetch<{ items: { style_id: string; style_name: string }[] }>("/configs/styles"),
+    list: () => apiFetch<{ items: StyleConfig[] }>("/configs/styles"),
   },
 
   voicevox: {
