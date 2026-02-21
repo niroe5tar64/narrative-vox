@@ -1,4 +1,4 @@
-# Source Code
+# Source Layout
 
 `apps/ + packages/ + data/` への再編後、実装本体は以下へ移動済み。
 
