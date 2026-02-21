@@ -2,7 +2,7 @@ import { test } from "bun:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 
-import { resolveBuildTextOutputPaths } from "../../../src/app/build-text/output-paths.ts";
+import { resolveBuildTextOutputPaths } from "@narrative-vox/application/build-text/output-paths.ts";
 
 const runDir = path.join("/tmp", "introducing-rescript", "run-20260212-0000");
 const runId = "run-20260212-0000";

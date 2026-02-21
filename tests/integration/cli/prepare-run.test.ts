@@ -8,7 +8,7 @@ import {
   findLatestRunDir,
   makeRunIdNow,
   validateRunId
-} from "../../../src/cli/prepare-run.ts";
+} from "@narrative-vox/cli/prepare-run.ts";
 
 test("makeRunIdNow creates run-YYYYMMDD-HHMM format", () => {
   const runId = makeRunIdNow(new Date("2026-02-11T12:34:56.000Z"));

@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { validateBuildPrerequisites } from "../../../src/quality/build-prerequisites.ts";
+import { validateBuildPrerequisites } from "@narrative-vox/quality/build-prerequisites.ts";
 
 const ENGINE_ID = "074fc39e-678b-4c13-8916-ffca8d505d1d";
 const SPEAKER_ID = "04dbd989-32d0-40b4-9e71-17c920f2a8a9";
@@ -57,7 +57,7 @@ test("validateBuildPrerequisites passes with explicit voice triple", async () =>
   }, async (voicevoxApiUrl) => {
     const result = await validateBuildPrerequisites({
       scriptPaths: [scriptPath],
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
@@ -105,7 +105,7 @@ test("validateBuildPrerequisites rejects unknown speaker_key in scripts", async 
       () =>
         validateBuildPrerequisites({
           scriptPaths: [scriptPath],
-          synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+          synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
           voicevoxApiUrl
         }),
       /Unknown character_key "ghost"/

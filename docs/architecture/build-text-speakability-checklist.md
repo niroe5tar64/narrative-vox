@@ -1,6 +1,6 @@
 # Build Text Speakability warning checklist
 
-このドキュメントは Phase5（軽微指摘対応）に向けて Build Text の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。しきい値は `configs/voicevox/build-text-config.json`（または `--build-text-config` 指定ファイル）で管理し、実装上の型定義は `src/app/build-text/build-text-config.ts` の `SpeakabilityWarningConfig` を参照します。
+このドキュメントは Phase5（軽微指摘対応）に向けて Build Text の `quality_checks.warnings` を扱う際の再現手順とチェックポイントをまとめたチェックリストです。しきい値は `configs/voice/voicevox/build-text-config.json`（または `--build-text-config` 指定ファイル）で管理し、実装上の型定義は `packages/application/src/build-text/build-text-config.ts` の `SpeakabilityWarningConfig` を参照します。
 
 ## 警告条件と計測ポイント
 
@@ -36,12 +36,12 @@
 ## 再現ログの活用
 
 - 警告再現の主データは `/tmp/nv-build-text-script/E01_script.md` `/tmp/nv-build-text-script/E02_script.md` `/tmp/nv-build-text-script/E04_script.md` から生成した run（例: `run-20260212-0300`）を使ってください。`E04` は `score=60` / `long_utterance_ratio=0.444` / `terminal_punctuation_ratio=0` で 3 件警告、`E01` と `E02` は Terminal punctuation 警告を再現できます。
-- `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は 2026-02-12 再生成時点で `E01`〜`E12` の `quality_checks.warnings` が 0 件です。こちらは「通常サンプルの健全系確認」用途として扱ってください。
+- `data/projects/introducing-rescript/run-20260211-0000/voicevox_text/` は 2026-02-12 再生成時点で `E01`〜`E12` の `quality_checks.warnings` が 0 件です。こちらは「通常サンプルの健全系確認」用途として扱ってください。
 - `dict_candidates/<episode>_dict_candidates.csv` には `DictionaryCsvField` ヘッダー順（`surface,reading,priority,occurrences,source,note`）と `priority` のルールが反映されているので、警告が出た run についてヘッダー/quote ルールも照合してください。
 
 ## テストとの紐付け
 
-- `tests/integration/app/build_pipeline.test.ts` では一時 script を生成して `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と報告をリンクさせることで再現済みシナリオを維持できます。
+- `tests/integration/app/build-pipeline.test.ts` では一時 script を生成して `quality_checks.warnings` に Speakability score low の警告が含まれることを確認しており、Phase5 ではこのテスト結果と報告をリンクさせることで再現済みシナリオを維持できます。
 - `tests/integration/app/build-text.unit.test.ts` 系のユニットテストは `evaluateSpeakability`/`splitIntoSentences`/`decidePauseLengthMs` などの内部ロジックが期待どおりに動作し、`SpeakabilityWarningConfig.*` の各しきい値で警告をトリガーする前提を支えるため、変更を加える際は該当テストの入力値も見直してください。
 
 ## 警告別ドキュメント更新のたたき台

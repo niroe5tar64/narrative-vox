@@ -8,8 +8,8 @@ interface ProjectConfig {
 }
 
 test("all project configs reference existing style definitions", async () => {
-  const projectsDir = path.resolve("configs/projects");
-  const stylesDir = path.resolve("configs/styles");
+  const projectsDir = path.resolve("configs/pipeline/projects");
+  const stylesDir = path.resolve("configs/content/styles");
   const entries = (await readdir(projectsDir)).filter((name) => name.endsWith(".json")).sort();
 
   for (const fileName of entries) {

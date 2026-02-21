@@ -1,0 +1,5 @@
+{
+  "name": "@narrative-vox/infrastructure",
+  "private": true,
+  "type": "module"
+}

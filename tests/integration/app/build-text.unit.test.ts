@@ -16,7 +16,7 @@ import {
   replaceRubyWithReading,
   splitIntoSentences,
   toDictionaryCandidates
-} from "../../../src/app/build-text.ts";
+} from "@narrative-vox/application/build-text.ts";
 
 test("splitIntoSentences splits by Japanese and ASCII sentence endings", () => {
   const actual = splitIntoSentences("導入です。 次に進む？Yes! 改行\n最後。");

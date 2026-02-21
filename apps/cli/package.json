@@ -1,0 +1,5 @@
+{
+  "name": "@narrative-vox/cli",
+  "private": true,
+  "type": "module"
+}

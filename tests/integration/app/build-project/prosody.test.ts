@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import {
   applyProsodyAdjustments,
   type ProsodyAdjustments
-} from "../../../../src/app/build-project/prosody.ts";
-import type { VoicevoxAudioQuery } from "../../../../src/infra/voicevox-engine.ts";
+} from "@narrative-vox/application/build-project/prosody.ts";
+import type { VoicevoxAudioQuery } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 
 const baseQuery: VoicevoxAudioQuery = {
   accentPhrases: [],

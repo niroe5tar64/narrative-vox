@@ -12,10 +12,10 @@
 ```mermaid
 flowchart TB
   subgraph PromptFlow["Layer 1: LLM駆動 (Blueprint / Material / Script / Digest)"]
-    S["入力ソース<br/>inputs/books/\*/source/\*.md"]
-    PCFG["project config<br/>configs/projects/${project-id}.json"]
-    STY["content style<br/>configs/styles/${STYLE_ID}.json"]
-    CHR["characters<br/>configs/characters/*.json"]
+    S["入力ソース<br/>data/inputs/books/\*/source/\*.md"]
+    PCFG["project config<br/>configs/pipeline/projects/${project-id}.json"]
+    STY["content style<br/>configs/content/styles/${STYLE_ID}.json"]
+    CHR["characters<br/>configs/content/characters/*.json"]
     P1["gen-blueprint"]
     O1["blueprint/project_blueprint.json"]
     P2["gen-material"]
@@ -56,9 +56,9 @@ flowchart TB
     C3 --> O6
   end
 
-  CFG4["build-text config<br/>configs/voicevox/build-text-config.json"]
-  CFG5P["synthesis defaults<br/>configs/voicevox/synthesis-defaults.json"]
-  CFG5S["character map (optional)<br/>configs/voicevox/default_character_map.json"]
+  CFG4["build-text config<br/>configs/voice/voicevox/build-text-config.json"]
+  CFG5P["synthesis defaults<br/>configs/voice/voicevox/synthesis-defaults.json"]
+  CFG5S["character map (optional)<br/>configs/voice/voicevox/default_character_map.json"]
   VXURL["VOICEVOX URL<br/>--voicevox-url / VOICEVOX_URL"]
   VXAPI["VOICEVOX Engine API<br/>/audio_query, /synthesis"]
   VXSCRIPT["運用スクリプト<br/>tools/scripts/voicevox-\*.sh<br/>docker-compose.voicevox.yml"]
@@ -91,13 +91,13 @@ flowchart TB
 | `prompts/tech-explainer/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
 | `prompts/tech-explainer/episode-material.md` | Episode Material | プロンプト入力前提 | エピソード素材JSONを生成 |
 | `prompts/tech-explainer/script-common-frame.md` | Script | プロンプト入力前提 | 台本を生成（セクション数は演出層が決定） |
-| `configs/projects/<project-id>.json` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
-| `configs/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
-| `configs/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
-| `configs/voicevox/build-text-config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
-| `configs/voicevox/synthesis-defaults.json` | `build-project` | CLI操作前提 | `--synthesis-defaults` 未指定時に読み込む query/テンポ既定値 |
-| `configs/voicevox/synthesis-defaults.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--synthesis-defaults` で明示指定 |
-| `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（`speaker_key` / `--character-key` 利用時は必須） |
+| `configs/pipeline/projects/<project-id>.json` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
+| `configs/content/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
+| `configs/content/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
+| `configs/voice/voicevox/build-text-config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
+| `configs/voice/voicevox/synthesis-defaults.json` | `build-project` | CLI操作前提 | `--synthesis-defaults` 未指定時に読み込む query/テンポ既定値 |
+| `configs/voice/voicevox/synthesis-defaults.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--synthesis-defaults` で明示指定 |
+| `configs/voice/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（`speaker_key` / `--character-key` 利用時は必須） |
 | `--voicevox-url` / `VOICEVOX_URL` | `build-project`/`build-audio` | CLI操作前提 | VOICEVOX Engine接続先を指定 |
 | `ffmpeg` (`--ffmpeg-path`) | `build-audio` | CLI操作前提 | WAV を mp3/m4a/ogg へ圧縮変換 |
 | `tools/scripts/voicevox-up.sh` など | Engine起動/疎通確認 | CLI操作前提 | Docker上のVOICEVOX Engine運用補助 |
@@ -118,5 +118,5 @@ flowchart TB
 ## 現状ステータス
 
 - Blueprint / Material / Script / Digest は Skills (`/gen-blueprint`, `/gen-material`, `/gen-script`, `/gen-digest`) で LLM 生成。
-- Build Text / Build Project / Build Audio は `src/cli/main.ts` から実行可能。
+- Build Text / Build Project / Build Audio は `apps/cli/src/main.ts` から実行可能。
 - `check-run` は Blueprint/Material スキーマ、Digest スキーマ、Script 最低限構造、Style/Cast クロスバリデーションを検証する補助コマンド。

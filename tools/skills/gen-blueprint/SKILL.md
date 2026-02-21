@@ -13,7 +13,7 @@ project config と参照ソースを入力として、書籍全体の設計図�
 
 ### Step 1: project config 読み込み
 
-1. `configs/projects/$ARGUMENTS.json` を読み込む。
+1. `configs/pipeline/projects/$ARGUMENTS.json` を読み込む。
 2. `GENRE` フィールドを確認する（例: `tech_explainer`）。
 
 ### Step 2: プロンプト解決
@@ -36,7 +36,7 @@ project config と参照ソースを入力として、書籍全体の設計図�
 
 ### Step 5: 出力保存
 
-1. 出力先: `projects/{PROJECT_ID}/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
+1. 出力先: `data/projects/{PROJECT_ID}/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
    - `run-YYYYMMDD-HHMM` は現在日時で新規作成する。
    - 既存の run ディレクトリを上書きしない。
 2. JSON をフォーマットして保存する。

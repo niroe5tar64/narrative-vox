@@ -20,7 +20,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 
 ### Step 1: project config 読み込み
 
-1. `configs/projects/$0.json` を読み込む。
+1. `configs/pipeline/projects/$0.json` を読み込む。
 2. `GENRE` フィールドを確認する（例: `tech_explainer`）。
 3. `EPISODE_ID` を `$1` で上書きする。
 4. `STYLE_ID` と `CAST` フィールドは素材層では使用しない（演出層の責務）。
@@ -62,7 +62,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 
 ### Step 5: 出力保存
 
-1. 出力先: `projects/{PROJECT_ID}/{run-dir}/material/{EPISODE_ID}_material.json`
+1. 出力先: `data/projects/{PROJECT_ID}/{run-dir}/material/{EPISODE_ID}_material.json`
    - Blueprint と同じ run ディレクトリを使用する（`PROJECT_BLUEPRINT_JSON_PATH` からパスを推定）。
    - material ディレクトリが存在しない場合は作成する。
 2. JSON をフォーマットして保存する。

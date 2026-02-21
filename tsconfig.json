@@ -1,15 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": true,
-    "strict": true,
-    "noEmit": true,
-    "allowJs": true,
-    "checkJs": true,
-    "types": ["node", "bun"],
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*", "tests/**/*"]
+  "extends": "./tsconfig.base.json",
+  "include": ["apps/api/**/*", "apps/cli/**/*", "packages/**/*", "tests/**/*"]
 }

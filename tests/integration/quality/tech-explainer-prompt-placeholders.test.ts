@@ -7,7 +7,7 @@ const blueprintPromptPath = path.resolve("prompts/tech-explainer/blueprint.md");
 const materialPromptPath = path.resolve("prompts/tech-explainer/episode-material.md");
 const scriptPromptPath = path.resolve("prompts/tech-explainer/script-common-frame.md");
 const techExplainerReadmePath = path.resolve("prompts/tech-explainer/README.md");
-const sampleProjectConfigPath = path.resolve("configs/projects/tech-explainer.example.json");
+const sampleProjectConfigPath = path.resolve("configs/pipeline/projects/tech-explainer.example.json");
 
 const retiredStage2Aliases = [
   "SOURCE_MARKDOWN_PATHS_OR_EMPTY",

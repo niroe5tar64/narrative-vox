@@ -9,7 +9,7 @@ Narrative Vox は技術書・記事をナレーション台本に変換し、VOI
 1. **Layer 1（LLM駆動）**: ブループリント → 素材 → 台本 → ダイジェスト（Skills: `/gen-blueprint`, `/gen-material`, `/gen-script`, `/gen-digest`）
 2. **Layer 2（決定的CLI）**: `build-text` → `build-project` → `build-audio`
 
-データは実行ディレクトリ `projects/<project-id>/run-YYYYMMDD-HHMM/` 配下のサブフォルダ（blueprint/, material/, script/, context/, voicevox_text/, dict_candidates/, voicevox_project/, audio/）を通して流れる。
+データは実行ディレクトリ `data/projects/<project-id>/run-YYYYMMDD-HHMM/` 配下のサブフォルダ（blueprint/, material/, script/, context/, voicevox_text/, dict_candidates/, voicevox_project/, audio/）を通して流れる。
 
 ## コマンド
 
@@ -50,15 +50,15 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 ### 主要パターン
 
 - **スキーマ駆動バリデーション**: 全データ構造に `schemas/` のJSON Schemaが対応し、AJVで各ステージごとに検証
-- **キャラクター/話者解決**: 台本の `speaker_key` → キャラクターマップ（`configs/characters/`）→ VOICEVOX の engineId/speakerId/styleId。キャラクターごとの感情スタイル対応
+- **キャラクター/話者解決**: 台本の `speaker_key` → キャラクターマップ（`configs/content/characters/`）→ VOICEVOX の engineId/speakerId/styleId。キャラクターごとの感情スタイル対応
 - **台本構造**: `check-run` では最小構造（空でないこと、セクション見出しを含むこと、speaker_modeに応じた話者タグ）を検証
 - **自動推論**: 大半のCLIフラグ（run-dir, episode-id, voicevox-url）はファイルパスや環境変数から推論可能
 
 ### 設定ファイル
 
-- `configs/characters/*.json` — キャラクター定義（音声設定含む）
-- `configs/voicevox/` — 音声プロファイル、キャラクターマップ、build-text設定（ポーズ・読み上げ適性閾値）、速度プロファイル、読み辞書
-- `configs/projects/*.json` — プロジェクト設定（ソースパス、エピソード数）
+- `configs/content/characters/*.json` — キャラクター定義（音声設定含む）
+- `configs/voice/voicevox/` — 音声プロファイル、キャラクターマップ、build-text設定（ポーズ・読み上げ適性閾値）、速度プロファイル、読み辞書
+- `configs/pipeline/projects/*.json` — プロジェクト設定（ソースパス、エピソード数）
 
 ## 開発方針
 

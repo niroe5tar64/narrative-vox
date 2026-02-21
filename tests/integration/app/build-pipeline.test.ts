@@ -6,9 +6,9 @@ import path from "node:path";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { buildText as buildTextBase } from "../../../src/app/build-text.ts";
-import { buildProject } from "../../../src/app/build-project.ts";
-import { DEFAULT_BUILD_TEXT_CONFIG } from "../../../src/app/build-text/build-text-config.ts";
+import { buildText as buildTextBase } from "@narrative-vox/application/build-text.ts";
+import { buildProject } from "@narrative-vox/application/build-project.ts";
+import { DEFAULT_BUILD_TEXT_CONFIG } from "@narrative-vox/application/build-text/build-text-config.ts";
 
 interface VoicevoxTextJsonTest {
   meta: {
@@ -77,7 +77,7 @@ interface VoicevoxProjectMetaJsonTest {
 const sampleScriptPath = path.resolve(
   "tests/fixtures/sample-run/script/E01_script.md"
 );
-const defaultBuildTextConfigPath = path.resolve("configs/voicevox/build-text-config.json");
+const defaultBuildTextConfigPath = path.resolve("configs/voice/voicevox/build-text-config.json");
 const explicitVoiceOverrides = {
   engineId: "074fc39e-678b-4c13-8916-ffca8d505d1d",
   speakerId: "7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff",
@@ -289,7 +289,7 @@ test("build-text -> build-project pipeline works with sample script", async () =
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       ...explicitVoiceOverrides
     });
@@ -520,7 +520,7 @@ test("build-project resolves character voices per utterance speaker_key", async 
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
     runDir,
-    synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+    synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
     characterMapPath
   });
   const projectJson = JSON.parse(await readFile(projectResult.importJsonPath, "utf-8")) as VoicevoxProjectJsonTest;
@@ -597,7 +597,7 @@ test("build-project character-key overrides utterance speaker_key values", async
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
     runDir,
-    synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+    synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
     characterMapPath,
     characterKey: "narrator"
   });
@@ -651,7 +651,7 @@ test("build-project applies --emotion style mapping from character map", async (
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       characterMapPath,
       characterKey: "narrator",
       emotion: "energetic",
@@ -708,7 +708,7 @@ test("build-project rejects unknown --emotion key with available list", async ()
       buildProject({
         voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
         runDir,
-        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
         characterMapPath,
         characterKey: "narrator",
         emotion: "unknown",
@@ -755,7 +755,7 @@ test("build-project rejects --emotion when character has no emotionStyles", asyn
       buildProject({
         voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
         runDir,
-        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
         characterMapPath,
         characterKey: "narrator",
         emotion: "calm",
@@ -806,7 +806,7 @@ test("build-project keeps --style-id priority over --emotion", async () => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       characterMapPath,
       characterKey: "narrator",
       emotion: "energetic",
@@ -870,7 +870,7 @@ test("build-project rejects unknown character_key in utterance", async () => {
       buildProject({
         voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
         runDir,
-        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
         characterMapPath
       }),
     /Unknown character_key "ghost"/
@@ -957,7 +957,7 @@ test("build-project fills accentPhrases via VOICEVOX audio_query", async () => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       ...explicitVoiceOverrides
     });
@@ -1027,7 +1027,7 @@ test("build-project applies speed preset values after synthesis defaults", async
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       speedPreset: "slow",
       speedProfilesPath,
@@ -1085,7 +1085,7 @@ test("build-project keeps pause-length lower bound after speed preset overrides"
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       speedPreset: "slow",
       speedProfilesPath,
@@ -1121,7 +1121,7 @@ test("build-project rejects unknown speed-preset", async () => {
       buildProject({
         voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
         runDir,
-        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
         speedPreset: "invalid",
         ...explicitVoiceOverrides
       }),
@@ -1148,7 +1148,7 @@ test("build-project applies intonation-scale and preserves interrogative accent 
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       intonationScale: 0.05,
       ...explicitVoiceOverrides
@@ -1189,7 +1189,7 @@ test("build-project clamps intonationScale to zero when intonation-scale is nega
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       intonationScale: -2,
       ...explicitVoiceOverrides
@@ -1264,7 +1264,7 @@ test("build-project writes project meta sidecar with speed, emotion, and prosody
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       characterMapPath,
       characterKey: "narrator",
       emotion: "calm",
@@ -1304,7 +1304,7 @@ test("build-project supports snake_case audio_query response", async () => {
     const projectResult = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       runDir,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl,
       ...explicitVoiceOverrides
     });
@@ -1354,7 +1354,7 @@ test("build-project rejects empty accentPhrases from VOICEVOX audio_query", asyn
         buildProject({
           voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
           runDir,
-          synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+          synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
           voicevoxApiUrl,
           ...explicitVoiceOverrides
         }),
@@ -1464,7 +1464,7 @@ test("build-project infers run-dir from --voicevox-text-json path when run-dir i
 
   const projectResult = await buildProject({
     voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
-    synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+    synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
     ...explicitVoiceOverrides
   });
 

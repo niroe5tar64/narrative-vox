@@ -5,8 +5,8 @@
 ## 入力
 
 - `voicevox_text/E##_voicevox_text.json`
-- `configs/voicevox/synthesis-defaults.json`（`--synthesis-defaults` 未指定時）
-- `--synthesis-defaults configs/voicevox/synthesis-defaults.example.json`（テンプレートを明示指定する場合）
+- `configs/voice/voicevox/synthesis-defaults.json`（`--synthesis-defaults` 未指定時）
+- `--synthesis-defaults configs/voice/voicevox/synthesis-defaults.example.json`（テンプレートを明示指定する場合）
 
 ## 出力
 
@@ -37,7 +37,7 @@
 
 ```bash
 bun run build-project -- \
-  --voicevox-text-json projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json
+  --voicevox-text-json data/projects/<id>/run-YYYYMMDD-HHMM/voicevox_text/E01_voicevox_text.json
 ```
 
 - `--run-dir` は任意（`--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論）。

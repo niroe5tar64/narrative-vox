@@ -21,8 +21,8 @@ Narrative Vox は設定編集・パイプライン実行・生成物確認を主
 以下を採用する。
 
 1. フロントエンド/サーバー構成
-   - APIサーバー: Bun + Hono（`src/server/`）
-   - GUI: Vite + React + TypeScript（`web/`）
+   - APIサーバー: Bun + Hono（`apps/api/src/`）
+   - GUI: Vite + React + TypeScript（`apps/web/`）
    - UI: shadcn/ui + Tailwind CSS
    - データ取得: TanStack Query
    - フォーム: React Hook Form + AJVスキーマ再利用

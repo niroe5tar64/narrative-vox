@@ -6,12 +6,12 @@
 
 主要ファイル:
 
-- `src/cli/main.ts`
--- `src/app/build-text.ts`
--- `src/app/build-project.ts`
--- `src/app/build-audio.ts`
-- `src/quality/schema-validator.ts`
-- `tests/integration/app/build_pipeline.test.ts`
+- `apps/cli/src/main.ts`
+- `packages/application/src/build-text.ts`
+- `packages/application/src/build-project.ts`
+- `packages/application/src/build-audio.ts`
+- `packages/quality/src/schema-validator.ts`
+- `tests/integration/app/build-pipeline.test.ts`
 - `tests/integration/app/build-text.unit.test.ts`
 
 ## 日常運用コマンド
@@ -25,8 +25,8 @@ bun test
 
 # パイプライン実行
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
-  --run-dir projects/introducing-rescript/run-20260211-0000
+  --script data/projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
+  --run-dir data/projects/introducing-rescript/run-20260211-0000
 ```
 
 PR/コミット前の最低ライン:
@@ -80,7 +80,7 @@ JS の再混在を禁止したい場合は、次の変更を別PRで実施して
 
 ### 型チェックは通るが実行が失敗する
 
-- `bun run build-all -- ...` を再実行し、入力パスと `configs/voicevox` 配下のファイル存在を確認する。
+- `bun run build-all -- ...` を再実行し、入力パスと `configs/voice/voicevox` 配下のファイル存在を確認する。
 
 ## AI への依頼テンプレート（運用版）
 

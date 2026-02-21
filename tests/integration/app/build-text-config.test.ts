@@ -8,7 +8,7 @@ import {
   loadBuildTextConfig,
   normalizeBuildTextConfig,
   DEFAULT_BUILD_TEXT_CONFIG
-} from "../../../src/app/build-text/build-text-config.ts";
+} from "@narrative-vox/application/build-text/build-text-config.ts";
 
 const VALID_CONFIG = {
   version: 1,

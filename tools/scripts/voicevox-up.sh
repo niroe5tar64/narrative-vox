@@ -36,7 +36,7 @@ done
 
 if [ "$ENGINE_READY" = true ]; then
   echo "Syncing user dictionary..."
-  if bun src/cli/main.ts dict-sync; then
+  if bun apps/cli/src/main.ts dict-sync; then
     echo "User dictionary synced successfully."
   else
     echo "[warning] User dictionary sync failed. Engine is running but dictionary may be out of date."

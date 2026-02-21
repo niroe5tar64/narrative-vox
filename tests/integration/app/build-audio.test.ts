@@ -6,8 +6,8 @@ import path from "node:path";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { buildAudio } from "../../../src/app/build-audio.ts";
-import type { VoicevoxAudioQuery } from "../../../src/infra/voicevox-engine.ts";
+import { buildAudio } from "@narrative-vox/application/build-audio.ts";
+import type { VoicevoxAudioQuery } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 
 interface BuildAudioManifest {
   schema_version: "1.0";

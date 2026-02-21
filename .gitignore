@@ -37,6 +37,7 @@ inputs/novels/*/source/
 
 # cloned OSS repositories (oss-dive genre)
 inputs/repos/*/
+data/inputs/repos/*/
 
 # generated audio assets (copyright / size risk)
 *.wav

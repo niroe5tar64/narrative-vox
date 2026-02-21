@@ -9,22 +9,22 @@
 - `prompts/tech-explainer/script-common-frame.md`
 - `prompts/tech-explainer/build-text.md`
 - `prompts/tech-explainer/build-project.md`
-- `configs/projects/<project-id>.json`
-- `configs/projects/<project-id>.example.json`
+- `configs/pipeline/projects/<project-id>.json`
+- `configs/pipeline/projects/<project-id>.example.json`
 
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/projects/<project-id>.json`
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
+- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.json`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Material
 - 入力: `episode-material.md` + Blueprint 出力 + `EPISODE_ID`
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
 
 3. Script
 - 入力: Material + Style + Cast + Characters + Digests
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text (script -> voicevox text)
 - 入力: `script/E##_script.md`
@@ -33,14 +33,14 @@
 - 出力: `dict_candidates/E##_dict_candidates.csv`
 
 5. Build Project (voicevox text -> import)
-- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/synthesis-defaults.json`（`--synthesis-defaults` 未指定時）
-- 代替入力: `--synthesis-defaults configs/voicevox/synthesis-defaults.example.json` を明示指定して実行
+- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voice/voicevox/synthesis-defaults.json`（`--synthesis-defaults` 未指定時）
+- 代替入力: `--synthesis-defaults configs/voice/voicevox/synthesis-defaults.example.json` を明示指定して実行
 - 出力: `voicevox_project/E##_voicevox_import.json`
 - 出力: `voicevox_project/E##.vvproj`
 - 出力: `voicevox_project/E##_project_meta.json`
 
 6. Validation（任意）
-- `bun run check-run -- --run-dir projects/<project-id>/run-YYYYMMDD-HHMM`
+- `bun run check-run -- --run-dir data/projects/<project-id>/run-YYYYMMDD-HHMM`
 - Blueprint/Material/Script を検証（レポートファイルは出力しない）
 
 ## 補助指示
@@ -67,24 +67,24 @@ Episode Materialで回を切り替える場合は以下を追加します。
 - `PROJECT_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
 
-推奨: 初期作成は `configs/projects/<project-id>.example.json` をコピーして `configs/projects/<project-id>.json` を作る。
+推奨: 初期作成は `configs/pipeline/projects/<project-id>.example.json` をコピーして `configs/pipeline/projects/<project-id>.json` を作る。
 
 ## CLI 実行例（Build Text/Project）
 
 ```bash
 # Prompt解決（Blueprint）
-bun src/cli/main.ts render-prompt -- \
+bun apps/cli/src/main.ts render-prompt -- \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/tech-explainer.example.json
+  --project-config configs/pipeline/projects/tech-explainer.example.json
 
 # Build Text + Build Project
 bun run build-all -- \
-  --script projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
+  --script data/projects/introducing-rescript/run-20260211-0000/script/E01_script.md \
   --engine-id 074fc39e-678b-4c13-8916-ffca8d505d1d \
   --speaker-id 7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff \
   --style-id 67 \
-  --run-dir projects/introducing-rescript/run-20260211-0000
+  --run-dir data/projects/introducing-rescript/run-20260211-0000
 ```
 
 ## Skills 実行例（Blueprint / Material / Script / Digest）

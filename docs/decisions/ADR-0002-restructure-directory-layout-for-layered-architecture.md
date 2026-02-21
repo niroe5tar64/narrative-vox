@@ -5,13 +5,13 @@ Accepted (2026-02-20)
 
 ## Context
 
-`ADR-0001` によりトップレベル責務分離（`inputs/`, `projects/`, `prompts/`, `configs/`, `schemas/`, `src/`, `tests/`, `docs/`）は達成した。
+`ADR-0001` によりトップレベル責務分離（`data/inputs/`, `data/projects/`, `prompts/`, `configs/`, `schemas/`, `src/`, `tests/`, `docs/`）は達成した。
 一方で、以下の課題が残っている。
 
 - `src/shared/` に責務が集中し、ドメインロジックとI/O境界が曖昧
 - `src/pipeline/` がユースケース層と外部連携層を同時に抱えている
 - `scripts/` と `skills/` が開発・運用ツール群として分離されていない
-- `projects/<project-id>/run-*` 配下に旧来の段構造や暫定ファイルが混在し、run契約が不明瞭
+- `data/projects/<project-id>/run-*` 配下に旧来の段構造や暫定ファイルが混在し、run契約が不明瞭
 
 今後の機能追加と保守性を優先し、物理配置を層構造へ合わせて再設計する。
 既存互換は不要であり、旧データ破棄を許容する。

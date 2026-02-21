@@ -10,15 +10,15 @@
 
 現状の主なテスト:
 
-- `tests/integration/app/build_pipeline.test.ts`
+- `tests/integration/app/build-pipeline.test.ts`
 - `tests/integration/app/build-text.unit.test.ts`
-- `tests/integration/quality/check_run.test.ts`
-- `tests/integration/quality/blueprint_material_schema.test.ts`
-- `tests/integration/quality/voicevox_schema.test.ts`
-- `tests/integration/cli/prepare_run.test.ts`
+- `tests/integration/quality/check-run.test.ts`
+- `tests/integration/quality/blueprint-material-schema.test.ts`
+- `tests/integration/quality/voicevox-schema.test.ts`
+- `tests/integration/cli/prepare-run.test.ts`
 
 fixture 運用:
 
-- 共有前提データは `projects/*/run-*` ではなく `tests/fixtures/sample-run` を使う。
+- 共有前提データは `data/projects/*/run-*` ではなく `tests/fixtures/sample-run` を使う。
 - fixture 更新時は blueprint/material/script/voicevox_text/voicevox_project の整合を保ち、変更後に `bun run test` を実行して `ENOENT` が出ないことを確認する。
 - fixture の内容・方針は `tests/fixtures/README.md` を参照する。

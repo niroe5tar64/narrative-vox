@@ -1,0 +1,5 @@
+{
+  "name": "@narrative-vox/application",
+  "private": true,
+  "type": "module"
+}

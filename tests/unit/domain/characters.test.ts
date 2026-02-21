@@ -8,7 +8,7 @@ import {
   normalizeCharacterMap,
   loadCharacterDefinitions,
   buildRunCharacters
-} from "../../../src/domain/characters.ts";
+} from "@narrative-vox/domain/characters.ts";
 
 const sampleCharacterProfile = {
   gender: "neutral",

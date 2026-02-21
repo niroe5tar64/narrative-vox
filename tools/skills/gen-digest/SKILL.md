@@ -18,19 +18,19 @@ description: "台本生成後にエピソード間一貫性のためのダイジ
 
 ### Step 1: project config 読み込み
 
-1. `configs/projects/$0.json` を読み込む。
+1. `configs/pipeline/projects/$0.json` を読み込む。
 2. `GENRE`, `STYLE_ID`, `CAST` フィールドを取得する。
 3. `EPISODE_ID` を `$1` で上書きする。
 
 ### Step 2: 台本読み込み
 
 1. project config の `PROJECT_BLUEPRINT_JSON_PATH` から run ディレクトリを推定する。
-2. `projects/{PROJECT_ID}/{run-dir}/script/{$1}_script.md` を読み込む。
+2. `data/projects/{PROJECT_ID}/{run-dir}/script/{$1}_script.md` を読み込む。
 3. ファイルが存在しなければエラー報告して終了する。
 
 ### Step 3: Material 読み込み
 
-1. `projects/{PROJECT_ID}/{run-dir}/material/{$1}_material.json` を読み込む。
+1. `data/projects/{PROJECT_ID}/{run-dir}/material/{$1}_material.json` を読み込む。
 2. ファイルが存在しなければエラー報告して終了する。
 
 ### Step 4: Blueprint 読み込み
@@ -40,7 +40,7 @@ description: "台本生成後にエピソード間一貫性のためのダイジ
 
 ### Step 5: キャラクター読み込み
 
-1. `CAST` の各 character_key に対して `configs/characters/{key}.json` を読み込む。
+1. `CAST` の各 character_key に対して `configs/content/characters/{key}.json` を読み込む。
 2. `profile.sentence_patterns.catchphrases` を取得する（使用実績の追跡用）。
 
 ### Step 6: LLM 実行
@@ -76,7 +76,7 @@ description: "台本生成後にエピソード間一貫性のためのダイジ
 
 ### Step 7: 出力保存
 
-1. 出力先: `projects/{PROJECT_ID}/{run-dir}/context/{EPISODE_ID}_episode_digest.json`
+1. 出力先: `data/projects/{PROJECT_ID}/{run-dir}/context/{EPISODE_ID}_episode_digest.json`
    - context ディレクトリが存在しない場合は作成する。
 2. JSON をフォーマットして保存する。
 

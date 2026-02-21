@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { resolveCharacterMap } from "../../../src/infra/character-map-resolver.ts";
+import { resolveCharacterMap } from "@narrative-vox/infrastructure/character-map-resolver.ts";
 
 const ENGINE_ID = "074fc39e-678b-4c13-8916-ffca8d505d1d";
 const SAMPLE_PROFILE = {

@@ -16,21 +16,21 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 - `prompts/oss-dive/blueprint.md`
 - `prompts/oss-dive/episode-material.md`
 - `prompts/oss-dive/script-common-frame.md`
-- `configs/projects/<project-id>.json`
-- `configs/projects/oss-dive.example.json`
+- `configs/pipeline/projects/<project-id>.json`
+- `configs/pipeline/projects/oss-dive.example.json`
 
 ## 準備
 
-1. 対象リポジトリを `inputs/repos/` に clone する:
+1. 対象リポジトリを `data/inputs/repos/` に clone する:
 
 ```bash
-git clone https://github.com/owner/repo.git inputs/repos/repo-name
+git clone https://github.com/owner/repo.git data/inputs/repos/repo-name
 ```
 
-2. `configs/projects/oss-dive.example.json` をコピーして project config を作成:
+2. `configs/pipeline/projects/oss-dive.example.json` をコピーして project config を作成:
 
 ```bash
-cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
+cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-oss-project.json
 ```
 
 3. config の `REPO_ROOT_PATH` / `DEEP_DIVE_FOCUS` / `PROJECT_ID` 等を編集する。
@@ -39,18 +39,18 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/projects/<project-id>.json`
+- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.json`
 - Claudeが `REPO_ROOT_PATH` を探索してリポジトリ全体像を把握
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Material
 - 入力: `episode-material.md` + Blueprint 出力 + `EPISODE_ID`
 - Claudeが `source_refs` のファイルパスから実際のコードを読む
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
 
 3. Script
 - 入力: Material + Style + Cast + Characters + Digests
-- 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
+- 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text / Build Project / Build Audio
 - tech_explainer と同じパイプライン（ジャンル非依存）
@@ -60,7 +60,7 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 - `PROJECT_ID`
 - `GENRE` — `"oss-dive"`
 - `PROJECT_TITLE`
-- `REPO_ROOT_PATH` — clone先パス（例: `inputs/repos/my-project`）
+- `REPO_ROOT_PATH` — clone先パス（例: `data/inputs/repos/my-project`）
 - `DEEP_DIVE_FOCUS` — 深掘りの方向性
 - `AUDIENCE_BACKGROUND`
 - `AUDIENCE_LEVEL`
@@ -73,7 +73,7 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 ## スタイル運用方針
 
 - oss-dive のデフォルトスタイルは `radio-talk`。
-- `STYLE_ID` は将来拡張可能だが、`configs/styles/<style_id>.json` に実体がある値のみ使用する。
+- `STYLE_ID` は将来拡張可能だが、`configs/content/styles/<style_id>.json` に実体がある値のみ使用する。
 
 ## Skills 実行例
 
@@ -88,15 +88,15 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 
 ```bash
 # Prompt解決（Blueprint）
-bun src/cli/main.ts render-prompt -- \
+bun apps/cli/src/main.ts render-prompt -- \
   --genre oss-dive \
   --step blueprint \
-  --project-config configs/projects/my-oss-project.json
+  --project-config configs/pipeline/projects/my-oss-project.json
 
 # Build Text + Build Project
 bun run build-all -- \
-  --script projects/my-oss-project/run-20260217-0000/script/E01_script.md \
-  --run-dir projects/my-oss-project/run-20260217-0000
+  --script data/projects/my-oss-project/run-20260217-0000/script/E01_script.md \
+  --run-dir data/projects/my-oss-project/run-20260217-0000
 ```
 
 ## DEEP_DIVE_FOCUS の例

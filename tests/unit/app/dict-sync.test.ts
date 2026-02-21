@@ -6,7 +6,7 @@ import path from "node:path";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { syncUserDict } from "../../../src/app/dict-sync.ts";
+import { syncUserDict } from "@narrative-vox/application/dict-sync.ts";
 
 function createMockVoicevoxServer(options?: {
   existingDict?: Record<string, unknown>;

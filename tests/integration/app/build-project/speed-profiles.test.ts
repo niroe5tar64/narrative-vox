@@ -4,8 +4,8 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { applySpeedPreset, loadSpeedProfiles } from "../../../../src/app/build-project/speed-profiles.ts";
-import type { VoicevoxAudioQuery } from "../../../../src/infra/voicevox-engine.ts";
+import { applySpeedPreset, loadSpeedProfiles } from "@narrative-vox/application/build-project/speed-profiles.ts";
+import type { VoicevoxAudioQuery } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 
 const baseQuery: VoicevoxAudioQuery = {
   accentPhrases: [],

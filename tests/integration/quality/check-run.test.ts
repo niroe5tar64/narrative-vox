@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { test } from "bun:test";
-import { checkRun } from "../../../src/quality/check-run.ts";
+import { checkRun } from "@narrative-vox/quality/check-run.ts";
 
 const sampleRunDir = path.resolve("tests/fixtures/sample-run");
 const ENGINE_ID = "074fc39e-678b-4c13-8916-ffca8d505d1d";
@@ -203,7 +203,7 @@ test("checkRun accepts current sample run", async () => {
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl
     });
 
@@ -230,7 +230,7 @@ test("checkRun accepts script with any number of sections", async () => {
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
@@ -291,7 +291,7 @@ test("checkRun accepts script with markdown heading style section lines", async 
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
       voicevoxApiUrl
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
@@ -351,10 +351,10 @@ test("checkRun rejects speaker_count mismatch for dialogue style", async () => {
 test("checkRun rejects speaker_count mismatch for monologue style", async () => {
   const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
   const projectId = `tmp-project-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
 
   const baseConfig = JSON.parse(
-    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+    await readFile(path.resolve("configs/pipeline/projects/introducing-rescript.json"), "utf-8")
   ) as Record<string, unknown>;
   const tempConfig = {
     ...baseConfig,
@@ -397,10 +397,10 @@ test("checkRun accepts monologue style with one speaker key", async () => {
     ].join("\n")
   });
   const projectId = `tmp-project-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
 
   const baseConfig = JSON.parse(
-    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+    await readFile(path.resolve("configs/pipeline/projects/introducing-rescript.json"), "utf-8")
   ) as Record<string, unknown>;
   const tempConfig = {
     ...baseConfig,
@@ -434,7 +434,7 @@ test("checkRun accepts monologue style with one speaker key", async () => {
     }, async (voicevoxApiUrl) => {
       const result = await checkRun({
         runDir,
-        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis-defaults.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voice/voicevox/synthesis-defaults.example.json"),
         voicevoxApiUrl
       });
       assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
@@ -592,7 +592,7 @@ test("checkRun rejects missing project config for material project_id", async ()
 test("checkRun rejects schema-invalid project config", async () => {
   const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
   const projectId = `tmp-project-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
 
   await writeFile(
     projectConfigPath,
@@ -632,10 +632,10 @@ test("checkRun rejects missing style definition referenced by STYLE_ID", async (
   const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
   const projectId = `tmp-project-${randomUUID()}`;
   const missingStyleId = `tmp-style-missing-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
 
   const baseConfig = JSON.parse(
-    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+    await readFile(path.resolve("configs/pipeline/projects/introducing-rescript.json"), "utf-8")
   ) as Record<string, unknown>;
   const tempConfig = {
     ...baseConfig,
@@ -670,11 +670,11 @@ test("checkRun rejects schema-invalid content style", async () => {
   const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
   const projectId = `tmp-project-${randomUUID()}`;
   const styleId = `tmp-style-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
-  const stylePath = path.resolve("configs", "styles", `${styleId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
+  const stylePath = path.resolve("configs", "content", "styles", `${styleId}.json`);
 
   const baseConfig = JSON.parse(
-    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+    await readFile(path.resolve("configs/pipeline/projects/introducing-rescript.json"), "utf-8")
   ) as Record<string, unknown>;
   const tempConfig = {
     ...baseConfig,
@@ -712,14 +712,14 @@ test("checkRun rejects STYLE_ID and content-style style_id mismatch", async () =
   const projectId = `tmp-project-${randomUUID()}`;
   const styleId = `tmp-style-${randomUUID()}`;
   const differentStyleId = `different-style-${randomUUID()}`;
-  const projectConfigPath = path.resolve("configs", "projects", `${projectId}.json`);
-  const stylePath = path.resolve("configs", "styles", `${styleId}.json`);
+  const projectConfigPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
+  const stylePath = path.resolve("configs", "content", "styles", `${styleId}.json`);
 
   const baseConfig = JSON.parse(
-    await readFile(path.resolve("configs/projects/introducing-rescript.json"), "utf-8")
+    await readFile(path.resolve("configs/pipeline/projects/introducing-rescript.json"), "utf-8")
   ) as Record<string, unknown>;
   const baseStyle = JSON.parse(
-    await readFile(path.resolve("configs/styles/radio-talk.json"), "utf-8")
+    await readFile(path.resolve("configs/content/styles/radio-talk.json"), "utf-8")
   ) as Record<string, unknown>;
 
   const tempConfig = {

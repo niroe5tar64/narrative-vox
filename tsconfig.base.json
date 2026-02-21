@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node", "bun"],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@narrative-vox/cli": ["apps/cli/src/index.ts"],
+      "@narrative-vox/cli/*": ["apps/cli/src/*"],
+      "@narrative-vox/domain": ["packages/domain/src/index.ts"],
+      "@narrative-vox/domain/*": ["packages/domain/src/*"],
+      "@narrative-vox/application": ["packages/application/src/index.ts"],
+      "@narrative-vox/application/*": ["packages/application/src/*"],
+      "@narrative-vox/infrastructure": ["packages/infrastructure/src/index.ts"],
+      "@narrative-vox/infrastructure/*": ["packages/infrastructure/src/*"],
+      "@narrative-vox/quality": ["packages/quality/src/index.ts"],
+      "@narrative-vox/quality/*": ["packages/quality/src/*"]
+    }
+  }
+}

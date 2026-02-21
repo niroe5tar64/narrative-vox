@@ -5,9 +5,9 @@ import {
   renderPrompt,
   resolvePromptTemplate,
   resolvePromptTemplatePath,
-} from "../../../src/cli/render-prompt.ts";
+} from "@narrative-vox/cli/render-prompt.ts";
 
-const sampleProjectConfigPath = path.resolve("configs/projects/tech-explainer.example.json");
+const sampleProjectConfigPath = path.resolve("configs/pipeline/projects/tech-explainer.example.json");
 
 describe("resolvePromptTemplatePath", () => {
   test("returns correct path for genre+step", () => {
@@ -164,7 +164,7 @@ describe("renderPrompt", () => {
   test("throws on unresolved placeholder", async () => {
     // Create a minimal config that is missing required keys
     const { writeFile, unlink } = await import("node:fs/promises");
-    const tmpConfig = path.resolve("configs/projects/_test_incomplete.json");
+    const tmpConfig = path.resolve("configs/pipeline/projects/_test_incomplete.json");
     await writeFile(tmpConfig, JSON.stringify({ GENRE: "tech_explainer", PROJECT_TITLE: "Test" }));
     try {
       await assert.rejects(

@@ -11,8 +11,8 @@
       "interest": "型安全、設計の見通し、保守性、実務での採用判断"
     },
     "source_refs": [
-      "inputs/books/introducing-rescript/source/00_Introduction.md",
-      "inputs/books/introducing-rescript/source/01_Chapter-1.md"
+      "data/inputs/books/introducing-rescript/source/00_Introduction.md",
+      "data/inputs/books/introducing-rescript/source/01_Chapter-1.md"
     ],
     "comparison_mode": "with_baseline",
     "baseline_context": "TypeScriptでの実装・設計パターン"
