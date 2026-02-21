@@ -203,7 +203,7 @@ test("checkRun accepts current sample run", async () => {
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
       voicevoxApiUrl
     });
 
@@ -230,7 +230,7 @@ test("checkRun accepts script with any number of sections", async () => {
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
       voicevoxApiUrl
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
@@ -291,7 +291,7 @@ test("checkRun accepts script with markdown heading style section lines", async 
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
-      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
       voicevoxApiUrl
     });
     assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
@@ -434,7 +434,7 @@ test("checkRun accepts monologue style with one speaker key", async () => {
     }, async (voicevoxApiUrl) => {
       const result = await checkRun({
         runDir,
-        profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+        synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
         voicevoxApiUrl
       });
       assert.deepEqual(result.validatedEpisodeIds, ["E01"]);

@@ -57,7 +57,7 @@ flowchart TB
   end
 
   CFG4["build-text config<br/>configs/voicevox/build_text_config.json"]
-  CFG5P["voice profile<br/>configs/voicevox/default_profile.json"]
+  CFG5P["synthesis defaults<br/>configs/voicevox/synthesis_defaults.json"]
   CFG5S["character map (optional)<br/>configs/voicevox/default_character_map.json"]
   VXURL["VOICEVOX URL<br/>--voicevox-url / VOICEVOX_URL"]
   VXAPI["VOICEVOX Engine API<br/>/audio_query, /synthesis"]
@@ -95,8 +95,8 @@ flowchart TB
 | `configs/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
 | `configs/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
 | `configs/voicevox/build_text_config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
-| `configs/voicevox/default_profile.json` | `build-project` | CLI操作前提 | `--profile` 未指定時に読み込む query/テンポ既定値 |
-| `configs/voicevox/default_profile.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--profile` で明示指定 |
+| `configs/voicevox/synthesis_defaults.json` | `build-project` | CLI操作前提 | `--synthesis-defaults` 未指定時に読み込む query/テンポ既定値 |
+| `configs/voicevox/synthesis_defaults.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--synthesis-defaults` で明示指定 |
 | `configs/voicevox/default_character_map.json` | `build-project` | CLI操作前提 | `character_key` ごとの声設定（`speaker_key` / `--character-key` 利用時は必須） |
 | `--voicevox-url` / `VOICEVOX_URL` | `build-project`/`build-audio` | CLI操作前提 | VOICEVOX Engine接続先を指定 |
 | `ffmpeg` (`--ffmpeg-path`) | `build-audio` | CLI操作前提 | WAV を mp3/m4a/ogg へ圧縮変換 |
@@ -108,12 +108,12 @@ flowchart TB
 | --- | --- | --- | --- |
 | `render-prompt` | `--genre`, `--step`, `--project-config` | なし（`material` のみ `--episode-id` 上書き可） | 解決済みプロンプトを stdout 出力 |
 | `build-text` | `--script script/E##_script.md` | `--run-dir` は `.../run-.../script/...` なら推論。`--episode-id` 未指定時はファイル名 `E##_script.md` から推論。 | `voicevox_text/*.json`, `voicevox_text/*.txt`, `dict_candidates/*.csv` |
-| `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。`--profile` 未指定時は `default_profile.json` を使用（未作成ならエラー）。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj`, `voicevox_project/*_project_meta.json` |
+| `build-project` | `--voicevox-text-json voicevox_text/E##_voicevox_text.json` | `--run-dir` を `.../voicevox_text/...` から推論。`--synthesis-defaults` 未指定時は `synthesis_defaults.json` を使用（未作成ならエラー）。 | `voicevox_project/*_voicevox_import.json`, `voicevox_project/*.vvproj`, `voicevox_project/*_project_meta.json` |
 | `build-audio` | `--vvproj voicevox_project/E##.vvproj` | `--run-dir` を `.../voicevox_project/...` から推論。圧縮は `--compressed-format` / `--compressed-bitrate-kbps` で変更可。 | `audio/E##.wav`, `audio/E##.(mp3|m4a|ogg)`, `audio/manifest.json` |
 
 補足:
 
-- `build-project` の話者解決は profile の voice を使いません。`speaker_key`/`--character-key` + character map、または `--engine-id`/`--speaker-id`/`--style-id` の3指定が必要です。
+- `build-project` の話者解決は synthesis defaults から voice を解決しません。`speaker_key`/`--character-key` + character map、または `--engine-id`/`--speaker-id`/`--style-id` の3指定が必要です。
 
 ## 現状ステータス
 

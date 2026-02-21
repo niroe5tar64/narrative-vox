@@ -5,13 +5,13 @@ import { SchemaPaths } from "../infra/schema_paths.ts";
 import type { VoicevoxTextData } from "../domain/types.ts";
 import type { CharacterMap } from "../domain/characters.ts";
 import { resolveCharacterMap } from "../infra/character_map_resolver.ts";
-import { resolveProfilePath, resolveSpeedProfilesPath } from "../infra/config_resolver.ts";
+import { resolveSynthesisDefaultsPath, resolveSpeedProfilesPath } from "../infra/config_resolver.ts";
 import { loadJson } from "../infra/json.ts";
 import {
-  RawVoiceProfile,
-  VoiceProfile,
-  normalizeVoiceProfile
-} from "../domain/voice_profile.ts";
+  RawSynthesisDefaults,
+  SynthesisDefaults,
+  normalizeSynthesisDefaults
+} from "../domain/synthesis_defaults.ts";
 import {
   fetchAudioQueryFromEngine,
   resolveVoicevoxApiUrl,
@@ -44,7 +44,7 @@ interface ProjectVoice {
 interface BuildProjectOptions {
   voicevoxTextJsonPath: string;
   runDir?: string;
-  profilePath?: string;
+  synthesisDefaultsPath?: string;
   characterMapPath?: string;
   characterKey?: string;
   engineId?: string;
@@ -127,9 +127,9 @@ function toPostPhonemeLength(
 
 function applyQueryDefaults(
   query: VoicevoxAudioQuery,
-  profile: VoiceProfile
+  synthesisDefaults: SynthesisDefaults
 ): VoicevoxAudioQuery {
-  const defaults = profile.queryDefaults;
+  const defaults = synthesisDefaults.queryDefaults;
   return {
     ...query,
     speedScale: defaults.speedScale,
@@ -245,7 +245,7 @@ function resolveUtteranceVoice(params: {
 export async function buildProject({
   voicevoxTextJsonPath,
   runDir,
-  profilePath,
+  synthesisDefaultsPath,
   characterMapPath,
   characterKey,
   engineId,
@@ -268,15 +268,15 @@ export async function buildProject({
     );
   }
   const resolvedRunDir = inferredRunDir;
-  const resolvedProfilePath = await resolveProfilePath(profilePath);
+  const resolvedSynthesisDefaultsPath = await resolveSynthesisDefaultsPath(synthesisDefaultsPath);
   const resolvedSpeedProfilesPath = await resolveSpeedProfilesPath(speedProfilesPath);
 
   const voicevoxTextData = await loadJson<VoicevoxTextData>(
     resolvedVoicevoxTextPath,
     SchemaPaths.voicevoxText
   );
-  const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
-  const profile = normalizeVoiceProfile(rawProfile);
+  const rawSynthesisDefaults = await loadJson<RawSynthesisDefaults>(resolvedSynthesisDefaultsPath);
+  const synthesisDefaults = normalizeSynthesisDefaults(rawSynthesisDefaults);
   const { characterMap } = await resolveCharacterMap({
     characterMapPath,
     defaultCharacterKey: characterKey
@@ -286,7 +286,7 @@ export async function buildProject({
     : undefined;
   const resolvedSpeedPreset = resolveSpeedPreset(speedPreset, speedProfiles);
 
-  const finalAppVersion = normalizeProjectAppVersion(appVersion || profile.appVersion);
+  const finalAppVersion = normalizeProjectAppVersion(appVersion || synthesisDefaults.appVersion);
   const resolvedVoicevoxApiUrl = await resolveVoicevoxApiUrl(voicevoxApiUrl);
 
   const audioKeys: string[] = [];
@@ -308,7 +308,7 @@ export async function buildProject({
       styleId: resolvedVoice.styleId,
       audioKey: key
     });
-    let query = applyQueryDefaults(engineQuery, profile);
+    let query = applyQueryDefaults(engineQuery, synthesisDefaults);
     query = applySpeedPreset(query, resolvedSpeedPreset);
     query = applyProsodyAdjustments(query, { intonationScale });
     query = {
@@ -330,18 +330,18 @@ export async function buildProject({
       audioItems
     },
     song: {
-      tpqn: profile.tpqn,
+      tpqn: synthesisDefaults.tpqn,
       tempos: [
         {
           position: 0,
-          bpm: profile.tempoBpm
+          bpm: synthesisDefaults.tempoBpm
         }
       ],
       timeSignatures: [
         {
           measureNumber: 1,
-          beats: profile.timeSignature.beats,
-          beatType: profile.timeSignature.beatType
+          beats: synthesisDefaults.timeSignature.beats,
+          beatType: synthesisDefaults.timeSignature.beatType
         }
       ],
       tracks: {},

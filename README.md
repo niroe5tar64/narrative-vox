@@ -53,7 +53,7 @@
   - 辞書候補抽出は形態素解析（`kuromoji`）を優先し、利用不可時は既存トークン分割へフォールバック
   - `voicevox_text.json` の `quality_checks.speakability` に読み上げやすさ指標（score/平均文字数/長文比率/終端記号比率）を出力
 - Build Project: Build Text JSON から VOICEVOX import (`.vvproj`) 生成
-  - VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を常に生成し、profile 既定値を適用する
+  - VOICEVOX Engine `/audio_query` から `accentPhrases` を含む `query` を常に生成し、synthesis defaults を適用する
   - `--speed-preset`（`slow|normal|fast`）指定時は `speedScale/pauseLengthScale/postPhonemeLength` を上書きする
   - `--intonation-scale` 指定時は `intonationScale` を上書きする（0未満は0にクランプ）
   - 最後に `postPhonemeLength` は `utterances[*].pause_length_ms` を秒換算した下限で補正する
@@ -168,9 +168,9 @@ bun src/cli/main.ts render-prompt \
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
 - `--character-map` 未指定時は `configs/voicevox/default_character_map.json` を優先し、未作成なら `configs/characters/*.json` から自動的に character map を構築します。
-- `--profile` 未指定時は `configs/voicevox/default_profile.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--profile configs/voicevox/default_profile.example.json` などを明示指定してください。
+- `--synthesis-defaults` 未指定時は `configs/voicevox/synthesis_defaults.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--synthesis-defaults configs/voicevox/synthesis_defaults.example.json` などを明示指定してください。
 - `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は character map が必要です（`--character-map` 指定、`configs/voicevox/default_character_map.json`、または `configs/characters/*.json` からの自動構築）。
-- `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（profile の voice は自動適用されません）。
+- `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（synthesis defaults には voice 指定がないため自動適用されません）。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
 - `--emotion <key>` を指定すると、`character map` の `emotionStyles[character_key][key]` に従って `styleId` を切り替えます（`--style-id` 指定時はそちらを優先）。
 - `--build-text-config` は Build Text の Speakability/Pause 設定ファイルです（任意、未指定時は既定値を使用）。
@@ -192,7 +192,7 @@ bun src/cli/main.ts render-prompt \
   - `build-project`: `--voicevox-text-json` が `.../run-.../voicevox_text/...` 配下なら自動推論
   - `build-audio`: `--vvproj` が `.../run-.../voicevox_project/...` 配下なら自動推論
 - `prepare-run` では `--default-project-id` / `--default-source-run-dir` / `--default-run-id` で未入力時の既定値を上書きできます。
-- `check-run` は blueprint/material/script の構造検証に加えて、build 前提条件（profile / character 解決 / speed preset / VOICEVOX 到達性）も事前検証します。
+- `check-run` は blueprint/material/script の構造検証に加えて、build 前提条件（synthesis defaults / character 解決 / speed preset / VOICEVOX 到達性）も事前検証します。
 
 ### VOICEVOX の利用可能キャラクターID確認
 

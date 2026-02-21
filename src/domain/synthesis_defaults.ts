@@ -1,4 +1,4 @@
-export interface RawVoiceProfile {
+export interface RawSynthesisDefaults {
   appVersion?: string;
   tpqn?: number | string;
   tempoBpm?: number | string;
@@ -6,10 +6,10 @@ export interface RawVoiceProfile {
     beats?: number | string;
     beatType?: number | string;
   };
-  queryDefaults?: RawVoiceProfileQueryDefaults;
+  queryDefaults?: RawSynthesisDefaultsQueryDefaults;
 }
 
-export interface RawVoiceProfileQueryDefaults {
+export interface RawSynthesisDefaultsQueryDefaults {
   speedScale?: number | string;
   pitchScale?: number | string;
   intonationScale?: number | string;
@@ -21,7 +21,7 @@ export interface RawVoiceProfileQueryDefaults {
   outputStereo?: boolean;
 }
 
-export interface VoiceProfile {
+export interface SynthesisDefaults {
   appVersion?: string;
   tpqn: number;
   tempoBpm: number;
@@ -29,10 +29,10 @@ export interface VoiceProfile {
     beats: number;
     beatType: number;
   };
-  queryDefaults: VoiceProfileQueryDefaults;
+  queryDefaults: SynthesisQueryDefaults;
 }
 
-export interface VoiceProfileQueryDefaults {
+export interface SynthesisQueryDefaults {
   speedScale: number;
   pitchScale: number;
   intonationScale: number;
@@ -44,7 +44,7 @@ export interface VoiceProfileQueryDefaults {
   outputStereo: boolean;
 }
 
-const DEFAULT_QUERY_DEFAULTS: VoiceProfileQueryDefaults = {
+const DEFAULT_QUERY_DEFAULTS: SynthesisQueryDefaults = {
   speedScale: 1,
   pitchScale: 0,
   intonationScale: 1,
@@ -59,7 +59,7 @@ const DEFAULT_QUERY_DEFAULTS: VoiceProfileQueryDefaults = {
 function requireFiniteNumber(value: number | string | undefined, fieldName: string): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
-    throw new Error(`Voice profile ${fieldName} must be a valid number`);
+    throw new Error(`Synthesis defaults ${fieldName} must be a valid number`);
   }
   return parsed;
 }
@@ -75,8 +75,8 @@ function coerceOutputSamplingRate(value: number | string | undefined): number | 
   return DEFAULT_QUERY_DEFAULTS.outputSamplingRate;
 }
 
-export function normalizeVoiceProfile(raw: RawVoiceProfile): VoiceProfile {
-  const normalizedQueryDefaults: VoiceProfileQueryDefaults = {
+export function normalizeSynthesisDefaults(raw: RawSynthesisDefaults): SynthesisDefaults {
+  const normalizedQueryDefaults: SynthesisQueryDefaults = {
     speedScale: requireFiniteNumber(raw.queryDefaults?.speedScale, "queryDefaults.speedScale"),
     pitchScale: requireFiniteNumber(raw.queryDefaults?.pitchScale, "queryDefaults.pitchScale"),
     intonationScale: requireFiniteNumber(

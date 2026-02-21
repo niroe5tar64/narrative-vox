@@ -5,8 +5,8 @@
 ## 入力
 
 - `voicevox_text/E##_voicevox_text.json`
-- `configs/voicevox/default_profile.json`（`--profile` 未指定時）
-- `--profile configs/voicevox/default_profile.example.json`（テンプレートを明示指定する場合）
+- `configs/voicevox/synthesis_defaults.json`（`--synthesis-defaults` 未指定時）
+- `--synthesis-defaults configs/voicevox/synthesis_defaults.example.json`（テンプレートを明示指定する場合）
 
 ## 出力
 
@@ -27,7 +27,7 @@
    - `speaker_key` または `--character-key` を使う場合、`character map` が未設定だとエラー
    - `--style-id` 指定時は emotion より優先して最終上書き
 4. `song` は空トラック構成で最小値を埋める。
-5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、profile の `queryDefaults` を適用する。
+5. VOICEVOX Engine `/audio_query` で `accentPhrases` を含む `query` を生成し、synthesis defaults の `queryDefaults` を適用する。
 6. `--speed-preset` 指定時は `speed_profiles` の値で `speedScale/pauseLengthScale/postPhonemeLength` を上書きする。
 7. `--intonation-scale` 指定時は `intonationScale` を上書きし、0未満は0にクランプする。
 8. 最後に Build Text `pause_length_ms` を秒換算して `postPhonemeLength` の下限を保証する（`--voicevox-url` 未指定時は自動解決）。

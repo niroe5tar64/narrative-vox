@@ -57,7 +57,7 @@ test("validateBuildPrerequisites passes with explicit voice triple", async () =>
   }, async (voicevoxApiUrl) => {
     const result = await validateBuildPrerequisites({
       scriptPaths: [scriptPath],
-      profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+      synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
       engineId: ENGINE_ID,
       speakerId: SPEAKER_ID,
       styleId: STYLE_ID,
@@ -79,10 +79,10 @@ test("validateBuildPrerequisites reports aggregated errors", async () => {
     () =>
       validateBuildPrerequisites({
         scriptPaths: [scriptPath],
-        profilePath: path.join(tempDir, "missing_profile.json"),
+        synthesisDefaultsPath: path.join(tempDir, "missing_synthesis_defaults.json"),
         voicevoxApiUrl: "http://127.0.0.1:9"
       }),
-    /Build prerequisites failed:[\s\S]*missing_profile\.json[\s\S]*Voice must be specified explicitly[\s\S]*VOICEVOX Engine is not reachable/
+    /Build prerequisites failed:[\s\S]*missing_synthesis_defaults\.json[\s\S]*Voice must be specified explicitly[\s\S]*VOICEVOX Engine is not reachable/
   );
 });
 
@@ -105,7 +105,7 @@ test("validateBuildPrerequisites rejects unknown speaker_key in scripts", async 
       () =>
         validateBuildPrerequisites({
           scriptPaths: [scriptPath],
-          profilePath: path.resolve("configs/voicevox/default_profile.example.json"),
+          synthesisDefaultsPath: path.resolve("configs/voicevox/synthesis_defaults.example.json"),
           voicevoxApiUrl
         }),
       /Unknown character_key "ghost"/

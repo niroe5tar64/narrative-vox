@@ -19,13 +19,13 @@ const usageByCommand: Record<CommandName, string> = {
   "build-text":
     "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--reading-dictionary <configs/voicevox/reading_dictionary.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>] [--intonation-scale <number>]",
+    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--synthesis-defaults configs/voicevox/synthesis_defaults.json|synthesis_defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>] [--intonation-scale <number>]",
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
     "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
-    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--profile configs/voicevox/default_profile.json|default_profile.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>]",
+    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voicevox/synthesis_defaults.json|synthesis_defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>]",
   "prepare-run":
     "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":
@@ -55,7 +55,7 @@ function printUsage(command?: string) {
 function buildProjectOptions(options: CliOptions) {
   return {
     runDir: optionAsString(options, "run-dir"),
-    profilePath: optionAsString(options, "profile"),
+    synthesisDefaultsPath: optionAsString(options, "synthesis-defaults"),
     characterMapPath: optionAsString(options, "character-map"),
     characterKey: optionAsString(options, "character-key"),
     engineId: optionAsString(options, "engine-id"),
@@ -72,7 +72,7 @@ function buildProjectOptions(options: CliOptions) {
 
 function buildPrerequisiteOptionFields(options: CliOptions) {
   return {
-    profilePath: optionAsString(options, "profile"),
+    synthesisDefaultsPath: optionAsString(options, "synthesis-defaults"),
     characterMapPath: optionAsString(options, "character-map"),
     characterKey: optionAsString(options, "character-key"),
     engineId: optionAsString(options, "engine-id"),

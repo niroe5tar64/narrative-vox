@@ -53,9 +53,9 @@ configs/**/*.local.json
 configs/**/*.local.yaml
 configs/**/*.local.yml
 configs/**/*.secrets.*
-configs/voicevox/default_profile.json
+configs/voicevox/synthesis_defaults.json
 configs/voicevox/default_character_map.json
-!configs/voicevox/default_profile.example.json
+!configs/**/*.example.json
 
 # project/content specific configs (keep local by default)
 configs/projects/*.json

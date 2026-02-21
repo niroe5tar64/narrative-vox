@@ -33,8 +33,8 @@
 - 出力: `dict_candidates/E##_dict_candidates.csv`
 
 5. Build Project (voicevox text -> import)
-- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/default_profile.json`（`--profile` 未指定時）
-- 代替入力: `--profile configs/voicevox/default_profile.example.json` を明示指定して実行
+- 入力: `voicevox_text/E##_voicevox_text.json` + `configs/voicevox/synthesis_defaults.json`（`--synthesis-defaults` 未指定時）
+- 代替入力: `--synthesis-defaults configs/voicevox/synthesis_defaults.example.json` を明示指定して実行
 - 出力: `voicevox_project/E##_voicevox_import.json`
 - 出力: `voicevox_project/E##.vvproj`
 - 出力: `voicevox_project/E##_project_meta.json`

@@ -39,7 +39,7 @@ test("applySpeedPreset overrides speed-related fields", () => {
   assert.equal(actual.intonationScale, baseQuery.intonationScale);
 });
 
-test("loadSpeedProfiles loads schema-valid profile file", async () => {
+test("loadSpeedProfiles loads schema-valid speed preset file", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const speedProfilesPath = path.join(tempRoot, "speed_profiles.json");
   await writeFile(

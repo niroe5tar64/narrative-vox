@@ -1,16 +1,16 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { resolveCharacterMap } from "../infra/character_map_resolver.ts";
-import { resolveProfilePath, resolveSpeedProfilesPath } from "../infra/config_resolver.ts";
+import { resolveSynthesisDefaultsPath, resolveSpeedProfilesPath } from "../infra/config_resolver.ts";
 import { loadJson } from "../infra/json.ts";
 import { parseSpeakerTag } from "../domain/speaker_tag.ts";
-import { normalizeVoiceProfile, type RawVoiceProfile } from "../domain/voice_profile.ts";
+import { normalizeSynthesisDefaults, type RawSynthesisDefaults } from "../domain/synthesis_defaults.ts";
 import { resolveVoicevoxApiUrl } from "../infra/voicevox_engine.ts";
 import { loadSpeedProfiles } from "../app/build_project/speed_profiles.ts";
 
 export interface BuildPrerequisiteOptions {
   scriptPaths: string[];
-  profilePath?: string;
+  synthesisDefaultsPath?: string;
   characterMapPath?: string;
   characterKey?: string;
   engineId?: string;
@@ -25,7 +25,7 @@ export interface BuildPrerequisiteOptions {
 export interface BuildPrerequisiteResult {
   scriptCount: number;
   speakerKeys: string[];
-  resolvedProfilePath: string;
+  resolvedSynthesisDefaultsPath: string;
   resolvedCharacterMapSource?: string;
   resolvedVoicevoxApiUrl: string;
   resolvedSpeedProfilesPath?: string;
@@ -84,7 +84,7 @@ export async function validateBuildPrerequisites(
 ): Promise<BuildPrerequisiteResult> {
   const errors: string[] = [];
   let speakerKeys: string[] = [];
-  let resolvedProfilePath = "";
+  let resolvedSynthesisDefaultsPath = "";
   let resolvedCharacterMapSource: string | undefined;
   let resolvedVoicevoxApiUrl = "";
   let resolvedSpeedProfilesPath: string | undefined;
@@ -96,9 +96,9 @@ export async function validateBuildPrerequisites(
   }
 
   try {
-    resolvedProfilePath = await resolveProfilePath(options.profilePath);
-    const rawProfile = await loadJson<RawVoiceProfile>(resolvedProfilePath);
-    normalizeVoiceProfile(rawProfile);
+    resolvedSynthesisDefaultsPath = await resolveSynthesisDefaultsPath(options.synthesisDefaultsPath);
+    const rawSynthesisDefaults = await loadJson<RawSynthesisDefaults>(resolvedSynthesisDefaultsPath);
+    normalizeSynthesisDefaults(rawSynthesisDefaults);
   } catch (error) {
     errors.push(toErrorMessage(error));
   }
@@ -207,7 +207,7 @@ export async function validateBuildPrerequisites(
   return {
     scriptCount: options.scriptPaths.length,
     speakerKeys,
-    resolvedProfilePath,
+    resolvedSynthesisDefaultsPath,
     resolvedCharacterMapSource,
     resolvedVoicevoxApiUrl,
     resolvedSpeedProfilesPath

@@ -1,18 +1,18 @@
 import path from "node:path";
 import { pathExists } from "./fs_utils.ts";
 
-export async function resolveProfilePath(profilePath?: string): Promise<string> {
-  if (profilePath) {
-    return path.resolve(profilePath);
+export async function resolveSynthesisDefaultsPath(synthesisDefaultsPath?: string): Promise<string> {
+  if (synthesisDefaultsPath) {
+    return path.resolve(synthesisDefaultsPath);
   }
 
-  const localDefault = path.resolve("configs/voicevox/default_profile.json");
+  const localDefault = path.resolve("configs/voicevox/synthesis_defaults.json");
   if (await pathExists(localDefault)) {
     return localDefault;
   }
 
   throw new Error(
-    `Voice profile not found: ${localDefault}. Create configs/voicevox/default_profile.json or pass --profile.`
+    `Synthesis defaults not found: ${localDefault}. Create configs/voicevox/synthesis_defaults.json or pass --synthesis-defaults.`
   );
 }
 

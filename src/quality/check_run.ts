@@ -14,7 +14,7 @@ type SpeakerMode = "monologue" | "dialogue" | "panel";
 
 export interface CheckRunOptions {
   runDir: string;
-  profilePath?: string;
+  synthesisDefaultsPath?: string;
   characterMapPath?: string;
   characterKey?: string;
   engineId?: string;
@@ -257,7 +257,7 @@ function validateEpisodePrerequisites(
 
 export async function checkRun({
   runDir,
-  profilePath,
+  synthesisDefaultsPath,
   characterMapPath,
   characterKey,
   engineId,
@@ -406,7 +406,7 @@ export async function checkRun({
   // 6. Build prerequisites
   await validateBuildPrerequisites({
     scriptPaths,
-    profilePath,
+    synthesisDefaultsPath,
     characterMapPath,
     characterKey,
     engineId,
