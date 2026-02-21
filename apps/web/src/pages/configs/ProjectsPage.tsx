@@ -119,10 +119,12 @@ function Optional() {
 function Field({
   label,
   required,
+  hint,
   children,
 }: {
   label: string;
   required?: boolean;
+  hint?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -132,6 +134,9 @@ function Field({
         {required ? <Required /> : <Optional />}
       </Label>
       {children}
+      {hint && (
+        <p className="mt-1 text-xs text-slate-500">{hint}</p>
+      )}
     </div>
   );
 }
@@ -314,7 +319,7 @@ export function ProjectsPage() {
             {isNew ? "New Project" : `Edit: ${selected}`}
           </h3>
           <div className="max-w-lg space-y-4">
-            <Field label="PROJECT_ID" required>
+            <Field label="PROJECT_ID" required hint={<>英小文字・数字・ハイフンのみ推奨（例: my-project）<br />※ディレクトリ名にもなる識別子で作成後は変更不可</>}>
               <Input
                 value={form.PROJECT_ID}
                 onChange={(e) => patch({ PROJECT_ID: e.target.value })}
@@ -332,7 +337,11 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="EPISODE_ID" required>
+            <Field
+              label="EPISODE_ID"
+              required
+              hint={<>現在作業するエピソードの番号（E01, E02 … の形式）<br />スキル実行時の対象エピソードになります。</>}
+            >
               <Input
                 value={form.EPISODE_ID}
                 onChange={(e) => patch({ EPISODE_ID: e.target.value })}
@@ -340,7 +349,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="SOURCE_MARKDOWN_PATHS" required>
+            <Field label="SOURCE_MARKDOWN_PATHS" required hint={<>glob パターンで対象 Markdown を指定（例: data/inputs/books/my-book/*.md）<br />※oss-dive ジャンルでは空欄で可</>}>
               <Input
                 value={form.SOURCE_MARKDOWN_PATHS}
                 onChange={(e) => patch({ SOURCE_MARKDOWN_PATHS: e.target.value })}
@@ -374,7 +383,7 @@ export function ProjectsPage() {
             {/* OSS Dive specific fields */}
             {showOssDiveFields && (
               <>
-                <Field label="REPO_ROOT_PATH" required>
+                <Field label="REPO_ROOT_PATH" required hint="分析するOSSリポジトリの git clone 先ルートパスを指定（例: data/inputs/repos/my-project）。">
                   <Input
                     value={form.REPO_ROOT_PATH}
                     onChange={(e) => patch({ REPO_ROOT_PATH: e.target.value })}
@@ -382,7 +391,7 @@ export function ProjectsPage() {
                   />
                 </Field>
 
-                <Field label="DEEP_DIVE_FOCUS" required>
+                <Field label="DEEP_DIVE_FOCUS" required hint="OSSの何に着目して深掘りするかを指定。ブループリント・素材・台本全体の焦点になる（例: アーキテクチャと設計思想）。">
                   <Textarea
                     value={form.DEEP_DIVE_FOCUS}
                     onChange={(e) => patch({ DEEP_DIVE_FOCUS: e.target.value })}
@@ -477,7 +486,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="BASELINE_CONTEXT_OR_EMPTY">
+            <Field label="BASELINE_CONTEXT_OR_EMPTY" hint="台本内で「既知」として扱う具体的な前提知識（例: TypeScript での実装パターン）。AUDIENCE_BACKGROUND が「読者の属性」なら、こちらは「説明を省ける知識」。不要なら空欄。">
               <Input
                 value={form.BASELINE_CONTEXT_OR_EMPTY}
                 onChange={(e) => patch({ BASELINE_CONTEXT_OR_EMPTY: e.target.value })}
@@ -485,7 +494,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY">
+            <Field label="EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY" hint="過去runの台本ディレクトリを引き継ぐ場合に指定（初回や引き継ぎ不要な場合は空欄）">
               <Input
                 value={form.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}
                 onChange={(e) => patch({ EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: e.target.value })}
@@ -493,7 +502,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="PROJECT_BLUEPRINT_JSON_PATH">
+            <Field label="PROJECT_BLUEPRINT_JSON_PATH" hint="/gen-blueprint 実行後に生成された JSON のパスを指定。初回は空欄で可。">
               <Input
                 value={form.PROJECT_BLUEPRINT_JSON_PATH}
                 onChange={(e) => patch({ PROJECT_BLUEPRINT_JSON_PATH: e.target.value })}
