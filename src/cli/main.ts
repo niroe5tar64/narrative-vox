@@ -23,7 +23,7 @@ const usageByCommand: Record<CommandName, string> = {
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
-    "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build-text-config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
+    "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build-text-config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [--dict <configs/voicevox/user-dict.json>] [build-text/build-project options]",
   "check-run":
     "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed-profiles.json>]",
   "prepare-run":
@@ -181,6 +181,18 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       readingDictionaryPath: optionAsString(options, "reading-dictionary")
     });
 
+    const apiUrl = await resolveVoicevoxApiUrl(optionAsString(options, "voicevox-url"));
+    const syncResult = await syncUserDict({
+      apiUrl,
+      dictPath: optionAsString(options, "dict")
+    });
+    if (syncResult.errors.length > 0) {
+      for (const err of syncResult.errors) {
+        console.log(`  [error] ${err}`);
+      }
+      throw new Error(`dict-sync completed with ${syncResult.errors.length} error(s)`);
+    }
+
     const result = await buildProject({
       voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
       ...buildProjectOptions(options),
@@ -191,6 +203,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(
       `- build-text: ${path.relative(process.cwd(), buildTextResult.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), buildTextResult.voicevoxTextPath)}, ${path.relative(process.cwd(), buildTextResult.dictionaryCsvPath)}`
     );
+    console.log(`- dict-sync: deleted=${syncResult.deleted}, added=${syncResult.added}`);
     console.log(
       `- build-project: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}, ${path.relative(process.cwd(), result.projectMetaJsonPath)}`
     );
