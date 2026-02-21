@@ -76,7 +76,7 @@ Episode Materialで回を切り替える場合は以下を追加します。
 bun src/cli/main.ts render-prompt -- \
   --genre study \
   --step blueprint \
-  --project-config configs/projects/introducing-rescript.example.json
+  --project-config configs/projects/study.example.json
 
 # Build Text + Build Project
 bun run build-all -- \

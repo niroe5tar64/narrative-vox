@@ -126,7 +126,7 @@ bun run build-all -- \
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step blueprint \
-  --project-config configs/projects/introducing-rescript.example.json
+  --project-config configs/projects/study.example.json
 ```
 
 ## Prompt工程の実行方法（Blueprint / Material / Script / Digest）
@@ -152,13 +152,13 @@ Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実�
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step blueprint \
-  --project-config configs/projects/introducing-rescript.example.json
+  --project-config configs/projects/study.example.json
 
 # Material Promptを解決（EPISODE_IDを上書き）
 bun src/cli/main.ts render-prompt \
   --genre study \
   --step material \
-  --project-config configs/projects/introducing-rescript.example.json \
+  --project-config configs/projects/study.example.json \
   --episode-id E01
 ```
 

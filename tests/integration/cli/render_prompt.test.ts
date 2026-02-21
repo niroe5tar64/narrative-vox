@@ -7,7 +7,7 @@ import {
   resolvePromptTemplatePath,
 } from "../../../src/cli/render_prompt.ts";
 
-const sampleProjectConfigPath = path.resolve("configs/projects/introducing-rescript.example.json");
+const sampleProjectConfigPath = path.resolve("configs/projects/study.example.json");
 
 describe("resolvePromptTemplatePath", () => {
   test("returns correct path for genre+step", () => {

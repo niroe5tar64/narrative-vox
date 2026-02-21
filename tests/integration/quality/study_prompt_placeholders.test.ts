@@ -7,7 +7,7 @@ const blueprintPromptPath = path.resolve("prompts/study/blueprint.md");
 const materialPromptPath = path.resolve("prompts/study/episode_material.md");
 const scriptPromptPath = path.resolve("prompts/study/script_common_frame.md");
 const studyReadmePath = path.resolve("prompts/study/README.md");
-const sampleProjectConfigPath = path.resolve("configs/projects/introducing-rescript.example.json");
+const sampleProjectConfigPath = path.resolve("configs/projects/study.example.json");
 
 const retiredStage2Aliases = [
   "SOURCE_MARKDOWN_PATHS_OR_EMPTY",
