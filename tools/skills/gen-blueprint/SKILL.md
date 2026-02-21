@@ -14,7 +14,7 @@ project config と参照ソースを入力として、書籍全体の設計図�
 ### Step 1: project config 読み込み
 
 1. `configs/projects/$ARGUMENTS.json` を読み込む。
-2. `GENRE` フィールドを確認する（例: `study`）。
+2. `GENRE` フィールドを確認する（例: `tech_explainer`）。
 
 ### Step 2: プロンプト解決
 

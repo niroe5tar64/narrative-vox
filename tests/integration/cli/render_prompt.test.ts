@@ -7,21 +7,21 @@ import {
   resolvePromptTemplatePath,
 } from "../../../src/cli/render_prompt.ts";
 
-const sampleProjectConfigPath = path.resolve("configs/projects/study.example.json");
+const sampleProjectConfigPath = path.resolve("configs/projects/tech_explainer.example.json");
 
 describe("resolvePromptTemplatePath", () => {
   test("returns correct path for genre+step", () => {
-    const result = resolvePromptTemplatePath("study", "blueprint");
-    assert.equal(result, path.resolve("prompts/study/blueprint.md"));
+    const result = resolvePromptTemplatePath("tech_explainer", "blueprint");
+    assert.equal(result, path.resolve("prompts/tech_explainer/blueprint.md"));
   });
 
   test("returns correct path for material step", () => {
-    const result = resolvePromptTemplatePath("study", "material");
-    assert.equal(result, path.resolve("prompts/study/episode_material.md"));
+    const result = resolvePromptTemplatePath("tech_explainer", "material");
+    assert.equal(result, path.resolve("prompts/tech_explainer/episode_material.md"));
   });
 
   test("throws on unknown step", () => {
-    assert.throws(() => resolvePromptTemplatePath("study", "unknown"), /Unknown step/);
+    assert.throws(() => resolvePromptTemplatePath("tech_explainer", "unknown"), /Unknown step/);
   });
 });
 
@@ -137,19 +137,19 @@ describe("resolvePromptTemplate", () => {
 describe("renderPrompt", () => {
   test("resolves blueprint template with project config", async () => {
     const result = await renderPrompt({
-      genre: "study",
+      genre: "tech_explainer",
       step: "blueprint",
       projectConfigPath: sampleProjectConfigPath,
     });
 
     assert.ok(result.resolvedPrompt.includes("Introducing ReScript"));
-    assert.ok(result.templatePath.endsWith("prompts/study/blueprint.md"));
+    assert.ok(result.templatePath.endsWith("prompts/tech_explainer/blueprint.md"));
     assert.deepEqual(result.unresolvedKeys, []);
   });
 
   test("resolves material template with project config and episodeId override", async () => {
     const result = await renderPrompt({
-      genre: "study",
+      genre: "tech_explainer",
       step: "material",
       projectConfigPath: sampleProjectConfigPath,
       episodeId: "E99",
@@ -165,11 +165,11 @@ describe("renderPrompt", () => {
     // Create a minimal config that is missing required keys
     const { writeFile, unlink } = await import("node:fs/promises");
     const tmpConfig = path.resolve("configs/projects/_test_incomplete.json");
-    await writeFile(tmpConfig, JSON.stringify({ GENRE: "study", PROJECT_TITLE: "Test" }));
+    await writeFile(tmpConfig, JSON.stringify({ GENRE: "tech_explainer", PROJECT_TITLE: "Test" }));
     try {
       await assert.rejects(
         () => renderPrompt({
-          genre: "study",
+          genre: "tech_explainer",
           step: "blueprint",
           projectConfigPath: tmpConfig,
         }),

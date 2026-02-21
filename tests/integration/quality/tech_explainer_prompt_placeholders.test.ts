@@ -3,11 +3,11 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "bun:test";
 
-const blueprintPromptPath = path.resolve("prompts/study/blueprint.md");
-const materialPromptPath = path.resolve("prompts/study/episode_material.md");
-const scriptPromptPath = path.resolve("prompts/study/script_common_frame.md");
-const studyReadmePath = path.resolve("prompts/study/README.md");
-const sampleProjectConfigPath = path.resolve("configs/projects/study.example.json");
+const blueprintPromptPath = path.resolve("prompts/tech_explainer/blueprint.md");
+const materialPromptPath = path.resolve("prompts/tech_explainer/episode_material.md");
+const scriptPromptPath = path.resolve("prompts/tech_explainer/script_common_frame.md");
+const techExplainerReadmePath = path.resolve("prompts/tech_explainer/README.md");
+const sampleProjectConfigPath = path.resolve("configs/projects/tech_explainer.example.json");
 
 const retiredStage2Aliases = [
   "SOURCE_MARKDOWN_PATHS_OR_EMPTY",
@@ -40,9 +40,9 @@ test("material prompt uses config-aligned placeholder names for source and audie
   }
 });
 
-test("study README key definitions are consistent with material prompt naming", async () => {
+test("tech_explainer README key definitions are consistent with material prompt naming", async () => {
   const [readmeRaw, materialRaw] = await Promise.all([
-    readFile(studyReadmePath, "utf-8"),
+    readFile(techExplainerReadmePath, "utf-8"),
     readFile(materialPromptPath, "utf-8")
   ]);
 

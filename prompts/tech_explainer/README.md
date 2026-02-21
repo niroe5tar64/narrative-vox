@@ -1,14 +1,14 @@
-# Study Prompt Guide
+# Tech Explainer Prompt Guide
 
 技術書・記事・技術資料を音声学習向け台本に変換するための運用ガイドです。
 
 ## ファイル
 
-- `prompts/study/blueprint.md`
-- `prompts/study/episode_material.md`
-- `prompts/study/script_common_frame.md`
-- `prompts/study/build_text.md`
-- `prompts/study/build_project.md`
+- `prompts/tech_explainer/blueprint.md`
+- `prompts/tech_explainer/episode_material.md`
+- `prompts/tech_explainer/script_common_frame.md`
+- `prompts/tech_explainer/build_text.md`
+- `prompts/tech_explainer/build_project.md`
 - `configs/projects/<project-id>.json`
 - `configs/projects/<project-id>.example.json`
 
@@ -74,9 +74,9 @@ Episode Materialで回を切り替える場合は以下を追加します。
 ```bash
 # Prompt解決（Blueprint）
 bun src/cli/main.ts render-prompt -- \
-  --genre study \
+  --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/study.example.json
+  --project-config configs/projects/tech_explainer.example.json
 
 # Build Text + Build Project
 bun run build-all -- \

@@ -69,7 +69,7 @@ const sampleMaterial = {
     project_id: "introducing-rescript",
     episode_id: "E01",
     episode_title: "テスト",
-    genre: "study",
+    genre: "tech_explainer",
     audience: {
       background: "テスト",
       level: "テスト",

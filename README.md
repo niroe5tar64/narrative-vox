@@ -13,7 +13,7 @@
 ```text
 .
 ├── prompts/
-│   ├── study/       # 技術資料向けプロンプト (Blueprint / Material / Script / Build Text / Build Project)
+│   ├── tech_explainer/       # 技術資料向けプロンプト (Blueprint / Material / Script / Build Text / Build Project)
 │   ├── audiobook/   # 小説向けプロンプト（整備中）
 │   └── shared/      # 共通ルール（整備中）
 ├── configs/
@@ -124,9 +124,9 @@ bun run build-all -- \
 
 # (補助) Promptテンプレートを project config で解決して出力
 bun src/cli/main.ts render-prompt \
-  --genre study \
+  --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/study.example.json
+  --project-config configs/projects/tech_explainer.example.json
 ```
 
 ## Prompt工程の実行方法（Blueprint / Material / Script / Digest）
@@ -150,15 +150,15 @@ Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実�
 ```bash
 # Blueprint Promptを解決
 bun src/cli/main.ts render-prompt \
-  --genre study \
+  --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/study.example.json
+  --project-config configs/projects/tech_explainer.example.json
 
 # Material Promptを解決（EPISODE_IDを上書き）
 bun src/cli/main.ts render-prompt \
-  --genre study \
+  --genre tech_explainer \
   --step material \
-  --project-config configs/projects/study.example.json \
+  --project-config configs/projects/tech_explainer.example.json \
   --episode-id E01
 ```
 

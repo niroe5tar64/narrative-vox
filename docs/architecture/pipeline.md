@@ -88,9 +88,9 @@ flowchart TB
 
 | 項目 | 主に使う工程 | 前提 | 役割 |
 | --- | --- | --- | --- |
-| `prompts/study/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
-| `prompts/study/episode_material.md` | Episode Material | プロンプト入力前提 | エピソード素材JSONを生成 |
-| `prompts/study/script_common_frame.md` | Script | プロンプト入力前提 | 台本を生成（セクション数は演出層が決定） |
+| `prompts/tech_explainer/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
+| `prompts/tech_explainer/episode_material.md` | Episode Material | プロンプト入力前提 | エピソード素材JSONを生成 |
+| `prompts/tech_explainer/script_common_frame.md` | Script | プロンプト入力前提 | 台本を生成（セクション数は演出層が決定） |
 | `configs/projects/<project-id>.json` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
 | `configs/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
 | `configs/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |

@@ -21,7 +21,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 ### Step 1: project config 読み込み
 
 1. `configs/projects/$0.json` を読み込む。
-2. `GENRE` フィールドを確認する（例: `study`）。
+2. `GENRE` フィールドを確認する（例: `tech_explainer`）。
 3. `EPISODE_ID` を `$1` で上書きする。
 4. `STYLE_ID` と `CAST` フィールドは素材層では使用しない（演出層の責務）。
 
@@ -50,7 +50,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 1. Step 3 で解決済みの `## Prompt` 以降をシステムプロンプトとして使用する。
 2. Blueprint JSON 全体を添付コンテキストとして提供する。
 3. ソースファイルの添付（GENRE による分岐）:
-   - `study`: `SOURCE_MARKDOWN_PATHS` のグロブパターンでファイルを取得して添付する。
+   - `tech_explainer`: `SOURCE_MARKDOWN_PATHS` のグロブパターンでファイルを取得して添付する。
    - `oss-dive`: Blueprint の `episode_plan[$1].source_refs` に列挙されたパスを `REPO_ROOT_PATH` 配下で解決して添付する。
 4. 出力は JSON のみ。
 5. 素材層の要素は18種の type enum:

@@ -208,7 +208,7 @@
     "project_id": "{{PROJECT_ID}}",
     "episode_id": "{{EPISODE_ID}}",
     "episode_title": "",
-    "genre": "study",
+    "genre": "tech_explainer",
     "audience": {
       "background": "{{AUDIENCE_BACKGROUND}}",
       "level": "{{AUDIENCE_LEVEL}}",

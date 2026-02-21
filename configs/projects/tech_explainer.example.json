@@ -1,5 +1,5 @@
 {
-  "GENRE": "study",
+  "GENRE": "tech_explainer",
   "PROJECT_ID": "introducing-rescript",
   "PROJECT_TITLE": "Introducing ReScript: Functional Programming for Web Applications",
   "SOURCE_MARKDOWN_PATHS": "inputs/books/introducing-rescript/source/*.md",

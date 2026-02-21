@@ -4,7 +4,7 @@
     "project_id": "introducing-rescript",
     "episode_id": "E01",
     "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
-    "genre": "study",
+    "genre": "tech_explainer",
     "audience": {
       "background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
       "level": "ReScript初学者〜中級手前",

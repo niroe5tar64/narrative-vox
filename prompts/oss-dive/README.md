@@ -2,9 +2,9 @@
 
 OSSリポジトリのソースコードを解析し、テーマを絞って深掘りした音声コンテンツ用台本を生成するためのガイドです。
 
-## study との違い
+## tech_explainer との違い
 
-| 項目 | study | oss-dive |
+| 項目 | tech_explainer | oss-dive |
 |---|---|---|
 | 入力ソース | Markdownファイル (`SOURCE_MARKDOWN_PATHS`) | リポジトリ全体 (`REPO_ROOT_PATH`) |
 | 分析対象 | 書籍の章・節 | ディレクトリ・モジュール・ファイル |
@@ -53,7 +53,7 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/script/E##_script.md`
 
 4. Build Text / Build Project / Build Audio
-- study と同じパイプライン（ジャンル非依存）
+- tech_explainer と同じパイプライン（ジャンル非依存）
 
 ## 必須キー（project config）
 
