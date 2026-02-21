@@ -1,7 +1,4 @@
 export interface RawVoiceProfile {
-  engineId: string;
-  speakerId: string;
-  styleId: number | string;
   appVersion?: string;
   tpqn?: number | string;
   tempoBpm?: number | string;
@@ -25,9 +22,6 @@ export interface RawVoiceProfileQueryDefaults {
 }
 
 export interface VoiceProfile {
-  engineId: string;
-  speakerId: string;
-  styleId: number;
   appVersion?: string;
   tpqn: number;
   tempoBpm: number;
@@ -107,9 +101,6 @@ export function normalizeVoiceProfile(raw: RawVoiceProfile): VoiceProfile {
   };
 
   return {
-    engineId: raw.engineId,
-    speakerId: raw.speakerId,
-    styleId: requireFiniteNumber(raw.styleId, "styleId"),
     appVersion: raw.appVersion,
     tpqn: requireFiniteNumber(raw.tpqn, "tpqn"),
     tempoBpm: requireFiniteNumber(raw.tempoBpm, "tempoBpm"),

@@ -10,9 +10,6 @@
   "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": "",
   "PROJECT_BLUEPRINT_JSON_PATH": "projects/introducing-rescript/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
   "EPISODE_ID": "E01",
-  "OUTPUT_BLUEPRINT_JSON": "projects/introducing-rescript/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json",
-  "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN": "projects/introducing-rescript/run-YYYYMMDD-HHMM/material/E##_material.json",
-  "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": "projects/introducing-rescript/run-YYYYMMDD-HHMM/script/E##_script.md",
   "STYLE_ID": "radio-talk",
   "CAST": {
     "lead": "teacher",

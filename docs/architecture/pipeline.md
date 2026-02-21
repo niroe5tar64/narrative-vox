@@ -102,10 +102,6 @@ flowchart TB
 | `ffmpeg` (`--ffmpeg-path`) | `build-audio` | CLI操作前提 | WAV を mp3/m4a/ogg へ圧縮変換 |
 | `tools/scripts/voicevox-up.sh` など | Engine起動/疎通確認 | CLI操作前提 | Docker上のVOICEVOX Engine運用補助 |
 
-補足:
-
-- `configs/voicevox/dictionary_rules.yaml` と `configs/voicevox/punctuation_rules.yaml` は planned コメントのみで、現行実装では未参照です。
-
 ## CLIでの実データ生成ポイント
 
 | コマンド | 必須入力 | 主な自動推論 | 出力 |

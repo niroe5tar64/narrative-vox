@@ -15,9 +15,6 @@
     "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY",
     "PROJECT_BLUEPRINT_JSON_PATH",
     "EPISODE_ID",
-    "OUTPUT_BLUEPRINT_JSON",
-    "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN",
-    "OUTPUT_EPISODE_SCRIPT_MD_PATTERN",
     "STYLE_ID",
     "CAST"
   ],
@@ -62,18 +59,6 @@
     "EPISODE_ID": {
       "type": "string",
       "pattern": "^E[0-9]{2}$"
-    },
-    "OUTPUT_BLUEPRINT_JSON": {
-      "type": "string",
-      "minLength": 1
-    },
-    "OUTPUT_EPISODE_MATERIAL_JSON_PATTERN": {
-      "type": "string",
-      "minLength": 1
-    },
-    "OUTPUT_EPISODE_SCRIPT_MD_PATTERN": {
-      "type": "string",
-      "minLength": 1
     },
     "STYLE_ID": {
       "type": "string",
