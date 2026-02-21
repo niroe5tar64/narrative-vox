@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "server": "bun src/server/index.ts",
+    "server:dev": "bun --watch src/server/index.ts",
+    "web:dev": "cd web && bun run dev",
+    "dev": "bun run server:dev",
     "prepare-run": "bun src/cli/main.ts prepare-run",
     "check-run": "bun src/cli/main.ts check-run",
     "build-text": "bun src/cli/main.ts build-text",
@@ -19,6 +23,7 @@
   },
   "dependencies": {
     "ajv": "^8.17.1",
+    "hono": "^4.12.0",
     "kuromoji": "^0.1.2"
   },
   "devDependencies": {

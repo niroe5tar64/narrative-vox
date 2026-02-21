@@ -37,6 +37,8 @@
 │       └── audio/
 ├── schemas/
 ├── src/
+│   └── server/      # フロントエンド向け API サーバー (Bun + Hono)
+├── web/             # Vite + React フロントエンド
 ├── tests/
 ├── docs/
 │   ├── architecture/
@@ -128,6 +130,24 @@ bun src/cli/main.ts render-prompt \
   --step blueprint \
   --project-config configs/projects/tech-explainer.example.json
 ```
+
+## Frontend 開発（T01）
+
+Hono API サーバーは Docker 必須ではありません。ローカル/DevContainer のどちらでも Bun で直接起動できます。
+Docker を使うのは主に VOICEVOX Engine が必要なときです。
+
+```bash
+# API (Bun + Hono)
+bun run server
+
+# API (watch mode)
+bun run server:dev
+
+# UI (Vite + React)
+cd web && bun run dev
+```
+
+UI 開発中は `web/vite.config.ts` で `/api/*` と `/ws/*` を `http://localhost:3000` にプロキシします。
 
 ## Prompt工程の実行方法（Blueprint / Material / Script / Digest）
 
