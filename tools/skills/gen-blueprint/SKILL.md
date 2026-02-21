@@ -14,11 +14,11 @@ project config と参照ソースを入力として、書籍全体の設計図�
 ### Step 1: project config 読み込み
 
 1. `configs/pipeline/projects/$ARGUMENTS.json` を読み込む。
-2. `GENRE` フィールドを確認する（例: `tech_explainer`）。
+2. `GENRE_ID` フィールドを確認する（例: `tech-explainer`）。
 
 ### Step 2: プロンプト解決
 
-1. `prompts/{GENRE}/blueprint.md` を読み込む。
+1. `prompts/{GENRE_ID}/blueprint.md` を読み込む。
 2. `## Prompt` セクション以降のプレースホルダ `{{KEY}}` を project config の値で置換する。
 3. ````json` コードブロック内のプレースホルダは置換しない（出力形式の例示のため）。
 4. 未解決プレースホルダが残っていればエラー報告して終了する。

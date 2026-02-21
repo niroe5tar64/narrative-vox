@@ -142,7 +142,7 @@ describe("renderPrompt", () => {
       projectConfigPath: sampleProjectConfigPath,
     });
 
-    assert.ok(result.resolvedPrompt.includes("Introducing ReScript"));
+    assert.ok(result.resolvedPrompt.includes("Tech Explainer: Example Tech Explainer"));
     assert.ok(result.templatePath.endsWith("prompts/tech-explainer/blueprint.md"));
     assert.deepEqual(result.unresolvedKeys, []);
   });
@@ -165,7 +165,7 @@ describe("renderPrompt", () => {
     // Create a minimal config that is missing required keys
     const { writeFile, unlink } = await import("node:fs/promises");
     const tmpConfig = path.resolve("configs/pipeline/projects/_test_incomplete.json");
-    await writeFile(tmpConfig, JSON.stringify({ GENRE: "tech_explainer", PROJECT_TITLE: "Test" }));
+    await writeFile(tmpConfig, JSON.stringify({ GENRE_ID: "tech-explainer", PROJECT_TITLE: "Test" }));
     try {
       await assert.rejects(
         () => renderPrompt({

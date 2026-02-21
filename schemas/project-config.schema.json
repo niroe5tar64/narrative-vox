@@ -4,7 +4,7 @@
   "title": "Project Config",
   "type": "object",
   "required": [
-    "GENRE",
+    "GENRE_ID",
     "PROJECT_ID",
     "PROJECT_TITLE",
     "SOURCE_MARKDOWN_PATHS",
@@ -19,7 +19,7 @@
     "CAST"
   ],
   "properties": {
-    "GENRE": {
+    "GENRE_ID": {
       "type": "string",
       "minLength": 1
     },

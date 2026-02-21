@@ -13,8 +13,14 @@ export type CharacterConfig = {
   profile?: Record<string, unknown>;
 };
 
+export type GenreConfig = {
+  genre_id: string;
+  genre_name: string;
+  extra_fields: string[];
+};
+
 export type ProjectConfig = {
-  GENRE: string;
+  GENRE_ID: string;
   PROJECT_ID: string;
   PROJECT_TITLE: string;
   SOURCE_MARKDOWN_PATHS: string;
@@ -189,8 +195,12 @@ export const api = {
       apiFetch<void>(`/configs/projects/${id}`, { method: "DELETE" }),
   },
 
+  genres: {
+    list: () => apiFetch<{ items: GenreConfig[] }>("/configs/genres"),
+  },
+
   styles: {
-    list: () => apiFetch<{ items: unknown[] }>("/configs/styles"),
+    list: () => apiFetch<{ items: { style_id: string; style_name: string }[] }>("/configs/styles"),
   },
 
   voicevox: {

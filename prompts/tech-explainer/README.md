@@ -56,7 +56,7 @@ Episode Materialで回を切り替える場合は以下を追加します。
 ## 必須キー（project config）
 
 - `PROJECT_ID`
-- `GENRE`
+- `GENRE_ID`
 - `PROJECT_TITLE`
 - `SOURCE_MARKDOWN_PATHS`
 - `AUDIENCE_BACKGROUND`

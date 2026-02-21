@@ -1,0 +1,5 @@
+{
+  "genre_id": "oss-dive",
+  "genre_name": "OSSダイブ",
+  "extra_fields": ["REPO_ROOT_PATH", "DEEP_DIVE_FOCUS"]
+}

@@ -1,5 +1,5 @@
 {
-  "GENRE": "oss-dive",
+  "GENRE_ID": "oss-dive",
   "PROJECT_ID": "example-oss-project",
   "PROJECT_TITLE": "Deep Dive: Example OSS Project",
   "REPO_ROOT_PATH": "data/inputs/repos/example-oss-project",

@@ -63,11 +63,11 @@ test("tech_explainer README key definitions are consistent with material prompt 
   }
 });
 
-test("project config has GENRE field", async () => {
+test("project config has GENRE_ID field", async () => {
   const configRaw = await readFile(sampleProjectConfigPath, "utf-8");
   const config = JSON.parse(configRaw) as Record<string, unknown>;
-  assert.equal(typeof config.GENRE, "string", "GENRE field must be a string");
-  assert.ok((config.GENRE as string).length > 0, "GENRE field must not be empty");
+  assert.equal(typeof config.GENRE_ID, "string", "GENRE_ID field must be a string");
+  assert.ok((config.GENRE_ID as string).length > 0, "GENRE_ID field must not be empty");
 });
 
 test("blueprint/material/script prompt placeholders can be resolved with sample project config", async () => {

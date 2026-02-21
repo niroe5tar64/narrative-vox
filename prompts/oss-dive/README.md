@@ -58,7 +58,7 @@ cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-
 ## 必須キー（project config）
 
 - `PROJECT_ID`
-- `GENRE` — `"oss-dive"`
+- `GENRE_ID` — `"oss-dive"`
 - `PROJECT_TITLE`
 - `REPO_ROOT_PATH` — clone先パス（例: `data/inputs/repos/my-project`）
 - `DEEP_DIVE_FOCUS` — 深掘りの方向性

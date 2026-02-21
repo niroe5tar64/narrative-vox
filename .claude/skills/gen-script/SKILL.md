@@ -21,7 +21,7 @@ Episode Material JSON、コンテンツスタイル、キャスト、キャラ�
 ### Step 1: project config 読み込み
 
 1. `configs/projects/$0.json` を読み込む。
-2. `GENRE`, `STYLE_ID`, `CAST` フィールドを取得する。
+2. `GENRE_ID`, `STYLE_ID`, `CAST` フィールドを取得する。
 3. `EPISODE_ID` を `$1` で上書きする。
 
 ### Step 2: Material 読み込み
@@ -49,7 +49,7 @@ Episode Material JSON、コンテンツスタイル、キャスト、キャラ�
 
 ### Step 6: プロンプト構築
 
-1. `prompts/{GENRE}/script_common_frame.md` を読み込む。
+1. `prompts/{GENRE_ID}/script_common_frame.md` を読み込む。
 2. LLM に以下の情報を構造化して渡す:
    - **Material**: Episode Material JSON 全体
    - **Style**: コンテンツスタイル JSON 全体

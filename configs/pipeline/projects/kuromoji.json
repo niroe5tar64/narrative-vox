@@ -1,5 +1,5 @@
 {
-  "GENRE": "oss-dive",
+  "GENRE_ID": "oss-dive",
   "PROJECT_ID": "kuromoji",
   "PROJECT_TITLE": "Deep Dive: kuromoji.js",
   "REPO_ROOT_PATH": "data/inputs/repos/kuromoji",

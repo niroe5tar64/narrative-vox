@@ -19,7 +19,7 @@ description: "台本生成後にエピソード間一貫性のためのダイジ
 ### Step 1: project config 読み込み
 
 1. `configs/projects/$0.json` を読み込む。
-2. `GENRE`, `STYLE_ID`, `CAST` フィールドを取得する。
+2. `GENRE_ID`, `STYLE_ID`, `CAST` フィールドを取得する。
 3. `EPISODE_ID` を `$1` で上書きする。
 
 ### Step 2: 台本読み込み

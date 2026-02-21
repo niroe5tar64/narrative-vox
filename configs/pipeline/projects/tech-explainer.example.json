@@ -1,5 +1,5 @@
 {
-  "GENRE": "tech_explainer",
+  "GENRE_ID": "tech-explainer",
   "PROJECT_ID": "example-tech-explainer",
   "PROJECT_TITLE": "Tech Explainer: Example Tech Explainer",
   "SOURCE_MARKDOWN_PATHS": "data/inputs/books/introducing-rescript/source/*.md",

@@ -26,12 +26,15 @@ function isValidKey(key: string): boolean {
   return KEY_PATTERN.test(key);
 }
 
-async function listJsonFiles(dirRelPath: string): Promise<unknown[]> {
+async function listJsonFiles(
+  dirRelPath: string,
+  exclude?: (f: string) => boolean,
+): Promise<unknown[]> {
   const dirPath = join(config.repoRoot, dirRelPath);
   const files = await readdir(dirPath);
   const items = await Promise.all(
     files
-      .filter((f) => f.endsWith(".json") && !f.startsWith("."))
+      .filter((f) => f.endsWith(".json") && !f.startsWith(".") && !exclude?.(f))
       .sort()
       .map(async (f) => Bun.file(join(dirPath, f)).json()),
   );
@@ -169,7 +172,10 @@ configsRouter.delete("/characters/:key", async (c) => {
 
 configsRouter.get("/projects", async (c) => {
   try {
-    const items = await listJsonFiles("configs/pipeline/projects");
+    const items = await listJsonFiles(
+      "configs/pipeline/projects",
+      (f) => f.endsWith(".example.json"),
+    );
     return c.json({ items });
   } catch {
     return problem(c, { title: "Failed to list projects", status: STATUS_500 });
@@ -286,6 +292,17 @@ configsRouter.get("/styles/:id", async (c) => {
   } catch (e) {
     if (e instanceof SafePathError) return problem(c, { title: "Forbidden", status: STATUS_403 });
     return problem(c, { title: "Failed to read style", status: STATUS_500 });
+  }
+});
+
+// ===== Genres API (read-only) =====
+
+configsRouter.get("/genres", async (c) => {
+  try {
+    const items = await listJsonFiles("configs/content/genres");
+    return c.json({ items });
+  } catch {
+    return problem(c, { title: "Failed to list genres", status: STATUS_500 });
   }
 });
 

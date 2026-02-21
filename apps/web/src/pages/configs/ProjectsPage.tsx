@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2 } from "lucide-react";
 
-import { ApiError, api, type CharacterConfig, type ProjectConfig } from "@/api/client";
+import { ApiError, api, type CharacterConfig, type GenreConfig, type ProjectConfig } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ type CastRow = { role: string; charKey: string };
 type ProjForm = {
   PROJECT_ID: string;
   PROJECT_TITLE: string;
-  GENRE: string;
+  GENRE_ID: string;
   STYLE_ID: string;
   EPISODE_ID: string;
   SOURCE_MARKDOWN_PATHS: string;
@@ -28,6 +28,8 @@ type ProjForm = {
   BASELINE_CONTEXT_OR_EMPTY: string;
   EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: string;
   PROJECT_BLUEPRINT_JSON_PATH: string;
+  REPO_ROOT_PATH: string;
+  DEEP_DIVE_FOCUS: string;
   castRows: CastRow[];
   NOTES: string;
 };
@@ -35,7 +37,7 @@ type ProjForm = {
 const EMPTY_FORM: ProjForm = {
   PROJECT_ID: "",
   PROJECT_TITLE: "",
-  GENRE: "tech_explainer",
+  GENRE_ID: "",
   STYLE_ID: "",
   EPISODE_ID: "E01",
   SOURCE_MARKDOWN_PATHS: "",
@@ -45,6 +47,8 @@ const EMPTY_FORM: ProjForm = {
   BASELINE_CONTEXT_OR_EMPTY: "",
   EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: "",
   PROJECT_BLUEPRINT_JSON_PATH: "",
+  REPO_ROOT_PATH: "",
+  DEEP_DIVE_FOCUS: "",
   castRows: [],
   NOTES: "",
 };
@@ -53,7 +57,7 @@ function projToForm(p: ProjectConfig): ProjForm {
   return {
     PROJECT_ID: p.PROJECT_ID,
     PROJECT_TITLE: p.PROJECT_TITLE,
-    GENRE: p.GENRE,
+    GENRE_ID: p.GENRE_ID,
     STYLE_ID: p.STYLE_ID,
     EPISODE_ID: p.EPISODE_ID,
     SOURCE_MARKDOWN_PATHS: p.SOURCE_MARKDOWN_PATHS,
@@ -63,16 +67,18 @@ function projToForm(p: ProjectConfig): ProjForm {
     BASELINE_CONTEXT_OR_EMPTY: p.BASELINE_CONTEXT_OR_EMPTY,
     EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: p.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY,
     PROJECT_BLUEPRINT_JSON_PATH: p.PROJECT_BLUEPRINT_JSON_PATH,
+    REPO_ROOT_PATH: (p as unknown as Record<string, string>).REPO_ROOT_PATH ?? "",
+    DEEP_DIVE_FOCUS: (p as unknown as Record<string, string>).DEEP_DIVE_FOCUS ?? "",
     castRows: Object.entries(p.CAST).map(([role, charKey]) => ({ role, charKey })),
     NOTES: p.NOTES ?? "",
   };
 }
 
-function formToProj(f: ProjForm): ProjectConfig {
-  return {
+function formToProj(f: ProjForm, extraFields: string[]): ProjectConfig {
+  const base: ProjectConfig = {
     PROJECT_ID: f.PROJECT_ID,
     PROJECT_TITLE: f.PROJECT_TITLE,
-    GENRE: f.GENRE,
+    GENRE_ID: f.GENRE_ID,
     STYLE_ID: f.STYLE_ID,
     EPISODE_ID: f.EPISODE_ID,
     SOURCE_MARKDOWN_PATHS: f.SOURCE_MARKDOWN_PATHS,
@@ -87,20 +93,44 @@ function formToProj(f: ProjForm): ProjectConfig {
     ),
     ...(f.NOTES && { NOTES: f.NOTES }),
   };
+  const extra = base as unknown as Record<string, string>;
+  if (extraFields.includes("REPO_ROOT_PATH") && f.REPO_ROOT_PATH) {
+    extra.REPO_ROOT_PATH = f.REPO_ROOT_PATH;
+  }
+  if (extraFields.includes("DEEP_DIVE_FOCUS") && f.DEEP_DIVE_FOCUS) {
+    extra.DEEP_DIVE_FOCUS = f.DEEP_DIVE_FOCUS;
+  }
+  return base;
 }
 
 // ===== Field row helper =====
 
+const selectClass =
+  "h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60";
+
+function Required() {
+  return <span className="ml-0.5 text-red-500">*</span>;
+}
+
+function Optional() {
+  return <span className="ml-1 text-xs text-slate-400">(任意)</span>;
+}
+
 function Field({
   label,
+  required,
   children,
 }: {
   label: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {required ? <Required /> : <Optional />}
+      </Label>
       {children}
     </div>
   );
@@ -133,11 +163,28 @@ export function ProjectsPage() {
     queryFn: () => api.characters.list(),
   });
 
+  const { data: genresData } = useQuery({
+    queryKey: ["genres"],
+    queryFn: () => api.genres.list(),
+  });
+
+  const { data: stylesData } = useQuery({
+    queryKey: ["styles"],
+    queryFn: () => api.styles.list(),
+  });
+
+  const genres = genresData?.items ?? [];
+  const styles = stylesData?.items ?? [];
   const charKeys = (chars?.items as CharacterConfig[] | undefined)?.map((c) => c.key) ?? [];
+
+  // Determine extra_fields for the currently selected genre
+  const selectedGenre = genres.find((g) => g.genre_id === form.GENRE_ID) as GenreConfig | undefined;
+  const extraFields = selectedGenre?.extra_fields ?? [];
+  const showOssDiveFields = extraFields.includes("REPO_ROOT_PATH") || extraFields.includes("DEEP_DIVE_FOCUS");
 
   const saveMutation = useMutation({
     mutationFn: (f: ProjForm) => {
-      const data = formToProj(f);
+      const data = formToProj(f, extraFields);
       return isNew ? api.projects.create(data) : api.projects.update(f.PROJECT_ID, data);
     },
     onSuccess: (_, f) => {
@@ -193,6 +240,11 @@ export function ProjectsPage() {
 
   function patch(p: Partial<ProjForm>) {
     setForm((f) => ({ ...f, ...p }));
+  }
+
+  function changeGenre(genreId: string) {
+    // Clear extra fields that may no longer apply
+    patch({ GENRE_ID: genreId, REPO_ROOT_PATH: "", DEEP_DIVE_FOCUS: "" });
   }
 
   function addCastRow() {
@@ -261,7 +313,7 @@ export function ProjectsPage() {
             {isNew ? "New Project" : `Edit: ${selected}`}
           </h3>
           <div className="max-w-lg space-y-4">
-            <Field label="PROJECT_ID">
+            <Field label="PROJECT_ID" required>
               <Input
                 value={form.PROJECT_ID}
                 onChange={(e) => patch({ PROJECT_ID: e.target.value })}
@@ -271,7 +323,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="PROJECT_TITLE">
+            <Field label="PROJECT_TITLE" required>
               <Input
                 value={form.PROJECT_TITLE}
                 onChange={(e) => patch({ PROJECT_TITLE: e.target.value })}
@@ -280,23 +332,53 @@ export function ProjectsPage() {
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="GENRE">
-                <Input
-                  value={form.GENRE}
-                  onChange={(e) => patch({ GENRE: e.target.value })}
-                  placeholder="e.g. tech_explainer"
-                />
+              <Field label="GENRE_ID" required>
+                {genres.length > 0 ? (
+                  <select
+                    className={selectClass}
+                    value={form.GENRE_ID}
+                    onChange={(e) => changeGenre(e.target.value)}
+                  >
+                    <option value="">-- 選択 --</option>
+                    {genres.map((g) => (
+                      <option key={g.genre_id} value={g.genre_id}>
+                        {g.genre_id}: {g.genre_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    value={form.GENRE_ID}
+                    onChange={(e) => patch({ GENRE_ID: e.target.value })}
+                    placeholder="e.g. tech-explainer"
+                  />
+                )}
               </Field>
-              <Field label="STYLE_ID">
-                <Input
-                  value={form.STYLE_ID}
-                  onChange={(e) => patch({ STYLE_ID: e.target.value })}
-                  placeholder="e.g. radio-talk"
-                />
+              <Field label="STYLE_ID" required>
+                {styles.length > 0 ? (
+                  <select
+                    className={selectClass}
+                    value={form.STYLE_ID}
+                    onChange={(e) => patch({ STYLE_ID: e.target.value })}
+                  >
+                    <option value="">-- 選択 --</option>
+                    {styles.map((s) => (
+                      <option key={s.style_id} value={s.style_id}>
+                        {s.style_id}: {s.style_name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    value={form.STYLE_ID}
+                    onChange={(e) => patch({ STYLE_ID: e.target.value })}
+                    placeholder="e.g. radio-talk"
+                  />
+                )}
               </Field>
             </div>
 
-            <Field label="EPISODE_ID">
+            <Field label="EPISODE_ID" required>
               <Input
                 value={form.EPISODE_ID}
                 onChange={(e) => patch({ EPISODE_ID: e.target.value })}
@@ -304,7 +386,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="SOURCE_MARKDOWN_PATHS">
+            <Field label="SOURCE_MARKDOWN_PATHS" required>
               <Input
                 value={form.SOURCE_MARKDOWN_PATHS}
                 onChange={(e) => patch({ SOURCE_MARKDOWN_PATHS: e.target.value })}
@@ -312,7 +394,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="AUDIENCE_BACKGROUND">
+            <Field label="AUDIENCE_BACKGROUND" required>
               <Textarea
                 value={form.AUDIENCE_BACKGROUND}
                 onChange={(e) => patch({ AUDIENCE_BACKGROUND: e.target.value })}
@@ -321,7 +403,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="AUDIENCE_LEVEL">
+            <Field label="AUDIENCE_LEVEL" required>
               <Input
                 value={form.AUDIENCE_LEVEL}
                 onChange={(e) => patch({ AUDIENCE_LEVEL: e.target.value })}
@@ -329,7 +411,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="AUDIENCE_INTEREST">
+            <Field label="AUDIENCE_INTEREST" required>
               <Textarea
                 value={form.AUDIENCE_INTEREST}
                 onChange={(e) => patch({ AUDIENCE_INTEREST: e.target.value })}
@@ -337,6 +419,28 @@ export function ProjectsPage() {
                 placeholder="読者の関心事"
               />
             </Field>
+
+            {/* OSS Dive specific fields */}
+            {showOssDiveFields && (
+              <>
+                <Field label="REPO_ROOT_PATH" required>
+                  <Input
+                    value={form.REPO_ROOT_PATH}
+                    onChange={(e) => patch({ REPO_ROOT_PATH: e.target.value })}
+                    placeholder="data/inputs/repos/my-project"
+                  />
+                </Field>
+
+                <Field label="DEEP_DIVE_FOCUS" required>
+                  <Textarea
+                    value={form.DEEP_DIVE_FOCUS}
+                    onChange={(e) => patch({ DEEP_DIVE_FOCUS: e.target.value })}
+                    rows={2}
+                    placeholder="アーキテクチャと設計思想"
+                  />
+                </Field>
+              </>
+            )}
 
             <Field label="BASELINE_CONTEXT_OR_EMPTY">
               <Input
