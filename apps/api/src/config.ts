@@ -9,4 +9,6 @@ export const config = {
   repoRoot: process.env.REPO_ROOT
     ? resolve(process.env.REPO_ROOT)
     : resolve(process.cwd()),
+  /** VOICEVOX EngineのベースURL。 */
+  voicevoxUrl: process.env.VOICEVOX_URL ?? "http://localhost:50021",
 };

@@ -36,6 +36,8 @@ export const STATUS_415 = 415 as const;
 export const STATUS_422 = 422 as const;
 /** HTTP 500 Internal Server Error */
 export const STATUS_500 = 500 as const;
+/** HTTP 503 Service Unavailable */
+export const STATUS_503 = 503 as const;
 
 /**
  * RFC7807形式のエラーレスポンスを返す。

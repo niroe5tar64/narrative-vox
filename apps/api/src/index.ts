@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { config } from "./config.ts";
 import { requestIdMiddleware } from "./middleware/request-id.ts";
 import type { AppVariables } from "./types.ts";
+import { configsRouter } from "./routes/configs.ts";
+import { voicevoxProxyRouter } from "./routes/voicevox-proxy.ts";
 
 const app = new Hono<{ Variables: AppVariables }>();
 
@@ -21,6 +23,9 @@ if (config.allowedOrigin) {
     }),
   );
 }
+
+app.route("/api/configs", configsRouter);
+app.route("/api/voicevox", voicevoxProxyRouter);
 
 app.get("/api/health", (c) => {
   return c.json({
