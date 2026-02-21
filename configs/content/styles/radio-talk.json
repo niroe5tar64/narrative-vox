@@ -1,6 +1,6 @@
 {
   "style_id": "radio-talk",
-  "style_name": "ラジオトーク形式",
+  "style_name": "ラジオ形式",
   "description": "二人の掛け合いで技術トピックを解説する対話形式",
   "format": {
     "speaker_mode": "dialogue",

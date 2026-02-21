@@ -348,7 +348,7 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="GENRE_ID" required>
+            <Field label="GENRE" required>
               {genres.length > 0 ? (
                 <select
                   className={selectClass}
@@ -358,7 +358,7 @@ export function ProjectsPage() {
                   <option value="">-- 選択 --</option>
                   {genres.map((g) => (
                     <option key={g.genre_id} value={g.genre_id}>
-                      {g.genre_id}: {g.genre_name}
+                      {g.genre_name} ({g.genre_id})
                     </option>
                   ))}
                 </select>
@@ -393,7 +393,7 @@ export function ProjectsPage() {
               </>
             )}
 
-            <Field label="STYLE_ID" required>
+            <Field label="STYLE" required>
               {styles.length > 0 ? (
                 <select
                   className={selectClass}
@@ -403,7 +403,7 @@ export function ProjectsPage() {
                   <option value="">-- 選択 --</option>
                   {styles.map((s) => (
                     <option key={s.style_id} value={s.style_id}>
-                      {s.style_id}: {s.style_name}
+                      {s.style_name} ({s.style_id})
                     </option>
                   ))}
                 </select>
