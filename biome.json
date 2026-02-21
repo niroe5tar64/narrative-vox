@@ -11,7 +11,9 @@
     "ignoreUnknown": true,
     "includes": [
       "**/*.ts",
+      "**/*.tsx",
       "**/*.js",
+      "**/*.jsx",
       "!!**/node_modules/"
     ]
   },
