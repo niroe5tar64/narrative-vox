@@ -1,7 +1,7 @@
 {
   "GENRE": "tech_explainer",
-  "PROJECT_ID": "introducing-rescript",
-  "PROJECT_TITLE": "Introducing ReScript: Functional Programming for Web Applications",
+  "PROJECT_ID": "example-tech-explainer",
+  "PROJECT_TITLE": "Tech Explainer: Example Tech Explainer",
   "SOURCE_MARKDOWN_PATHS": "data/inputs/books/introducing-rescript/source/*.md",
   "AUDIENCE_BACKGROUND": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
   "AUDIENCE_LEVEL": "ReScript初学者〜中級手前",
