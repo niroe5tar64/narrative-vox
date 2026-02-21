@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { cn } from "@/lib/utils";
 
 // ===== Form state =====
@@ -112,8 +113,15 @@ export function ProjectsPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<ProjForm>(EMPTY_FORM);
+  const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const isDirty = isNew
+    ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
+    : savedFormStr !== null && JSON.stringify(form) !== savedFormStr;
+
+  useDirtyGuard(isDirty);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
@@ -132,11 +140,15 @@ export function ProjectsPage() {
       const data = formToProj(f);
       return isNew ? api.projects.create(data) : api.projects.update(f.PROJECT_ID, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, f) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
       setError(null);
       setSuccess(true);
-      if (isNew) setIsNew(false);
+      setSavedFormStr(JSON.stringify(f));
+      if (isNew) {
+        setIsNew(false);
+        setSelected(f.PROJECT_ID);
+      }
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -151,6 +163,7 @@ export function ProjectsPage() {
       setSelected(null);
       setIsNew(false);
       setForm(EMPTY_FORM);
+      setSavedFormStr(null);
     },
     onError: (e) => {
       setError(e instanceof ApiError ? e.title : String(e));
@@ -158,17 +171,22 @@ export function ProjectsPage() {
   });
 
   function selectProject(p: ProjectConfig) {
+    if (isDirty && !window.confirm("未保存の変更があります。変更を破棄しますか？")) return;
+    const f = projToForm(p);
     setSelected(p.PROJECT_ID);
     setIsNew(false);
-    setForm(projToForm(p));
+    setForm(f);
+    setSavedFormStr(JSON.stringify(f));
     setError(null);
     setSuccess(false);
   }
 
   function startNew() {
+    if (isDirty && !window.confirm("未保存の変更があります。変更を破棄しますか？")) return;
     setSelected(null);
     setIsNew(true);
     setForm(EMPTY_FORM);
+    setSavedFormStr(null);
     setError(null);
     setSuccess(false);
   }

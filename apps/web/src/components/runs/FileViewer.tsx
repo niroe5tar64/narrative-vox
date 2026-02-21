@@ -31,13 +31,14 @@ type Props = {
   projectId: string;
   runId: string;
   filePath: string;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 // ---------------------------------------------------------------------------
 // FileViewer
 // ---------------------------------------------------------------------------
 
-export function FileViewer({ projectId, runId, filePath }: Props) {
+export function FileViewer({ projectId, runId, filePath, onDirtyChange }: Props) {
   const fileType = detectFileType(filePath);
   const [openError, setOpenError] = useState<string | null>(null);
 
@@ -106,6 +107,7 @@ export function FileViewer({ projectId, runId, filePath }: Props) {
             projectId={projectId}
             runId={runId}
             filePath={filePath}
+            onDirtyChange={onDirtyChange}
           />
         ) : null}
       </div>
@@ -124,6 +126,7 @@ type FileContentProps = {
   projectId: string;
   runId: string;
   filePath: string;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 function FileContent({
@@ -133,6 +136,7 @@ function FileContent({
   projectId,
   runId,
   filePath,
+  onDirtyChange,
 }: FileContentProps) {
   if (fileType === "voicevox_text") {
     try {
@@ -144,6 +148,7 @@ function FileContent({
           projectId={projectId}
           runId={runId}
           filePath={filePath}
+          onDirtyChange={onDirtyChange}
         />
       );
     } catch {

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { cn } from "@/lib/utils";
 
 // ===== Form state types =====
@@ -120,11 +121,18 @@ export function CharactersPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<CharForm>(EMPTY_FORM);
+  const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [originalProfile, setOriginalProfile] = useState<Record<string, unknown> | undefined>(
     undefined,
   );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const isDirty = isNew
+    ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
+    : savedFormStr !== null && JSON.stringify(form) !== savedFormStr;
+
+  useDirtyGuard(isDirty);
 
   const { data: chars, isLoading } = useQuery({
     queryKey: ["characters"],
@@ -150,11 +158,15 @@ export function CharactersPage() {
       const data = formToChar(f, originalProfile);
       return isNew ? api.characters.create(data) : api.characters.update(f.key, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, f) => {
       qc.invalidateQueries({ queryKey: ["characters"] });
       setError(null);
       setSuccess(true);
-      if (isNew) setIsNew(false);
+      setSavedFormStr(JSON.stringify(f));
+      if (isNew) {
+        setIsNew(false);
+        setSelected(f.key);
+      }
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -169,6 +181,7 @@ export function CharactersPage() {
       setSelected(null);
       setIsNew(false);
       setForm(EMPTY_FORM);
+      setSavedFormStr(null);
     },
     onError: (e) => {
       setError(e instanceof ApiError ? e.title : String(e));
@@ -176,18 +189,23 @@ export function CharactersPage() {
   });
 
   function selectChar(c: CharacterConfig) {
+    if (isDirty && !window.confirm("未保存の変更があります。変更を破棄しますか？")) return;
+    const f = charToForm(c);
     setSelected(c.key);
     setIsNew(false);
-    setForm(charToForm(c));
+    setForm(f);
+    setSavedFormStr(JSON.stringify(f));
     setOriginalProfile(c.profile);
     setError(null);
     setSuccess(false);
   }
 
   function startNew() {
+    if (isDirty && !window.confirm("未保存の変更があります。変更を破棄しますか？")) return;
     setSelected(null);
     setIsNew(true);
     setForm(EMPTY_FORM);
+    setSavedFormStr(null);
     setOriginalProfile(undefined);
     setError(null);
     setSuccess(false);

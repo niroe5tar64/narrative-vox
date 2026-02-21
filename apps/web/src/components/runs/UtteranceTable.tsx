@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 
@@ -14,9 +14,10 @@ type Props = {
   projectId: string;
   runId: string;
   filePath: string;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function UtteranceTable({ data, etag, projectId, runId, filePath }: Props) {
+export function UtteranceTable({ data, etag, projectId, runId, filePath, onDirtyChange }: Props) {
   const [rows, setRows] = useState<EditRow[]>(
     data.utterances.map((u) => ({ ...u, _modified: false })),
   );
@@ -25,6 +26,10 @@ export function UtteranceTable({ data, etag, projectId, runId, filePath }: Props
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const hasChanges = rows.some((r) => r._modified);
+
+  useEffect(() => {
+    onDirtyChange?.(hasChanges);
+  }, [hasChanges, onDirtyChange]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {

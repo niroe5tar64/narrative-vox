@@ -6,14 +6,16 @@ import { ApiError, api, type ReadingDictionary, type UserDict, type UserDictWord
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 
 const WORD_TYPES = ["PROPER_NOUN", "COMMON_NOUN", "VERB", "ADJECTIVE", "SUFFIX"] as const;
 
 // ===== Reading Dictionary =====
 
-function ReadingDictionarySection() {
+function ReadingDictionarySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<ReadingDictionary | null>(null);
+  const [savedStr, setSavedStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -23,8 +25,16 @@ function ReadingDictionarySection() {
   });
 
   useEffect(() => {
-    if (data) setLocal(data as ReadingDictionary);
+    if (data) {
+      setLocal(data as ReadingDictionary);
+      setSavedStr(JSON.stringify(data));
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (savedStr === null || local === null) return;
+    onDirtyChange(JSON.stringify(local) !== savedStr);
+  }, [local, savedStr]); // onDirtyChange は安定した参照を親から受け取る
 
   const saveMutation = useMutation({
     mutationFn: () => api.voicevox.putConfig("reading-dictionary", local),
@@ -32,6 +42,8 @@ function ReadingDictionarySection() {
       qc.invalidateQueries({ queryKey: ["voicevox-config", "reading-dictionary"] });
       setError(null);
       setSuccess(true);
+      setSavedStr(JSON.stringify(local));
+      onDirtyChange(false);
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -131,9 +143,10 @@ function ReadingDictionarySection() {
 
 // ===== User Dictionary =====
 
-function UserDictSection() {
+function UserDictSection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<UserDict | null>(null);
+  const [savedStr, setSavedStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -143,8 +156,16 @@ function UserDictSection() {
   });
 
   useEffect(() => {
-    if (data) setLocal(data as UserDict);
+    if (data) {
+      setLocal(data as UserDict);
+      setSavedStr(JSON.stringify(data));
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (savedStr === null || local === null) return;
+    onDirtyChange(JSON.stringify(local) !== savedStr);
+  }, [local, savedStr]); // onDirtyChange は安定した参照を親から受け取る
 
   const saveMutation = useMutation({
     mutationFn: () => api.voicevox.putConfig("user-dict", local),
@@ -152,6 +173,8 @@ function UserDictSection() {
       qc.invalidateQueries({ queryKey: ["voicevox-config", "user-dict"] });
       setError(null);
       setSuccess(true);
+      setSavedStr(JSON.stringify(local));
+      onDirtyChange(false);
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -293,13 +316,17 @@ function UserDictSection() {
 // ===== Main page =====
 
 export function DictionariesPage() {
+  const [readingDirty, setReadingDirty] = useState(false);
+  const [userDirty, setUserDirty] = useState(false);
+  useDirtyGuard(readingDirty || userDirty);
+
   return (
     <div className="space-y-5">
       <h2 className="text-lg font-bold tracking-tight">Dictionaries</h2>
       <div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur space-y-8">
-        <ReadingDictionarySection />
+        <ReadingDictionarySection onDirtyChange={setReadingDirty} />
         <hr className="border-slate-200" />
-        <UserDictSection />
+        <UserDictSection onDirtyChange={setUserDirty} />
       </div>
     </div>
   );

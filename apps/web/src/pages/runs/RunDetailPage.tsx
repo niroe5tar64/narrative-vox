@@ -10,6 +10,7 @@ import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { RunFileTree } from "@/components/runs/RunFileTree";
 import { FileViewer } from "@/components/runs/FileViewer";
 import { usePipelineLog } from "@/hooks/usePipelineLog";
+import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 
 export function RunDetailPage() {
   const { projectId, runId } = useParams<{ projectId: string; runId: string }>();
@@ -18,6 +19,9 @@ export function RunDetailPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobCommand, setJobCommand] = useState<string | null>(null);
   const [pipelineError, setPipelineError] = useState<string | null>(null);
+  const [fileViewerDirty, setFileViewerDirty] = useState(false);
+
+  useDirtyGuard(fileViewerDirty);
 
   const { logs, status: pipelineStatus, reset } = usePipelineLog(jobId);
 
@@ -143,7 +147,12 @@ export function RunDetailPage() {
         {/* Right: File Viewer */}
         <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur overflow-hidden flex flex-col">
           {selectedFile ? (
-            <FileViewer projectId={projectId!} runId={runId!} filePath={selectedFile} />
+            <FileViewer
+              projectId={projectId!}
+              runId={runId!}
+              filePath={selectedFile}
+              onDirtyChange={setFileViewerDirty}
+            />
           ) : (
             <div className="flex items-center justify-center h-48 text-sm text-slate-400">
               ← ファイルを選択してください

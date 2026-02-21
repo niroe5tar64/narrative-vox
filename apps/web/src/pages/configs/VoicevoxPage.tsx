@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { cn } from "@/lib/utils";
 
 type Tab = "synthesis-defaults" | "build-text-config" | "speed-profiles";
@@ -64,9 +65,16 @@ function NumberField({
   );
 }
 
-function SynthesisDefaultsEditor({ configName }: { configName: "synthesis-defaults" }) {
+function SynthesisDefaultsEditor({
+  configName,
+  onDirtyChange,
+}: {
+  configName: "synthesis-defaults";
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<SynthesisDefaults | null>(null);
+  const [savedStr, setSavedStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -76,8 +84,16 @@ function SynthesisDefaultsEditor({ configName }: { configName: "synthesis-defaul
   });
 
   useEffect(() => {
-    if (data) setLocal(data as SynthesisDefaults);
+    if (data) {
+      setLocal(data as SynthesisDefaults);
+      setSavedStr(JSON.stringify(data));
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (savedStr === null || local === null) return;
+    onDirtyChange(JSON.stringify(local) !== savedStr);
+  }, [local, savedStr]); // onDirtyChange は安定した参照を親から受け取る
 
   const saveMutation = useMutation({
     mutationFn: () => api.voicevox.putConfig(configName, local),
@@ -85,6 +101,8 @@ function SynthesisDefaultsEditor({ configName }: { configName: "synthesis-defaul
       qc.invalidateQueries({ queryKey: ["voicevox-config", configName] });
       setError(null);
       setSuccess(true);
+      setSavedStr(JSON.stringify(local));
+      onDirtyChange(false);
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -227,9 +245,16 @@ function SynthesisDefaultsEditor({ configName }: { configName: "synthesis-defaul
 
 // ===== JSON textarea editor (build-text-config) =====
 
-function JsonEditor({ configName }: { configName: string }) {
+function JsonEditor({
+  configName,
+  onDirtyChange,
+}: {
+  configName: string;
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const [savedStr, setSavedStr] = useState<string | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -240,8 +265,17 @@ function JsonEditor({ configName }: { configName: string }) {
   });
 
   useEffect(() => {
-    if (data !== undefined) setText(JSON.stringify(data, null, 2));
+    if (data !== undefined) {
+      const str = JSON.stringify(data, null, 2);
+      setText(str);
+      setSavedStr(str);
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (savedStr === null) return;
+    onDirtyChange(text !== savedStr);
+  }, [text, savedStr]); // onDirtyChange は安定した参照を親から受け取る
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -257,6 +291,8 @@ function JsonEditor({ configName }: { configName: string }) {
       qc.invalidateQueries({ queryKey: ["voicevox-config", configName] });
       setError(null);
       setSuccess(true);
+      setSavedStr(text);
+      onDirtyChange(false);
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -300,9 +336,16 @@ function JsonEditor({ configName }: { configName: string }) {
 type SpeedPreset = { speedScale: number; pauseLengthScale: number; postPhonemeLength: number };
 type SpeedProfiles = { version: number; presets: Record<string, SpeedPreset> };
 
-function SpeedProfilesEditor({ configName }: { configName: "speed-profiles" }) {
+function SpeedProfilesEditor({
+  configName,
+  onDirtyChange,
+}: {
+  configName: "speed-profiles";
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const qc = useQueryClient();
   const [local, setLocal] = useState<SpeedProfiles | null>(null);
+  const [savedStr, setSavedStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -312,8 +355,16 @@ function SpeedProfilesEditor({ configName }: { configName: "speed-profiles" }) {
   });
 
   useEffect(() => {
-    if (data) setLocal(data as SpeedProfiles);
+    if (data) {
+      setLocal(data as SpeedProfiles);
+      setSavedStr(JSON.stringify(data));
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (savedStr === null || local === null) return;
+    onDirtyChange(JSON.stringify(local) !== savedStr);
+  }, [local, savedStr]); // onDirtyChange は安定した参照を親から受け取る
 
   const saveMutation = useMutation({
     mutationFn: () => api.voicevox.putConfig(configName, local),
@@ -321,6 +372,8 @@ function SpeedProfilesEditor({ configName }: { configName: "speed-profiles" }) {
       qc.invalidateQueries({ queryKey: ["voicevox-config", configName] });
       setError(null);
       setSuccess(true);
+      setSavedStr(JSON.stringify(local));
+      onDirtyChange(false);
       setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
@@ -381,6 +434,19 @@ function SpeedProfilesEditor({ configName }: { configName: "speed-profiles" }) {
 
 export function VoicevoxPage() {
   const [tab, setTab] = useState<Tab>("synthesis-defaults");
+  const [dirtyEditors, setDirtyEditors] = useState<Partial<Record<Tab, boolean>>>({});
+
+  const isDirty = Object.values(dirtyEditors).some(Boolean);
+  useDirtyGuard(isDirty);
+
+  const handleDirtyChange = useCallback((editorTab: Tab, dirty: boolean) => {
+    setDirtyEditors((prev) => ({ ...prev, [editorTab]: dirty }));
+  }, []);
+
+  function switchTab(t: Tab) {
+    if (dirtyEditors[tab] && !window.confirm("未保存の変更があります。タブを切り替えますか？")) return;
+    setTab(t);
+  }
 
   return (
     <div className="space-y-5">
@@ -392,7 +458,7 @@ export function VoicevoxPage() {
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => switchTab(t.id)}
             className={cn(
               "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
               tab === t.id
@@ -401,6 +467,9 @@ export function VoicevoxPage() {
             )}
           >
             {t.label}
+            {dirtyEditors[t.id] && (
+              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+            )}
           </button>
         ))}
       </div>
@@ -408,10 +477,23 @@ export function VoicevoxPage() {
       {/* Tab content */}
       <div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">
         {tab === "synthesis-defaults" && (
-          <SynthesisDefaultsEditor configName="synthesis-defaults" />
+          <SynthesisDefaultsEditor
+            configName="synthesis-defaults"
+            onDirtyChange={(d) => handleDirtyChange("synthesis-defaults", d)}
+          />
         )}
-        {tab === "build-text-config" && <JsonEditor configName="build-text-config" />}
-        {tab === "speed-profiles" && <SpeedProfilesEditor configName="speed-profiles" />}
+        {tab === "build-text-config" && (
+          <JsonEditor
+            configName="build-text-config"
+            onDirtyChange={(d) => handleDirtyChange("build-text-config", d)}
+          />
+        )}
+        {tab === "speed-profiles" && (
+          <SpeedProfilesEditor
+            configName="speed-profiles"
+            onDirtyChange={(d) => handleDirtyChange("speed-profiles", d)}
+          />
+        )}
       </div>
     </div>
   );
