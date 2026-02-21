@@ -1,6 +1,11 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { CharactersPage } from "@/pages/configs/CharactersPage";
+import { DictionariesPage } from "@/pages/configs/DictionariesPage";
+import { ProjectsPage } from "@/pages/configs/ProjectsPage";
+import { StylesPage } from "@/pages/configs/StylesPage";
+import { VoicevoxPage } from "@/pages/configs/VoicevoxPage";
 import { PagePlaceholder } from "@/pages/page-placeholder";
 
 const router = createBrowserRouter([
@@ -11,53 +16,23 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate replace to="/configs/content/characters" /> },
       {
         path: "configs/content/characters",
-        element: (
-          <PagePlaceholder
-            path="/configs/content/characters"
-            title="Characters"
-            description="キャラクター定義と音声スタイル設定の編集ページ。"
-          />
-        ),
+        element: <CharactersPage />,
       },
       {
         path: "configs/pipeline/projects",
-        element: (
-          <PagePlaceholder
-            path="/configs/pipeline/projects"
-            title="Projects"
-            description="プロジェクト設定とエピソード管理の編集ページ。"
-          />
-        ),
+        element: <ProjectsPage />,
       },
       {
         path: "configs/content/styles",
-        element: (
-          <PagePlaceholder
-            path="/configs/content/styles"
-            title="Styles"
-            description="スタイル一覧の閲覧ページ。"
-          />
-        ),
+        element: <StylesPage />,
       },
       {
         path: "configs/voice/voicevox",
-        element: (
-          <PagePlaceholder
-            path="/configs/voice/voicevox"
-            title="VOICEVOX Config"
-            description="synthesis defaults、speed profile などを編集するページ。"
-          />
-        ),
+        element: <VoicevoxPage />,
       },
       {
         path: "configs/dictionaries",
-        element: (
-          <PagePlaceholder
-            path="/configs/dictionaries"
-            title="Dictionaries"
-            description="reading dictionary と user dictionary を管理するページ。"
-          />
-        ),
+        element: <DictionariesPage />,
       },
       {
         path: "pipeline",
