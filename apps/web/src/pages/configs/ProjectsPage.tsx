@@ -425,15 +425,10 @@ export function ProjectsPage() {
                 <div className="space-y-2">
                   {form.castRows.map((row, i) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: static order
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={row.role}
-                        readOnly
-                        className="w-32 bg-slate-50 text-slate-500"
-                      />
+                    <Field key={i} label={row.role} required>
                       {charKeys.length > 0 ? (
                         <select
-                          className="h-9 flex-1 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                          className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
                           value={row.charKey}
                           onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
                         >
@@ -448,10 +443,9 @@ export function ProjectsPage() {
                           value={row.charKey}
                           onChange={(e) => updateCastRow(i, { charKey: e.target.value })}
                           placeholder="character key"
-                          className="flex-1"
                         />
                       )}
-                    </div>
+                    </Field>
                   ))}
                 </div>
               </fieldset>
