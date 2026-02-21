@@ -332,53 +332,6 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="GENRE_ID" required>
-                {genres.length > 0 ? (
-                  <select
-                    className={selectClass}
-                    value={form.GENRE_ID}
-                    onChange={(e) => changeGenre(e.target.value)}
-                  >
-                    <option value="">-- 選択 --</option>
-                    {genres.map((g) => (
-                      <option key={g.genre_id} value={g.genre_id}>
-                        {g.genre_id}: {g.genre_name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Input
-                    value={form.GENRE_ID}
-                    onChange={(e) => patch({ GENRE_ID: e.target.value })}
-                    placeholder="e.g. tech-explainer"
-                  />
-                )}
-              </Field>
-              <Field label="STYLE_ID" required>
-                {styles.length > 0 ? (
-                  <select
-                    className={selectClass}
-                    value={form.STYLE_ID}
-                    onChange={(e) => changeStyle(e.target.value)}
-                  >
-                    <option value="">-- 選択 --</option>
-                    {styles.map((s) => (
-                      <option key={s.style_id} value={s.style_id}>
-                        {s.style_id}: {s.style_name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Input
-                    value={form.STYLE_ID}
-                    onChange={(e) => patch({ STYLE_ID: e.target.value })}
-                    placeholder="e.g. radio-talk"
-                  />
-                )}
-              </Field>
-            </div>
-
             <Field label="EPISODE_ID" required>
               <Input
                 value={form.EPISODE_ID}
@@ -395,30 +348,27 @@ export function ProjectsPage() {
               />
             </Field>
 
-            <Field label="AUDIENCE_BACKGROUND" required>
-              <Textarea
-                value={form.AUDIENCE_BACKGROUND}
-                onChange={(e) => patch({ AUDIENCE_BACKGROUND: e.target.value })}
-                rows={2}
-                placeholder="想定読者の背景知識"
-              />
-            </Field>
-
-            <Field label="AUDIENCE_LEVEL" required>
-              <Input
-                value={form.AUDIENCE_LEVEL}
-                onChange={(e) => patch({ AUDIENCE_LEVEL: e.target.value })}
-                placeholder="e.g. 初学者〜中級"
-              />
-            </Field>
-
-            <Field label="AUDIENCE_INTEREST" required>
-              <Textarea
-                value={form.AUDIENCE_INTEREST}
-                onChange={(e) => patch({ AUDIENCE_INTEREST: e.target.value })}
-                rows={2}
-                placeholder="読者の関心事"
-              />
+            <Field label="GENRE_ID" required>
+              {genres.length > 0 ? (
+                <select
+                  className={selectClass}
+                  value={form.GENRE_ID}
+                  onChange={(e) => changeGenre(e.target.value)}
+                >
+                  <option value="">-- 選択 --</option>
+                  {genres.map((g) => (
+                    <option key={g.genre_id} value={g.genre_id}>
+                      {g.genre_id}: {g.genre_name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  value={form.GENRE_ID}
+                  onChange={(e) => patch({ GENRE_ID: e.target.value })}
+                  placeholder="e.g. tech-explainer"
+                />
+              )}
             </Field>
 
             {/* OSS Dive specific fields */}
@@ -443,28 +393,27 @@ export function ProjectsPage() {
               </>
             )}
 
-            <Field label="BASELINE_CONTEXT_OR_EMPTY">
-              <Input
-                value={form.BASELINE_CONTEXT_OR_EMPTY}
-                onChange={(e) => patch({ BASELINE_CONTEXT_OR_EMPTY: e.target.value })}
-                placeholder="前提知識（なければ空欄）"
-              />
-            </Field>
-
-            <Field label="EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY">
-              <Input
-                value={form.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}
-                onChange={(e) => patch({ EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: e.target.value })}
-                placeholder="既存台本ディレクトリ（なければ空欄）"
-              />
-            </Field>
-
-            <Field label="PROJECT_BLUEPRINT_JSON_PATH">
-              <Input
-                value={form.PROJECT_BLUEPRINT_JSON_PATH}
-                onChange={(e) => patch({ PROJECT_BLUEPRINT_JSON_PATH: e.target.value })}
-                placeholder="data/projects/.../blueprint/..."
-              />
+            <Field label="STYLE_ID" required>
+              {styles.length > 0 ? (
+                <select
+                  className={selectClass}
+                  value={form.STYLE_ID}
+                  onChange={(e) => changeStyle(e.target.value)}
+                >
+                  <option value="">-- 選択 --</option>
+                  {styles.map((s) => (
+                    <option key={s.style_id} value={s.style_id}>
+                      {s.style_id}: {s.style_name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  value={form.STYLE_ID}
+                  onChange={(e) => patch({ STYLE_ID: e.target.value })}
+                  placeholder="e.g. radio-talk"
+                />
+              )}
             </Field>
 
             {/* CAST — STYLE_ID 選択後のみ表示 */}
@@ -507,6 +456,56 @@ export function ProjectsPage() {
                 </div>
               </fieldset>
             )}
+
+            <Field label="AUDIENCE_BACKGROUND" required>
+              <Textarea
+                value={form.AUDIENCE_BACKGROUND}
+                onChange={(e) => patch({ AUDIENCE_BACKGROUND: e.target.value })}
+                rows={2}
+                placeholder="想定読者の背景知識"
+              />
+            </Field>
+
+            <Field label="AUDIENCE_LEVEL" required>
+              <Input
+                value={form.AUDIENCE_LEVEL}
+                onChange={(e) => patch({ AUDIENCE_LEVEL: e.target.value })}
+                placeholder="e.g. 初学者〜中級"
+              />
+            </Field>
+
+            <Field label="AUDIENCE_INTEREST" required>
+              <Textarea
+                value={form.AUDIENCE_INTEREST}
+                onChange={(e) => patch({ AUDIENCE_INTEREST: e.target.value })}
+                rows={2}
+                placeholder="読者の関心事"
+              />
+            </Field>
+
+            <Field label="BASELINE_CONTEXT_OR_EMPTY">
+              <Input
+                value={form.BASELINE_CONTEXT_OR_EMPTY}
+                onChange={(e) => patch({ BASELINE_CONTEXT_OR_EMPTY: e.target.value })}
+                placeholder="前提知識（なければ空欄）"
+              />
+            </Field>
+
+            <Field label="EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY">
+              <Input
+                value={form.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}
+                onChange={(e) => patch({ EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: e.target.value })}
+                placeholder="既存台本ディレクトリ（なければ空欄）"
+              />
+            </Field>
+
+            <Field label="PROJECT_BLUEPRINT_JSON_PATH">
+              <Input
+                value={form.PROJECT_BLUEPRINT_JSON_PATH}
+                onChange={(e) => patch({ PROJECT_BLUEPRINT_JSON_PATH: e.target.value })}
+                placeholder="data/projects/.../blueprint/..."
+              />
+            </Field>
 
             <Field label="NOTES">
               <Textarea
