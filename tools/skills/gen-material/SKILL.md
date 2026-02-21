@@ -40,7 +40,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 
 ### Step 3: プロンプト解決
 
-1. `prompts/{GENRE}/episode_material.md` を読み込む。
+1. `prompts/{GENRE}/episode-material.md` を読み込む。
 2. `## Prompt` セクション以降のプレースホルダ `{{KEY}}` を project config の値（EPISODE_ID は上書き済み）で置換する。
 3. ````json` コードブロック内のプレースホルダは置換しない。
 4. 未解決プレースホルダが残っていればエラー報告して終了する。

@@ -7,12 +7,12 @@
 主要ファイル:
 
 - `src/cli/main.ts`
-- `src/app/build_text.ts`
-- `src/app/build_project.ts`
-- `src/app/build_audio.ts`
-- `src/quality/schema_validator.ts`
+-- `src/app/build-text.ts`
+-- `src/app/build-project.ts`
+-- `src/app/build-audio.ts`
+- `src/quality/schema-validator.ts`
 - `tests/integration/app/build_pipeline.test.ts`
-- `tests/integration/app/build_text.unit.test.ts`
+- `tests/integration/app/build-text.unit.test.ts`
 
 ## 日常運用コマンド
 

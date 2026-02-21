@@ -11,7 +11,7 @@
 現状の主なテスト:
 
 - `tests/integration/app/build_pipeline.test.ts`
-- `tests/integration/app/build_text.unit.test.ts`
+- `tests/integration/app/build-text.unit.test.ts`
 - `tests/integration/quality/check_run.test.ts`
 - `tests/integration/quality/blueprint_material_schema.test.ts`
 - `tests/integration/quality/voicevox_schema.test.ts`

@@ -1,31 +1,31 @@
 #!/usr/bin/env bun
 import path from "node:path";
-import { buildText } from "../app/build_text.ts";
-import { buildProject } from "../app/build_project.ts";
-import { buildAudio } from "../app/build_audio.ts";
-import { runPrepareRun } from "./prepare_run.ts";
-import { checkRun } from "../quality/check_run.ts";
-import { validateBuildPrerequisites } from "../quality/build_prerequisites.ts";
-import { renderPrompt } from "./render_prompt.ts";
-import { syncUserDict } from "../app/dict_sync.ts";
-import { resolveVoicevoxApiUrl } from "../infra/voicevox_engine.ts";
-import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "./cli_args.ts";
-import type { CliOptions } from "./cli_args.ts";
+import { buildText } from "../app/build-text.ts";
+import { buildProject } from "../app/build-project.ts";
+import { buildAudio } from "../app/build-audio.ts";
+import { runPrepareRun } from "./prepare-run.ts";
+import { checkRun } from "../quality/check-run.ts";
+import { validateBuildPrerequisites } from "../quality/build-prerequisites.ts";
+import { renderPrompt } from "./render-prompt.ts";
+import { syncUserDict } from "../app/dict-sync.ts";
+import { resolveVoicevoxApiUrl } from "../infra/voicevox-engine.ts";
+import { ensureOption, optionAsNumber, optionAsString, parseCliArgs } from "./cli-args.ts";
+import type { CliOptions } from "./cli-args.ts";
 
 type CommandName = "build-text" | "build-project" | "build-audio" | "build-all" | "check-run" | "prepare-run" | "render-prompt" | "dict-sync";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "build-text":
-    "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--reading-dictionary <configs/voicevox/reading_dictionary.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+    "Usage:\n  bun src/cli/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voicevox/build-text-config.json>] [--reading-dictionary <configs/voicevox/reading-dictionary.json>] [--run-dir <projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "build-project":
-    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--synthesis-defaults configs/voicevox/synthesis_defaults.json|synthesis_defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>] [--intonation-scale <number>]",
+    "Usage:\n  bun src/cli/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <projects/.../run-...>] [--synthesis-defaults configs/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed-profiles.json>] [--intonation-scale <number>]",
   "build-audio":
     "Usage:\n  bun src/cli/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
-    "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build_text_config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
+    "Usage:\n  bun src/cli/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voicevox/build-text-config.json>] [--run-dir <projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [build-text/build-project options]",
   "check-run":
-    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voicevox/synthesis_defaults.json|synthesis_defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed_profiles.json>]",
+    "Usage:\n  bun src/cli/main.ts check-run --run-dir <projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voicevox/speed-profiles.json>]",
   "prepare-run":
     "Usage:\n  bun src/cli/main.ts prepare-run [--run-dir <projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <projects>] [--default-project-id <id>] [--default-source-run-dir <projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":

@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "../infra/json.ts";
-import { SchemaPaths } from "../infra/schema_paths.ts";
+import { SchemaPaths } from "../infra/schema-paths.ts";
 
 export interface CharacterVoice {
   engineId: string;

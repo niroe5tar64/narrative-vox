@@ -1,6 +1,6 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { validateAgainstSchema } from "../quality/schema_validator.ts";
+import { validateAgainstSchema } from "../quality/schema-validator.ts";
 
 export async function readJson(filePath: string): Promise<unknown> {
   const raw = await readFile(filePath, "utf-8");

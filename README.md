@@ -126,7 +126,7 @@ bun run build-all -- \
 bun src/cli/main.ts render-prompt \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/tech_explainer.example.json
+  --project-config configs/projects/tech-explainer.example.json
 ```
 
 ## Prompt工程の実行方法（Blueprint / Material / Script / Digest）
@@ -152,13 +152,13 @@ Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実�
 bun src/cli/main.ts render-prompt \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/projects/tech_explainer.example.json
+  --project-config configs/projects/tech-explainer.example.json
 
 # Material Promptを解決（EPISODE_IDを上書き）
 bun src/cli/main.ts render-prompt \
   --genre tech_explainer \
   --step material \
-  --project-config configs/projects/tech_explainer.example.json \
+  --project-config configs/projects/tech-explainer.example.json \
   --episode-id E01
 ```
 
@@ -168,7 +168,7 @@ bun src/cli/main.ts render-prompt \
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voicevox/default_character_map.json`）。
 - `--character-map` 未指定時は `configs/voicevox/default_character_map.json` を優先し、未作成なら `configs/characters/*.json` から自動的に character map を構築します。
-- `--synthesis-defaults` 未指定時は `configs/voicevox/synthesis_defaults.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--synthesis-defaults configs/voicevox/synthesis_defaults.example.json` などを明示指定してください。
+- `--synthesis-defaults` 未指定時は `configs/voicevox/synthesis-defaults.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--synthesis-defaults configs/voicevox/synthesis-defaults.example.json` などを明示指定してください。
 - `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は character map が必要です（`--character-map` 指定、`configs/voicevox/default_character_map.json`、または `configs/characters/*.json` からの自動構築）。
 - `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（synthesis defaults には voice 指定がないため自動適用されません）。
 - `--character-key` を指定すると Build Text の `utterances[*].speaker_key` より優先して全 utterance に同一キャラクターキーを適用します。
@@ -177,7 +177,7 @@ bun src/cli/main.ts render-prompt \
 - `voicevox_text.json` の `meta.source_script_path` は、`--run-dir`（明示または自動推論）基準の相対パスとして固定保存されます（例: `script/E01_script.md`）。
 - `--voicevox-url` 未指定時は `VOICEVOX_URL` 環境変数、`http://127.0.0.1:50021`、`http://voicevox-engine:50021`、`http://host.docker.internal:50021`、`http://narrative-vox-voicevox-engine:50021` の順で自動判定します。
 - `build-project` と `build-audio` の両方で同じ URL 解決ロジックを使います。
-- `build-project` では `--speed-preset slow|normal|fast` で速度プリセットを指定できます（`--speed-profiles` で定義ファイルを上書き可能、未指定時は `configs/voicevox/speed_profiles.json` を利用）。
+- `build-project` では `--speed-preset slow|normal|fast` で速度プリセットを指定できます（`--speed-profiles` で定義ファイルを上書き可能、未指定時は `configs/voicevox/speed-profiles.json` を利用）。
 - `build-project` では `--intonation-scale <number>` で `intonationScale` を指定できます。
 - `build-project` 実行時は `voicevox_project/E##_project_meta.json` が出力され、`speed_preset` / `emotion` / `intonation_scale` の適用情報が保存されます。
 - 推奨: 環境ごとに `VOICEVOX_URL` を設定する（例: DevContainer は `.devcontainer/devcontainer.json` で `http://voicevox-engine:50021`、ホスト実行はシェルで `http://127.0.0.1:50021`）。
@@ -247,4 +247,4 @@ bun run voicevox:down
 
 チェックリストには上記の期待動作に加えて CSV ヘッダー確認や `SpeakabilityWarningConfig` しきい値の説明も含まれているので、QA は実行ごとに同ドキュメントを参照してください。`docs/phase5-speakability-guidance.md` を使って警告ごとの期待値・対策・再現コマンド・必要ドキュメントリンクを整理し、報告とドキュメント更新のアクションを確認します。
 
-2026-02-12 に再生成した `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は、`E01`〜`E12` すべてで `quality_checks.speakability` を含み、`quality_checks.warnings` は 0 件です。警告を再現して確認する場合は `docs/architecture/build-text-speakability-checklist.md` にある `/tmp/nv-build-text-script/*.md` を使用してください。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `configs/voicevox/build_text_config.json`（または `--build-text-config` 指定ファイル）で管理されています。
+2026-02-12 に再生成した `projects/introducing-rescript/run-20260211-0000/voicevox_text/` は、`E01`〜`E12` すべてで `quality_checks.speakability` を含み、`quality_checks.warnings` は 0 件です。警告を再現して確認する場合は `docs/architecture/build-text-speakability-checklist.md` にある `/tmp/nv-build-text-script/*.md` を使用してください。`SpeakabilityWarningConfig` のしきい値（scoreThreshold=70、minTerminalPunctuationRatio=0.65、maxLongUtteranceRatio=0.25）は `configs/voicevox/build-text-config.json`（または `--build-text-config` 指定ファイル）で管理されています。

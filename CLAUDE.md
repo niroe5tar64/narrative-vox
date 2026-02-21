@@ -41,11 +41,11 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 
 ### ソース構成（`src/`）
 
-- **`cli/`** — CLIエントリポイント（`main.ts` が7コマンドをディスパッチ）、`prepare_run.ts`、`render_prompt.ts`
-- **`app/`** — ユースケース実装（`build_text.ts` / `build_project.ts` / `build_audio.ts` と配下モジュール）
+- **`cli/`** — CLIエントリポイント（`main.ts` が7コマンドをディスパッチ）、`prepare-run.ts`、`render-prompt.ts`
+- **`app/`** — ユースケース実装（`build-text.ts` / `build-project.ts` / `build-audio.ts` と配下モジュール）
 - **`domain/`** — ドメイン型・ルール（話者タグ、台本構造、run-id、キャラクター定義など）
 - **`infra/`** — 外部I/O（filesystem、JSON、schema解決、VOICEVOX APIクライアント）
-- **`quality/`** — `check_run.ts`（スキーマ＋構造バリデーション）、`schema_validator.ts`（AJVラッパー）
+- **`quality/`** — `check-run.ts`（スキーマ＋構造バリデーション）、`schema-validator.ts`（AJVラッパー）
 
 ### 主要パターン
 

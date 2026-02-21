@@ -49,7 +49,7 @@ Episode Material JSON、コンテンツスタイル、キャスト、キャラ�
 
 ### Step 6: プロンプト構築
 
-1. `prompts/{GENRE}/script_common_frame.md` を読み込む。
+1. `prompts/{GENRE}/script-common-frame.md` を読み込む。
 2. LLM に以下の情報を構造化して渡す:
    - **Material**: Episode Material JSON 全体
    - **Style**: コンテンツスタイル JSON 全体

@@ -14,8 +14,8 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 ## ファイル
 
 - `prompts/oss-dive/blueprint.md`
-- `prompts/oss-dive/episode_material.md`
-- `prompts/oss-dive/script_common_frame.md`
+- `prompts/oss-dive/episode-material.md`
+- `prompts/oss-dive/script-common-frame.md`
 - `configs/projects/<project-id>.json`
 - `configs/projects/oss-dive.example.json`
 
@@ -44,7 +44,7 @@ cp configs/projects/oss-dive.example.json configs/projects/my-oss-project.json
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Material
-- 入力: `episode_material.md` + Blueprint 出力 + `EPISODE_ID`
+- 入力: `episode-material.md` + Blueprint 出力 + `EPISODE_ID`
 - Claudeが `source_refs` のファイルパスから実際のコードを読む
 - 出力: `projects/<project-id>/run-YYYYMMDD-HHMM/material/E##_material.json`
 
