@@ -1,10 +1,9 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { CharactersPage } from "@/pages/configs/CharactersPage";
+import { ContentPage } from "@/pages/configs/ContentPage";
 import { DictionariesPage } from "@/pages/configs/DictionariesPage";
 import { ProjectsPage } from "@/pages/configs/ProjectsPage";
-import { StylesPage } from "@/pages/configs/StylesPage";
 import { VoicevoxPage } from "@/pages/configs/VoicevoxPage";
 import { PipelinePage } from "@/pages/pipeline/PipelinePage";
 import { RunDetailPage } from "@/pages/runs/RunDetailPage";
@@ -18,15 +17,11 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate replace to="/configs/content/characters" /> },
       {
         path: "configs/content/characters",
-        element: <CharactersPage />,
+        element: <ContentPage />,
       },
       {
         path: "configs/pipeline/projects",
         element: <ProjectsPage />,
-      },
-      {
-        path: "configs/content/styles",
-        element: <StylesPage />,
       },
       {
         path: "configs/voice/voicevox",

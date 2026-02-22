@@ -11,9 +11,8 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Characters", to: "/configs/content/characters", icon: Settings2 },
+  { label: "Content", to: "/configs/content/characters", icon: Settings2 },
   { label: "Projects", to: "/configs/pipeline/projects", icon: FolderCog },
-  { label: "Styles", to: "/configs/content/styles", icon: Settings2 },
   { label: "VOICEVOX", to: "/configs/voice/voicevox", icon: Settings2 },
   { label: "Dictionaries", to: "/configs/dictionaries", icon: Settings2 },
   { label: "Pipeline", to: "/pipeline", icon: PlayCircle },

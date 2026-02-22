@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2 } from "lucide-react";
 
@@ -116,7 +116,7 @@ function SpeakerPicker({
 
 // ===== Main page =====
 
-export function CharactersPage() {
+export function CharactersPage({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -133,6 +133,10 @@ export function CharactersPage() {
     : savedFormStr !== null && JSON.stringify(form) !== savedFormStr;
 
   useDirtyGuard(isDirty);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty]); // onDirtyChange は安定した参照を親から受け取る
 
   const { data: chars, isLoading } = useQuery({
     queryKey: ["characters"],
