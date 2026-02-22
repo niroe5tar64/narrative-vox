@@ -6,11 +6,17 @@
     "speaker_mode": "monologue",
     "speaker_count": 1,
     "speaker_roles": [
-      { "role": "lead", "utterance_share": 1.0 }
+      {
+        "role": "lead",
+        "utterance_share": 1.0
+      }
     ]
   },
   "pacing": {
-    "target_duration_minutes": { "min": 10, "max": 15 },
+    "target_duration_minutes": {
+      "min": 10,
+      "max": 15
+    },
     "utterance_length": {
       "target_chars": 150,
       "max_chars": 250

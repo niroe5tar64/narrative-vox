@@ -6,7 +6,11 @@ import { createInterface } from "node:readline/promises";
 import { parseCliArgs, optionAsString } from "./cli-args.ts";
 import type { CliOptions } from "./cli-args.ts";
 import { pathExists } from "@narrative-vox/infrastructure/fs-utils.ts";
-import { RUN_ID_RE, makeRunIdNow, validateRunId } from "@narrative-vox/domain/run-id.ts";
+import {
+	RUN_ID_RE,
+	makeRunIdNow,
+	validateRunId,
+} from "@narrative-vox/domain/run-id.ts";
 
 export { makeRunIdNow, validateRunId };
 
@@ -171,7 +175,8 @@ export async function runPrepareRun(options: CliOptions) {
 
 	try {
 		if (!projectId) {
-			const inferred = defaultProjectId || (await inferDefaultProjectId(projectsDir));
+			const inferred =
+				defaultProjectId || (await inferDefaultProjectId(projectsDir));
 			if (interactive && rl) {
 				projectId = await askWithDefault(rl, "project-id", inferred);
 			} else {

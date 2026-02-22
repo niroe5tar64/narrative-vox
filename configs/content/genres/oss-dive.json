@@ -1,5 +1,8 @@
 {
   "genre_id": "oss-dive",
   "genre_name": "OSS深掘り",
-  "extra_fields": ["REPO_ROOT_PATH", "DEEP_DIVE_FOCUS"]
+  "extra_fields": [
+    "REPO_ROOT_PATH",
+    "DEEP_DIVE_FOCUS"
+  ]
 }

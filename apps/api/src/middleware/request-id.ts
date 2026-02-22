@@ -10,10 +10,10 @@ import type { AppVariables } from "../types.ts";
  *   レスポンスの `X-Request-Id` ヘッダーにも付与する
  */
 export const requestIdMiddleware: MiddlewareHandler<{
-  Variables: AppVariables;
+	Variables: AppVariables;
 }> = async (c, next) => {
-  const id = c.req.header("x-request-id") ?? crypto.randomUUID();
-  c.set("requestId", id);
-  await next();
-  c.res.headers.set("x-request-id", id);
+	const id = c.req.header("x-request-id") ?? crypto.randomUUID();
+	c.set("requestId", id);
+	await next();
+	c.res.headers.set("x-request-id", id);
 };
