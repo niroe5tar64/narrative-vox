@@ -388,7 +388,20 @@ export function CharactersPanel({
 									<SpeakerPicker
 										speakers={speakers}
 										value={form.voiceSpeakerId}
-										onSelect={(speakerId) => patch({ voiceSpeakerId: speakerId })}
+										onSelect={(speakerId) => {
+											const spk = speakers.find((s) => s.speaker_uuid === speakerId);
+											const firstStyleId = spk?.styles[0]?.id;
+											patch({
+												voiceSpeakerId: speakerId,
+												...(firstStyleId !== undefined && {
+													voiceStyleId: String(firstStyleId),
+													emotionRows: form.emotionRows.map((r) => ({
+														...r,
+														styleId: String(firstStyleId),
+													})),
+												}),
+											});
+										}}
 									/>
 									<p className="mt-1 text-xs text-slate-400">
 										選択するとスピーカーIDが反映されます
