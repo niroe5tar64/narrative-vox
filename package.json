@@ -22,6 +22,11 @@
     "voicevox:down": "bash tools/scripts/voicevox-down.sh",
     "voicevox:check": "bash tools/scripts/voicevox-check.sh",
     "voicevox:dict-sync": "bun apps/cli/src/main.ts dict-sync",
+    "format": "biome format",
+    "lint": "biome check",
+    "lint:fix": "biome check --apply",
+    "check": "bun run lint && bun run typecheck",
+    "validate": "bun run format && bun run lint:fix && bun run typecheck",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -34,6 +39,7 @@
     "@types/bun": "^1.3.9",
     "@types/kuromoji": "^0.1.3",
     "@types/node": "^25.2.3",
+    "biome": "^0.3.3",
     "typescript": "^5.9.3"
   }
 }
