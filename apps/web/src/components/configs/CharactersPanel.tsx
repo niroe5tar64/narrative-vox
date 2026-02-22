@@ -554,74 +554,91 @@ export function CharactersPanel({
                   )}
                 </p>
               )}
-            </Fieldset>
-
-            {/* Emotion Styles */}
-            <Fieldset legend="Emotion Styles">
-              <div className="space-y-1">
-                {/* Default row: always enabled */}
-                <div className="flex h-8 items-center gap-3">
-                  <Checkbox checked disabled className="cursor-not-allowed" />
-                  <span className="w-24 font-mono text-sm">default</span>
-                  <span className="w-20 text-xs text-slate-400">
-                    デフォルト
-                  </span>
-                  <StyleSelect
-                    speakers={speakers ?? []}
-                    speakerId={form.voiceSpeakerId}
-                    value={form.voiceStyleId}
-                    onChange={(v) => patch({ voiceStyleId: v })}
-                    disabled={!isVvRunning}
-                  />
-                  <VoicePreviewButton
-                    voiceSample={
-                      speakerInfoMap[form.voiceSpeakerId]?.style_infos.find(
-                        (si) => si.id === Number(form.voiceStyleId),
-                      )?.voice_samples[0]
-                    }
-                  />
+              {/* Emotion Styles */}
+              <div className="mt-3">
+                <div>
+                  <label
+                    htmlFor=""
+                    className="mb-1 block text-sm font-medium text-slate-700"
+                  >
+                    Emotion Styles
+                  </label>
                 </div>
-
-                {/* 7 preset emotion rows */}
-                {form.emotionRows.map((row, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: fixed preset order
-                  <div key={i} className="flex h-8 items-center gap-3">
-                    <Checkbox
-                      id={`emotion-${row.key}`}
-                      checked={row.enabled}
-                      onCheckedChange={(checked) =>
-                        updateEmotionRow(i, { enabled: checked === true })
-                      }
-                    />
-                    <Label
-                      htmlFor={`emotion-${row.key}`}
-                      className="flex cursor-pointer items-center gap-3"
-                    >
-                      <span className="w-24 font-mono">{row.key}</span>
+                <Fieldset legend="">
+                  <div className="space-y-1">
+                    {/* Default row: always enabled */}
+                    <div className="flex h-8 items-center gap-3">
+                      <Checkbox
+                        checked
+                        disabled
+                        className="cursor-not-allowed"
+                      />
+                      <span className="w-24 font-mono text-sm">default</span>
                       <span className="w-20 text-xs text-slate-400">
-                        {row.label}
+                        デフォルト
                       </span>
-                    </Label>
-                    {row.enabled && (
                       <StyleSelect
                         speakers={speakers ?? []}
                         speakerId={form.voiceSpeakerId}
-                        value={row.styleId}
-                        onChange={(v) => updateEmotionRow(i, { styleId: v })}
+                        value={form.voiceStyleId}
+                        onChange={(v) => patch({ voiceStyleId: v })}
                         disabled={!isVvRunning}
                       />
-                    )}
-                    {row.enabled && (
                       <VoicePreviewButton
                         voiceSample={
                           speakerInfoMap[form.voiceSpeakerId]?.style_infos.find(
-                            (si) => si.id === Number(row.styleId),
+                            (si) => si.id === Number(form.voiceStyleId),
                           )?.voice_samples[0]
                         }
                       />
-                    )}
+                    </div>
+
+                    {/* 7 preset emotion rows */}
+                    {form.emotionRows.map((row, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed preset order
+                      <div key={i} className="flex h-8 items-center gap-3">
+                        <Checkbox
+                          id={`emotion-${row.key}`}
+                          checked={row.enabled}
+                          onCheckedChange={(checked) =>
+                            updateEmotionRow(i, { enabled: checked === true })
+                          }
+                        />
+                        <Label
+                          htmlFor={`emotion-${row.key}`}
+                          className="flex cursor-pointer items-center gap-3"
+                        >
+                          <span className="w-24 font-mono">{row.key}</span>
+                          <span className="w-20 text-xs text-slate-400">
+                            {row.label}
+                          </span>
+                        </Label>
+                        {row.enabled && (
+                          <StyleSelect
+                            speakers={speakers ?? []}
+                            speakerId={form.voiceSpeakerId}
+                            value={row.styleId}
+                            onChange={(v) =>
+                              updateEmotionRow(i, { styleId: v })
+                            }
+                            disabled={!isVvRunning}
+                          />
+                        )}
+                        {row.enabled && (
+                          <VoicePreviewButton
+                            voiceSample={
+                              speakerInfoMap[
+                                form.voiceSpeakerId
+                              ]?.style_infos.find(
+                                (si) => si.id === Number(row.styleId),
+                              )?.voice_samples[0]
+                            }
+                          />
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </Fieldset>
               </div>
             </Fieldset>
 
