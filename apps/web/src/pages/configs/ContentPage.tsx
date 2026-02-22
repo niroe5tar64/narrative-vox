@@ -1,12 +1,9 @@
 import { useCallback, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/api/client";
-import type { GenreConfig } from "@/api/client";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { CharactersPage } from "./CharactersPage";
-import { StylesPage } from "./StylesPage";
+import { CharactersPanel } from "@/components/configs/CharactersPanel";
+import { StylesPanel } from "@/components/configs/StylesPanel";
+import { GenrePanel } from "@/components/configs/GenrePanel";
 
 type Tab = "characters" | "styles" | "genre";
 
@@ -15,41 +12,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "styles", label: "Styles" },
   { id: "genre", label: "Genre" },
 ];
-
-function GenreTab() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["genres"],
-    queryFn: () => api.genres.list(),
-  });
-
-  if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
-  if (isError) return <p className="text-sm text-red-600">ジャンルの取得に失敗しました</p>;
-
-  return (
-    <div className="space-y-5">
-      <p className="text-sm text-slate-500">ジャンル一覧（読み取り専用）</p>
-      {data && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {data.items.map((genre: GenreConfig) => (
-            <div
-              key={genre.genre_id}
-              className="rounded-xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
-            >
-              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                {genre.genre_id}
-              </div>
-              <h3 className="text-base font-bold text-slate-900">{genre.genre_name}</h3>
-              <p className="mt-1 text-sm text-slate-600">
-                extra_fields:{" "}
-                {genre.extra_fields.length > 0 ? genre.extra_fields.join(", ") : "なし"}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ContentPage() {
   const [tab, setTab] = useState<Tab>("characters");
@@ -94,10 +56,10 @@ export function ContentPage() {
       {/* Tab content */}
       <div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">
         {tab === "characters" && (
-          <CharactersPage onDirtyChange={(d) => handleDirtyChange("characters", d)} />
+          <CharactersPanel onDirtyChange={(d) => handleDirtyChange("characters", d)} />
         )}
-        {tab === "styles" && <StylesPage />}
-        {tab === "genre" && <GenreTab />}
+        {tab === "styles" && <StylesPanel />}
+        {tab === "genre" && <GenrePanel />}
       </div>
     </div>
   );

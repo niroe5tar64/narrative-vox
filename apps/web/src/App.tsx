@@ -14,9 +14,9 @@ const router = createBrowserRouter([
     path: "/",
     element: <AppShell />,
     children: [
-      { index: true, element: <Navigate replace to="/configs/content/characters" /> },
+      { index: true, element: <Navigate replace to="/configs/content" /> },
       {
-        path: "configs/content/characters",
+        path: "configs/content",
         element: <ContentPage />,
       },
       {
@@ -45,7 +45,7 @@ const router = createBrowserRouter([
       },
       {
         path: "*",
-        element: <Navigate replace to="/configs/content/characters" />,
+        element: <Navigate replace to="/configs/content" />,
       },
     ],
   },

@@ -116,7 +116,7 @@ function SpeakerPicker({
 
 // ===== Main page =====
 
-export function CharactersPage({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void } = {}) {
+export function CharactersPanel({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);

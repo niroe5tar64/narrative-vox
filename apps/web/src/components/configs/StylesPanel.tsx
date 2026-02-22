@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Spinner } from "@/components/ui/spinner";
 
-export function StylesPage() {
+export function StylesPanel() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["styles"],
     queryFn: () => api.styles.list(),
