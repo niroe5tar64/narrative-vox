@@ -43,6 +43,30 @@ type CharForm = {
 	voiceSpeakerId: string;
 	voiceStyleId: string;
 	emotionRows: EmotionRow[];
+	profileJson: string;
+};
+
+const PROFILE_TEMPLATE = {
+	gender: "neutral",
+	age_range: "adult",
+	knowledge_level: "expert",
+	personality_traits: ["特性1"],
+	speech_register: "polite_desu_masu",
+	sentence_patterns: {
+		typical_endings: ["です", "ます"],
+		filler_words: [],
+		catchphrases: [],
+		forbidden_patterns: [],
+	},
+	interaction_behavior: {
+		explains_by: "logical_steps",
+		responds_to_questions_by: "direct_answer",
+		emotion_range: "moderate",
+	},
+	topic_affinity: {
+		enthusiastic_about: [],
+		cautious_about: [],
+	},
 };
 
 const EMPTY_FORM: CharForm = {
@@ -52,6 +76,7 @@ const EMPTY_FORM: CharForm = {
 	voiceSpeakerId: "",
 	voiceStyleId: "0",
 	emotionRows: EMOTION_PRESETS.map((p) => ({ ...p, styleId: "0", enabled: false })),
+	profileJson: JSON.stringify(PROFILE_TEMPLATE, null, 2),
 };
 
 function charToForm(c: CharacterConfig): CharForm {
@@ -70,13 +95,19 @@ function charToForm(c: CharacterConfig): CharForm {
 				enabled: existing !== undefined,
 			};
 		}),
+		profileJson: c.profile
+			? JSON.stringify(c.profile, null, 2)
+			: JSON.stringify(PROFILE_TEMPLATE, null, 2),
 	};
 }
 
-function formToChar(
-	f: CharForm,
-	profile?: Record<string, unknown>,
-): CharacterConfig {
+function formToChar(f: CharForm): CharacterConfig {
+	let profile: Record<string, unknown> | undefined;
+	try {
+		profile = JSON.parse(f.profileJson) as Record<string, unknown>;
+	} catch {
+		profile = undefined;
+	}
 	return {
 		key: f.key,
 		name: f.name,
@@ -171,9 +202,6 @@ export function CharactersPanel({
 	const [isNew, setIsNew] = useState(false);
 	const [form, setForm] = useState<CharForm>(EMPTY_FORM);
 	const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
-	const [originalProfile, setOriginalProfile] = useState<
-		Record<string, unknown> | undefined
-	>(undefined);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 
@@ -208,7 +236,7 @@ export function CharactersPanel({
 
 	const saveMutation = useMutation({
 		mutationFn: (f: CharForm) => {
-			const data = formToChar(f, originalProfile);
+			const data = formToChar(f);
 			return isNew
 				? api.characters.create(data)
 				: api.characters.update(f.key, data);
@@ -258,7 +286,6 @@ export function CharactersPanel({
 		setIsNew(false);
 		setForm(f);
 		setSavedFormStr(JSON.stringify(f));
-		setOriginalProfile(c.profile);
 		setError(null);
 		setSuccess(false);
 	}
@@ -273,7 +300,6 @@ export function CharactersPanel({
 		setIsNew(true);
 		setForm(EMPTY_FORM);
 		setSavedFormStr(null);
-		setOriginalProfile(undefined);
 		setError(null);
 		setSuccess(false);
 	}
@@ -465,6 +491,32 @@ export function CharactersPanel({
 							</div>
 						</Fieldset>
 
+						{/* Profile */}
+						<Fieldset legend="Profile (JSON)">
+							{(() => {
+								let profileJsonError: string | null = null;
+								try {
+									JSON.parse(form.profileJson);
+								} catch (e) {
+									profileJsonError = e instanceof Error ? e.message : "Invalid JSON";
+								}
+								return (
+									<>
+										<Textarea
+											value={form.profileJson}
+											onChange={(e) => patch({ profileJson: e.target.value })}
+											rows={20}
+											className="font-mono text-xs"
+											spellCheck={false}
+										/>
+										{profileJsonError && (
+											<p className="mt-1 text-xs text-red-600">{profileJsonError}</p>
+										)}
+									</>
+								);
+							})()}
+						</Fieldset>
+
 						{/* Feedback */}
 						{error && <p className="text-sm text-red-600">{error}</p>}
 						{success && (
@@ -474,7 +526,19 @@ export function CharactersPanel({
 						{/* Actions */}
 						<div className="flex gap-3 pt-2">
 							<Button
-								onClick={() => saveMutation.mutate(form)}
+								onClick={() => {
+									let profileJsonError: string | null = null;
+									try {
+										JSON.parse(form.profileJson);
+									} catch (e) {
+										profileJsonError = e instanceof Error ? e.message : "Invalid JSON";
+									}
+									if (profileJsonError) {
+										setError(`Profile JSON エラー: ${profileJsonError}`);
+										return;
+									}
+									saveMutation.mutate(form);
+								}}
 								disabled={saveMutation.isPending}
 							>
 								{saveMutation.isPending ? (
