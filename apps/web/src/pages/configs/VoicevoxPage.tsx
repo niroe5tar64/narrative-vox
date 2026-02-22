@@ -4,12 +4,13 @@ import { Save } from "lucide-react";
 
 import { ApiError, api } from "@/api/client";
 import { Button } from "@/components/ui/button";
+import { Fieldset } from "@/components/ui/fieldset";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { TabBar } from "@/components/ui/tab-bar";
 import { Textarea } from "@/components/ui/textarea";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
-import { cn } from "@/lib/utils";
 
 type Tab = "synthesis-defaults" | "build-text-config" | "speed-profiles";
 
@@ -167,10 +168,7 @@ function SynthesisDefaultsEditor({
         </div>
       </div>
 
-      <fieldset className="rounded-md border border-slate-200 p-4">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-          Query Defaults
-        </legend>
+      <Fieldset legend="Query Defaults">
         <div className="grid grid-cols-2 gap-3">
           <NumberField
             label="speedScale"
@@ -230,7 +228,7 @@ function SynthesisDefaultsEditor({
             </label>
           </div>
         </div>
-      </fieldset>
+      </Fieldset>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-emerald-600">Saved successfully.</p>}
@@ -397,8 +395,11 @@ function SpeedProfilesEditor({
   return (
     <div className="max-w-lg space-y-4">
       {Object.entries(local.presets).map(([name, preset]) => (
-        <fieldset key={name} className="rounded-md border border-slate-200 p-4">
-          <legend className="px-1 text-sm font-semibold capitalize text-slate-700">{name}</legend>
+        <Fieldset
+          key={name}
+          legend={name}
+          legendClassName="px-1 text-sm font-semibold capitalize text-slate-700"
+        >
           <div className="grid grid-cols-3 gap-3">
             <NumberField
               label="speedScale"
@@ -416,7 +417,7 @@ function SpeedProfilesEditor({
               onChange={(v) => patchPreset(name, { postPhonemeLength: v })}
             />
           </div>
-        </fieldset>
+        </Fieldset>
       ))}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -453,26 +454,7 @@ export function VoicevoxPage() {
       <h2 className="text-lg font-bold tracking-tight">VOICEVOX Config</h2>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 w-fit">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => switchTab(t.id)}
-            className={cn(
-              "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-              tab === t.id
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-600 hover:text-slate-900",
-            )}
-          >
-            {t.label}
-            {dirtyEditors[t.id] && (
-              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
-            )}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={TABS} activeTab={tab} onTabChange={switchTab} dirtyMap={dirtyEditors} />
 
       {/* Tab content */}
       <div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">

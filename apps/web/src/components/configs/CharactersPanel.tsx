@@ -4,6 +4,7 @@ import { Plus, Save, Trash2 } from "lucide-react";
 
 import { ApiError, api, type CharacterConfig, type Speaker } from "@/api/client";
 import { Button } from "@/components/ui/button";
+import { Fieldset } from "@/components/ui/fieldset";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
@@ -322,10 +323,7 @@ export function CharactersPanel({ onDirtyChange }: { onDirtyChange?: (dirty: boo
             </div>
 
             {/* Voice */}
-            <fieldset className="rounded-md border border-slate-200 p-4">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Voice
-              </legend>
+            <Fieldset legend="Voice">
               <div className="space-y-3">
                 {isVvRunning && speakers && speakers.length > 0 && (
                   <div>
@@ -373,13 +371,10 @@ export function CharactersPanel({ onDirtyChange }: { onDirtyChange?: (dirty: boo
                   />
                 </div>
               </div>
-            </fieldset>
+            </Fieldset>
 
             {/* Emotion styles */}
-            <fieldset className="rounded-md border border-slate-200 p-4">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Emotion Styles
-              </legend>
+            <Fieldset legend="Emotion Styles">
               <div className="space-y-2">
                 {form.emotionRows.map((row, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: static order
@@ -411,7 +406,7 @@ export function CharactersPanel({ onDirtyChange }: { onDirtyChange?: (dirty: boo
                   Add emotion
                 </Button>
               </div>
-            </fieldset>
+            </Fieldset>
 
             {/* Feedback */}
             {error && <p className="text-sm text-red-600">{error}</p>}
