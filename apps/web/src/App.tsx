@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from "@/components/layout/AppShell";
 import { ContentPage } from "@/pages/configs/ContentPage";
 import { DictionariesPage } from "@/pages/configs/DictionariesPage";
 import { ProjectsPage } from "@/pages/configs/ProjectsPage";
