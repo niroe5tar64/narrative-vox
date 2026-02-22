@@ -9,6 +9,7 @@ import {
 	type Speaker,
 } from "@/api/client";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Fieldset } from "@/components/ui/fieldset";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,15 +18,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { cn } from "@/lib/utils";
 
+// ===== Constants =====
+
+const FIXED_ENGINE_ID = "074fc39e-678b-4c13-8916-ffca8d505d1d";
+
+const EMOTION_PRESETS: { key: string; label: string }[] = [
+	{ key: "calm", label: "落ち着いた" },
+	{ key: "energetic", label: "活発" },
+	{ key: "serious", label: "真剣" },
+	{ key: "confused", label: "困惑" },
+	{ key: "happy", label: "喜び" },
+	{ key: "sad", label: "悲しみ" },
+	{ key: "angry", label: "怒り" },
+];
+
 // ===== Form state types =====
 
-type EmotionRow = { key: string; styleId: string };
+type EmotionRow = { key: string; label: string; styleId: string; enabled: boolean };
 
 type CharForm = {
 	key: string;
 	name: string;
 	description: string;
-	voiceEngineId: string;
 	voiceSpeakerId: string;
 	voiceStyleId: string;
 	emotionRows: EmotionRow[];
@@ -35,10 +49,9 @@ const EMPTY_FORM: CharForm = {
 	key: "",
 	name: "",
 	description: "",
-	voiceEngineId: "",
 	voiceSpeakerId: "",
-	voiceStyleId: "",
-	emotionRows: [],
+	voiceStyleId: "0",
+	emotionRows: EMOTION_PRESETS.map((p) => ({ ...p, styleId: "0", enabled: false })),
 };
 
 function charToForm(c: CharacterConfig): CharForm {
@@ -46,13 +59,17 @@ function charToForm(c: CharacterConfig): CharForm {
 		key: c.key,
 		name: c.name,
 		description: c.description ?? "",
-		voiceEngineId: c.voice.engineId,
 		voiceSpeakerId: c.voice.speakerId,
 		voiceStyleId: String(c.voice.styleId),
-		emotionRows: Object.entries(c.emotionStyles).map(([k, v]) => ({
-			key: k,
-			styleId: String(v),
-		})),
+		emotionRows: EMOTION_PRESETS.map((p) => {
+			const existing = c.emotionStyles[p.key];
+			return {
+				key: p.key,
+				label: p.label,
+				styleId: existing !== undefined ? String(existing) : "0",
+				enabled: existing !== undefined,
+			};
+		}),
 	};
 }
 
@@ -65,67 +82,84 @@ function formToChar(
 		name: f.name,
 		...(f.description && { description: f.description }),
 		voice: {
-			engineId: f.voiceEngineId,
+			engineId: FIXED_ENGINE_ID,
 			speakerId: f.voiceSpeakerId,
 			styleId: Number(f.voiceStyleId),
 		},
 		emotionStyles: Object.fromEntries(
 			f.emotionRows
-				.filter((r) => r.key.trim())
+				.filter((r) => r.enabled)
 				.map((r) => [r.key, Number(r.styleId)]),
 		),
 		...(profile && { profile }),
 	};
 }
 
-// ===== Speaker browser subcomponent =====
+// ===== SpeakerPicker: speaker selection only =====
 
 function SpeakerPicker({
 	speakers,
+	value,
 	onSelect,
 }: {
 	speakers: Speaker[];
-	onSelect: (speakerId: string, styleId: number) => void;
+	value: string;
+	onSelect: (speakerId: string) => void;
 }) {
-	const [selectedUuid, setSelectedUuid] = useState("");
-	const speaker = speakers.find((s) => s.speaker_uuid === selectedUuid);
-
 	return (
-		<div className="flex flex-wrap gap-2">
-			<select
-				className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-				value={selectedUuid}
-				onChange={(e) => setSelectedUuid(e.target.value)}
-			>
-				<option value="">スピーカーを選択...</option>
-				{speakers.map((s) => (
-					<option key={s.speaker_uuid} value={s.speaker_uuid}>
-						{s.name}
-					</option>
-				))}
-			</select>
-			{speaker && (
-				<select
-					className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-					defaultValue=""
-					onChange={(e) => {
-						const styleId = Number(e.target.value);
-						if (styleId) onSelect(speaker.speaker_uuid, styleId);
-					}}
-				>
-					<option value="">スタイルを選択...</option>
-					{speaker.styles.map((st) => (
-						<option key={st.id} value={st.id}>
-							{st.name} (id: {st.id})
-						</option>
-					))}
-				</select>
-			)}
-		</div>
+		<select
+			className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+			value={value}
+			onChange={(e) => {
+				if (e.target.value) onSelect(e.target.value);
+			}}
+		>
+			<option value="">スピーカーを選択...</option>
+			{speakers.map((s) => (
+				<option key={s.speaker_uuid} value={s.speaker_uuid}>
+					{s.name}
+				</option>
+			))}
+		</select>
 	);
 }
 
-// ===== Main page =====
+// ===== StyleSelect: style selector for a given speaker =====
+
+function StyleSelect({
+	speakers,
+	speakerId,
+	value,
+	onChange,
+	disabled,
+}: {
+	speakers: Speaker[];
+	speakerId: string;
+	value: string;
+	onChange: (styleId: string) => void;
+	disabled?: boolean;
+}) {
+	const speaker = speakers.find((s) => s.speaker_uuid === speakerId);
+	if (!speaker) {
+		return <span className="text-xs text-slate-400">スピーカー未選択</span>;
+	}
+	return (
+		<select
+			className="h-8 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60 disabled:bg-slate-50 disabled:text-slate-400"
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			disabled={disabled}
+		>
+			{speaker.styles.map((st) => (
+				<option key={st.id} value={String(st.id)}>
+					{st.name} ({st.id})
+				</option>
+			))}
+		</select>
+	);
+}
+
+// ===== Main panel =====
 
 export function CharactersPanel({
 	onDirtyChange,
@@ -151,7 +185,7 @@ export function CharactersPanel({
 
 	useEffect(() => {
 		onDirtyChange?.(isDirty);
-	}, [isDirty, onDirtyChange]); // onDirtyChange は安定した参照を親から受け取る
+	}, [isDirty, onDirtyChange]);
 
 	const { data: chars, isLoading } = useQuery({
 		queryKey: ["characters"],
@@ -246,14 +280,6 @@ export function CharactersPanel({
 
 	function patch(p: Partial<CharForm>) {
 		setForm((f) => ({ ...f, ...p }));
-	}
-
-	function addEmotionRow() {
-		patch({ emotionRows: [...form.emotionRows, { key: "", styleId: "0" }] });
-	}
-
-	function removeEmotionRow(i: number) {
-		patch({ emotionRows: form.emotionRows.filter((_, idx) => idx !== i) });
 	}
 
 	function updateEmotionRow(i: number, p: Partial<EmotionRow>) {
@@ -356,96 +382,73 @@ export function CharactersPanel({
 
 						{/* Voice */}
 						<Fieldset legend="Voice">
-							<div className="space-y-3">
-								{isVvRunning && speakers && speakers.length > 0 && (
-									<div>
-										<Label>スピーカーブラウズ</Label>
-										<SpeakerPicker
-											speakers={speakers}
-											onSelect={(speakerId, styleId) =>
-												patch({
-													voiceSpeakerId: speakerId,
-													voiceStyleId: String(styleId),
-												})
-											}
-										/>
-										<p className="mt-1 text-xs text-slate-400">
-											選択すると speakerId / styleId が反映されます
-										</p>
-									</div>
-								)}
-								{voicevoxStatusQuery.isError && (
-									<p className="text-xs text-amber-600">
-										VOICEVOX未起動のため手動入力
-									</p>
-								)}
+							{isVvRunning && speakers && speakers.length > 0 ? (
 								<div>
-									<Label htmlFor="char-engine-id">Engine ID</Label>
-									<Input
-										id="char-engine-id"
-										value={form.voiceEngineId}
-										onChange={(e) => patch({ voiceEngineId: e.target.value })}
-										placeholder="engine UUID"
-									/>
-								</div>
-								<div>
-									<Label htmlFor="char-speaker-id">Speaker ID (UUID)</Label>
-									<Input
-										id="char-speaker-id"
+									<Label>スピーカー</Label>
+									<SpeakerPicker
+										speakers={speakers}
 										value={form.voiceSpeakerId}
-										onChange={(e) => patch({ voiceSpeakerId: e.target.value })}
-										placeholder="speaker UUID"
+										onSelect={(speakerId) => patch({ voiceSpeakerId: speakerId })}
 									/>
+									<p className="mt-1 text-xs text-slate-400">
+										選択するとスピーカーIDが反映されます
+									</p>
 								</div>
-								<div>
-									<Label htmlFor="char-style-id">Style ID</Label>
-									<Input
-										id="char-style-id"
-										type="number"
-										value={form.voiceStyleId}
-										onChange={(e) => patch({ voiceStyleId: e.target.value })}
-										placeholder="0"
-									/>
-								</div>
-							</div>
+							) : (
+								<p className="text-xs text-amber-600">
+									VOICEVOX未起動のためスピーカー変更不可
+									{form.voiceSpeakerId && (
+										<span className="ml-2 font-mono text-slate-500">
+											{form.voiceSpeakerId}
+										</span>
+									)}
+								</p>
+							)}
 						</Fieldset>
 
-						{/* Emotion styles */}
+						{/* Emotion Styles */}
 						<Fieldset legend="Emotion Styles">
-							<div className="space-y-2">
+							<div className="space-y-1">
+								{/* Default row: always enabled */}
+								<div className="flex h-8 items-center gap-3">
+									<Checkbox checked disabled className="cursor-not-allowed" />
+									<span className="w-24 font-mono text-sm">default</span>
+									<span className="w-20 text-xs text-slate-400">デフォルト</span>
+									<StyleSelect
+										speakers={speakers ?? []}
+										speakerId={form.voiceSpeakerId}
+										value={form.voiceStyleId}
+										onChange={(v) => patch({ voiceStyleId: v })}
+										disabled={!isVvRunning}
+									/>
+								</div>
+
+								{/* 7 preset emotion rows */}
 								{form.emotionRows.map((row, i) => (
-									// biome-ignore lint/suspicious/noArrayIndexKey: static order
-									<div key={i} className="flex items-center gap-2">
-										<Input
-											value={row.key}
-											onChange={(e) =>
-												updateEmotionRow(i, { key: e.target.value })
+									// biome-ignore lint/suspicious/noArrayIndexKey: fixed preset order
+									<div key={i} className="flex h-8 items-center gap-3">
+										<Checkbox
+											id={`emotion-${row.key}`}
+											checked={row.enabled}
+											onCheckedChange={(checked) =>
+												updateEmotionRow(i, { enabled: checked === true })
 											}
-											placeholder="emotion key (e.g. calm)"
-											className="flex-1"
 										/>
-										<Input
-											type="number"
-											value={row.styleId}
-											onChange={(e) =>
-												updateEmotionRow(i, { styleId: e.target.value })
-											}
-											placeholder="styleId"
-											className="w-24"
-										/>
-										<button
-											type="button"
-											onClick={() => removeEmotionRow(i)}
-											className="text-slate-400 hover:text-red-500"
-										>
-											<Trash2 className="h-4 w-4" />
-										</button>
+										<Label htmlFor={`emotion-${row.key}`} className="flex cursor-pointer items-center gap-3">
+											<span className="w-24 font-mono">{row.key}</span>
+											<span className="w-20 text-xs text-slate-400">{row.label}</span>
+										</Label>
+										{row.enabled && (
+											<StyleSelect
+												speakers={speakers ?? []}
+												speakerId={form.voiceSpeakerId}
+												value={row.styleId}
+												onChange={(v) => updateEmotionRow(i, { styleId: v })}
+												disabled={!isVvRunning}
+											/>
+										)}
 									</div>
 								))}
-								<Button variant="secondary" size="sm" onClick={addEmotionRow}>
-									<Plus className="h-4 w-4" />
-									Add emotion
-								</Button>
 							</div>
 						</Fieldset>
 
