@@ -21,6 +21,11 @@ export function ContentPage() {
 		setDirtyTabs((prev) => ({ ...prev, [t]: dirty }));
 	}, []);
 
+	const handleCharactersDirtyChange = useCallback(
+		(d: boolean) => handleDirtyChange("characters", d),
+		[handleDirtyChange],
+	);
+
 	function switchTab(next: Tab) {
 		if (
 			dirtyTabs[tab] &&
@@ -46,9 +51,7 @@ export function ContentPage() {
 			{/* Tab content */}
 			<div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">
 				{tab === "characters" && (
-					<CharactersPanel
-						onDirtyChange={(d) => handleDirtyChange("characters", d)}
-					/>
+					<CharactersPanel onDirtyChange={handleCharactersDirtyChange} />
 				)}
 				{tab === "styles" && <StylesPanel />}
 				{tab === "genre" && <GenrePanel />}

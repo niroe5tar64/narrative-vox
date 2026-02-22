@@ -519,6 +519,19 @@ export function VoicevoxPage() {
 		setDirtyEditors((prev) => ({ ...prev, [editorTab]: dirty }));
 	}, []);
 
+	const handleSynthesisDefaultsDirtyChange = useCallback(
+		(d: boolean) => handleDirtyChange("synthesis-defaults", d),
+		[handleDirtyChange],
+	);
+	const handleBuildTextConfigDirtyChange = useCallback(
+		(d: boolean) => handleDirtyChange("build-text-config", d),
+		[handleDirtyChange],
+	);
+	const handleSpeedProfilesDirtyChange = useCallback(
+		(d: boolean) => handleDirtyChange("speed-profiles", d),
+		[handleDirtyChange],
+	);
+
 	function switchTab(t: Tab) {
 		if (
 			dirtyEditors[tab] &&
@@ -545,19 +558,19 @@ export function VoicevoxPage() {
 				{tab === "synthesis-defaults" && (
 					<SynthesisDefaultsEditor
 						configName="synthesis-defaults"
-						onDirtyChange={(d) => handleDirtyChange("synthesis-defaults", d)}
+						onDirtyChange={handleSynthesisDefaultsDirtyChange}
 					/>
 				)}
 				{tab === "build-text-config" && (
 					<JsonEditor
 						configName="build-text-config"
-						onDirtyChange={(d) => handleDirtyChange("build-text-config", d)}
+						onDirtyChange={handleBuildTextConfigDirtyChange}
 					/>
 				)}
 				{tab === "speed-profiles" && (
 					<SpeedProfilesEditor
 						configName="speed-profiles"
-						onDirtyChange={(d) => handleDirtyChange("speed-profiles", d)}
+						onDirtyChange={handleSpeedProfilesDirtyChange}
 					/>
 				)}
 			</div>

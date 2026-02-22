@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Plus, Save, Trash2 } from "lucide-react";
 
 import {
 	ApiError,
 	api,
 	type CharacterConfig,
 	type Speaker,
+	type SpeakerInfo,
 } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -126,32 +127,87 @@ function formToChar(f: CharForm): CharacterConfig {
 	};
 }
 
-// ===== SpeakerPicker: speaker selection only =====
+// ===== SpeakerPicker: speaker selection with icons =====
 
 function SpeakerPicker({
 	speakers,
+	speakerInfoMap,
 	value,
 	onSelect,
 }: {
 	speakers: Speaker[];
+	speakerInfoMap: Record<string, SpeakerInfo>;
 	value: string;
 	onSelect: (speakerId: string) => void;
 }) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		function handleMouseDown(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node)) {
+				setOpen(false);
+			}
+		}
+		document.addEventListener("mousedown", handleMouseDown);
+		return () => document.removeEventListener("mousedown", handleMouseDown);
+	}, []);
+
+	const selected = speakers.find((s) => s.speaker_uuid === value);
+	const selectedIcon = value ? speakerInfoMap[value]?.style_infos[0]?.icon : undefined;
+
 	return (
-		<select
-			className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-			value={value}
-			onChange={(e) => {
-				if (e.target.value) onSelect(e.target.value);
-			}}
-		>
-			<option value="">スピーカーを選択...</option>
-			{speakers.map((s) => (
-				<option key={s.speaker_uuid} value={s.speaker_uuid}>
-					{s.name}
-				</option>
-			))}
-		</select>
+		<div className="relative" ref={ref}>
+			<button
+				type="button"
+				className="flex h-10 w-full items-center gap-2 rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+				onClick={() => setOpen((v) => !v)}
+			>
+				{selectedIcon ? (
+					<img
+						src={`data:image/png;base64,${selectedIcon}`}
+						alt=""
+						className="h-7 w-7 flex-shrink-0 rounded object-cover"
+					/>
+				) : (
+					<span className="h-7 w-7 flex-shrink-0 rounded bg-slate-100" />
+				)}
+				<span className="flex-1 text-left">{selected?.name ?? "スピーカーを選択..."}</span>
+				<ChevronDown className="h-4 w-4 flex-shrink-0 text-slate-400" />
+			</button>
+			{open && (
+				<div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
+					{speakers.map((s) => {
+						const icon = speakerInfoMap[s.speaker_uuid]?.style_infos[0]?.icon;
+						return (
+							<button
+								key={s.speaker_uuid}
+								type="button"
+								className={cn(
+									"flex w-full items-center gap-2 px-2 py-1.5 text-sm hover:bg-slate-50",
+									s.speaker_uuid === value && "bg-emerald-50 font-medium text-emerald-700",
+								)}
+								onClick={() => {
+									onSelect(s.speaker_uuid);
+									setOpen(false);
+								}}
+							>
+								{icon ? (
+									<img
+										src={`data:image/png;base64,${icon}`}
+										alt=""
+										className="h-7 w-7 flex-shrink-0 rounded object-cover"
+									/>
+								) : (
+									<span className="h-7 w-7 flex-shrink-0 rounded bg-slate-100" />
+								)}
+								{s.name}
+							</button>
+						);
+					})}
+				</div>
+			)}
+		</div>
 	);
 }
 
@@ -233,6 +289,25 @@ export function CharactersPanel({
 		enabled: isVvRunning,
 		retry: false,
 	});
+
+	const speakerInfoQueries = useQueries({
+		queries: (speakers ?? []).map((s) => ({
+			queryKey: ["voicevox-speaker-info", s.speaker_uuid],
+			queryFn: () => api.voicevox.speakerInfo(s.speaker_uuid),
+			enabled: isVvRunning && !!speakers,
+			retry: false,
+			staleTime: 5 * 60 * 1000,
+		})),
+	});
+
+	const speakerInfoMap = useMemo(() => {
+		const map: Record<string, SpeakerInfo> = {};
+		for (let i = 0; i < (speakers ?? []).length; i++) {
+			const data = speakerInfoQueries[i]?.data;
+			if (data) map[(speakers ?? [])[i].speaker_uuid] = data;
+		}
+		return map;
+	}, [speakerInfoQueries, speakers]);
 
 	const saveMutation = useMutation({
 		mutationFn: (f: CharForm) => {
@@ -337,20 +412,34 @@ export function CharactersPanel({
 					<div className="flex flex-col gap-1">
 						{chars?.items.map((c) => {
 							const item = c as CharacterConfig;
+							const info = speakerInfoMap[item.voice.speakerId];
+							const icon =
+								info?.style_infos.find((s) => s.id === item.voice.styleId)?.icon ??
+								info?.style_infos[0]?.icon;
+							const isSelected = selected === item.key && !isNew;
 							return (
 								<button
 									key={item.key}
 									type="button"
 									onClick={() => selectChar(item)}
 									className={cn(
-										"rounded-md px-3 py-2 text-left text-sm transition-colors",
-										selected === item.key && !isNew
-											? "bg-emerald-600 text-white"
-											: "hover:bg-slate-100",
+										"flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+										isSelected ? "bg-emerald-600 text-white" : "hover:bg-slate-100",
 									)}
 								>
-									<div className="font-medium">{item.name}</div>
-									<div className="text-xs opacity-60">{item.key}</div>
+									{icon ? (
+										<img
+											src={`data:image/png;base64,${icon}`}
+											alt=""
+											className="h-9 w-9 flex-shrink-0 rounded object-cover"
+										/>
+									) : (
+										<span className="h-9 w-9 flex-shrink-0 rounded bg-slate-200" />
+									)}
+									<div className="min-w-0">
+										<div className="font-medium">{item.name}</div>
+										<div className="text-xs opacity-60">{item.key}</div>
+									</div>
 								</button>
 							);
 						})}
@@ -410,9 +499,10 @@ export function CharactersPanel({
 						<Fieldset legend="Voice">
 							{isVvRunning && speakers && speakers.length > 0 ? (
 								<div>
-									<Label>スピーカー</Label>
+									<Label>Speaker</Label>
 									<SpeakerPicker
 										speakers={speakers}
+										speakerInfoMap={speakerInfoMap}
 										value={form.voiceSpeakerId}
 										onSelect={(speakerId) => {
 											const spk = speakers.find((s) => s.speaker_uuid === speakerId);

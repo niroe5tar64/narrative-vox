@@ -52,6 +52,17 @@ export type Speaker = {
 	speaker_uuid: string;
 	styles: SpeakerStyle[];
 };
+export type SpeakerStyleInfo = {
+	id: number;
+	icon: string;
+	portrait?: string;
+	voice_samples: string[];
+};
+export type SpeakerInfo = {
+	policy: string;
+	portrait: string;
+	style_infos: SpeakerStyleInfo[];
+};
 export type VoicevoxStatus = { status: "running"; version: string };
 
 export type ReadingEntry = { surface: string; reading: string };
@@ -220,6 +231,8 @@ export const api = {
 	voicevox: {
 		status: () => apiFetch<VoicevoxStatus>("/voicevox/status"),
 		speakers: () => apiFetch<Speaker[]>("/voicevox/speakers"),
+		speakerInfo: (speakerUuid: string) =>
+			apiFetch<SpeakerInfo>(`/voicevox/speaker_info?speaker_uuid=${encodeURIComponent(speakerUuid)}`),
 		getConfig: (name: string) =>
 			apiFetch<unknown>(`/configs/voice/voicevox/${name}`),
 		putConfig: (name: string, data: unknown) =>
