@@ -12,33 +12,33 @@ import { useBlocker } from "react-router-dom";
  * ダイアログが抑制される場合があるため、この方法を採用している。
  */
 export function useDirtyGuard(isDirty: boolean) {
-	useEffect(() => {
-		if (!isDirty) return;
-		const handler = (e: BeforeUnloadEvent) => {
-			e.preventDefault();
-		};
-		window.addEventListener("beforeunload", handler);
-		return () => window.removeEventListener("beforeunload", handler);
-	}, [isDirty]);
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
-	// useRef で isDirty の最新値を保持し、コールバック内での stale closure を防ぐ
-	const isDirtyRef = useRef(isDirty);
-	isDirtyRef.current = isDirty;
+  // useRef で isDirty の最新値を保持し、コールバック内での stale closure を防ぐ
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
 
-	// ナビゲーション判定をコールバックとして渡すことで、
-	// ルーターのナビゲーションイベントと同期的に確認ダイアログを表示する
-	const shouldBlock = useCallback(() => {
-		if (!isDirtyRef.current) return false;
-		return !window.confirm("未保存の変更があります。ページを離れますか？");
-	}, []);
+  // ナビゲーション判定をコールバックとして渡すことで、
+  // ルーターのナビゲーションイベントと同期的に確認ダイアログを表示する
+  const shouldBlock = useCallback(() => {
+    if (!isDirtyRef.current) return false;
+    return !window.confirm("未保存の変更があります。ページを離れますか？");
+  }, []);
 
-	const blocker = useBlocker(shouldBlock);
+  const blocker = useBlocker(shouldBlock);
 
-	// shouldBlock が true を返したとき、ルーターは blocker を "blocked" に遷移させる。
-	// ダイアログは shouldBlock 内で処理済みのため、ここではリセットのみ行う。
-	useEffect(() => {
-		if (blocker.state === "blocked") {
-			blocker.reset();
-		}
-	}, [blocker.state, blocker]);
+  // shouldBlock が true を返したとき、ルーターは blocker を "blocked" に遷移させる。
+  // ダイアログは shouldBlock 内で処理済みのため、ここではリセットのみ行う。
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+  }, [blocker.state, blocker]);
 }

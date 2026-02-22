@@ -1,5 +1,5 @@
 import { realpath } from "node:fs/promises";
-import { resolve, dirname, basename } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { config } from "../config.ts";
 
 /** セーフパス検証エラーのエラーコード。 */
@@ -7,18 +7,18 @@ export type SafePathErrorCode = "PATH_TRAVERSAL" | "SYMLINK_ESCAPE";
 
 /** パストラバーサルまたはシンボリックリンク逸脱を検出した場合のエラー。 */
 export class SafePathError extends Error {
-	constructor(
-		message: string,
-		public readonly code: SafePathErrorCode,
-	) {
-		super(message);
-		this.name = "SafePathError";
-	}
+  constructor(
+    message: string,
+    public readonly code: SafePathErrorCode,
+  ) {
+    super(message);
+    this.name = "SafePathError";
+  }
 }
 
 function isWithinRoot(absPath: string, root: string): boolean {
-	const normalizedRoot = root.endsWith("/") ? root : `${root}/`;
-	return absPath === root || absPath.startsWith(normalizedRoot);
+  const normalizedRoot = root.endsWith("/") ? root : `${root}/`;
+  return absPath === root || absPath.startsWith(normalizedRoot);
 }
 
 /**
@@ -33,39 +33,39 @@ function isWithinRoot(absPath: string, root: string): boolean {
  * @throws {SafePathError} パストラバーサルまたはシンボリックリンク逸脱を検出した場合
  */
 export async function safeResolve(inputPath: string): Promise<string> {
-	const resolved = resolve(config.repoRoot, inputPath);
+  const resolved = resolve(config.repoRoot, inputPath);
 
-	if (!isWithinRoot(resolved, config.repoRoot)) {
-		throw new SafePathError(
-			`Path escapes repository root: ${inputPath}`,
-			"PATH_TRAVERSAL",
-		);
-	}
+  if (!isWithinRoot(resolved, config.repoRoot)) {
+    throw new SafePathError(
+      `Path escapes repository root: ${inputPath}`,
+      "PATH_TRAVERSAL",
+    );
+  }
 
-	try {
-		const real = await realpath(resolved);
-		if (!isWithinRoot(real, config.repoRoot)) {
-			throw new SafePathError(
-				`Symlink escapes repository root: ${inputPath}`,
-				"SYMLINK_ESCAPE",
-			);
-		}
-		return real;
-	} catch (e) {
-		if (e instanceof SafePathError) throw e;
-		// ファイルが存在しない場合は親ディレクトリで検証する
-		const parentReal = await realpath(dirname(resolved)).catch(() => {
-			throw new SafePathError(
-				`Parent directory not found: ${inputPath}`,
-				"PATH_TRAVERSAL",
-			);
-		});
-		if (!isWithinRoot(parentReal, config.repoRoot)) {
-			throw new SafePathError(
-				`Symlink escapes repository root: ${inputPath}`,
-				"SYMLINK_ESCAPE",
-			);
-		}
-		return `${parentReal}/${basename(resolved)}`;
-	}
+  try {
+    const real = await realpath(resolved);
+    if (!isWithinRoot(real, config.repoRoot)) {
+      throw new SafePathError(
+        `Symlink escapes repository root: ${inputPath}`,
+        "SYMLINK_ESCAPE",
+      );
+    }
+    return real;
+  } catch (e) {
+    if (e instanceof SafePathError) throw e;
+    // ファイルが存在しない場合は親ディレクトリで検証する
+    const parentReal = await realpath(dirname(resolved)).catch(() => {
+      throw new SafePathError(
+        `Parent directory not found: ${inputPath}`,
+        "PATH_TRAVERSAL",
+      );
+    });
+    if (!isWithinRoot(parentReal, config.repoRoot)) {
+      throw new SafePathError(
+        `Symlink escapes repository root: ${inputPath}`,
+        "SYMLINK_ESCAPE",
+      );
+    }
+    return `${parentReal}/${basename(resolved)}`;
+  }
 }

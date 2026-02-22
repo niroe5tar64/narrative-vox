@@ -6,20 +6,20 @@ import type { AppVariables } from "../types.ts";
  * https://www.rfc-editor.org/rfc/rfc7807
  */
 export interface ProblemDetail {
-	/** 問題タイプを識別するURIリファレンス。省略時は "about:blank"。 */
-	type?: string;
-	/** 問題タイプの短い人間可読サマリー。 */
-	title: string;
-	/** HTTPステータスコード。 */
-	status: number;
-	/** この発生に固有の詳細説明。 */
-	detail?: string;
-	/** 問題の発生箇所を識別するURIリファレンス。省略時はリクエストURLを使用。 */
-	instance?: string;
-	/** アプリケーション固有のエラーコード。 */
-	errorCode?: string;
-	/** バリデーションエラーなどの追加詳細。 */
-	details?: unknown;
+  /** 問題タイプを識別するURIリファレンス。省略時は "about:blank"。 */
+  type?: string;
+  /** 問題タイプの短い人間可読サマリー。 */
+  title: string;
+  /** HTTPステータスコード。 */
+  status: number;
+  /** この発生に固有の詳細説明。 */
+  detail?: string;
+  /** 問題の発生箇所を識別するURIリファレンス。省略時はリクエストURLを使用。 */
+  instance?: string;
+  /** アプリケーション固有のエラーコード。 */
+  errorCode?: string;
+  /** バリデーションエラーなどの追加詳細。 */
+  details?: unknown;
 }
 
 /** HTTP 400 Bad Request */
@@ -44,22 +44,22 @@ export const STATUS_503 = 503 as const;
  * Content-Type は application/problem+json に設定される。
  */
 export function problem(
-	c: Context<{ Variables: AppVariables }>,
-	p: ProblemDetail,
+  c: Context<{ Variables: AppVariables }>,
+  p: ProblemDetail,
 ): Response {
-	const requestId = c.get("requestId") ?? "";
-	const body = {
-		type: p.type ?? "about:blank",
-		title: p.title,
-		status: p.status,
-		...(p.detail !== undefined && { detail: p.detail }),
-		instance: p.instance ?? c.req.url,
-		...(p.errorCode !== undefined && { errorCode: p.errorCode }),
-		...(p.details !== undefined && { details: p.details }),
-		requestId,
-	};
-	return new Response(JSON.stringify(body), {
-		status: p.status,
-		headers: { "Content-Type": "application/problem+json" },
-	});
+  const requestId = c.get("requestId") ?? "";
+  const body = {
+    type: p.type ?? "about:blank",
+    title: p.title,
+    status: p.status,
+    ...(p.detail !== undefined && { detail: p.detail }),
+    instance: p.instance ?? c.req.url,
+    ...(p.errorCode !== undefined && { errorCode: p.errorCode }),
+    ...(p.details !== undefined && { details: p.details }),
+    requestId,
+  };
+  return new Response(JSON.stringify(body), {
+    status: p.status,
+    headers: { "Content-Type": "application/problem+json" },
+  });
 }

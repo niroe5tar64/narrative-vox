@@ -3,34 +3,34 @@
  * これに含まれない拡張子のファイルは 415 Unsupported Media Type を返す。
  */
 const TEXT_EXTENSIONS = new Set([
-	".txt",
-	".md",
-	".json",
-	".jsonl",
-	".ts",
-	".js",
-	".mjs",
-	".cjs",
-	".yaml",
-	".yml",
-	".toml",
-	".env",
-	".sh",
-	".xml",
-	".csv",
+  ".txt",
+  ".md",
+  ".json",
+  ".jsonl",
+  ".ts",
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".env",
+  ".sh",
+  ".xml",
+  ".csv",
 ]);
 
 /**
  * テキスト系として扱うMIMEタイプのプレフィックス/完全一致リスト。
  */
 const TEXT_MIME_PREFIXES = [
-	"text/",
-	"application/json",
-	"application/ld+json",
-	"application/xml",
-	"application/javascript",
-	"application/x-yaml",
-	"application/yaml",
+  "text/",
+  "application/json",
+  "application/ld+json",
+  "application/xml",
+  "application/javascript",
+  "application/x-yaml",
+  "application/yaml",
 ];
 
 /**
@@ -40,9 +40,9 @@ const TEXT_MIME_PREFIXES = [
  * @returns テキスト系拡張子なら true
  */
 export function isTextExtension(filename: string): boolean {
-	const dotIndex = filename.lastIndexOf(".");
-	if (dotIndex === -1) return false;
-	return TEXT_EXTENSIONS.has(filename.slice(dotIndex).toLowerCase());
+  const dotIndex = filename.lastIndexOf(".");
+  if (dotIndex === -1) return false;
+  return TEXT_EXTENSIONS.has(filename.slice(dotIndex).toLowerCase());
 }
 
 /**
@@ -53,6 +53,6 @@ export function isTextExtension(filename: string): boolean {
  * @returns テキスト系MIMEなら true
  */
 export function isTextMime(contentType: string): boolean {
-	const base = contentType.split(";")[0].trim().toLowerCase();
-	return TEXT_MIME_PREFIXES.some((prefix) => base.startsWith(prefix));
+  const base = contentType.split(";")[0].trim().toLowerCase();
+  return TEXT_MIME_PREFIXES.some((prefix) => base.startsWith(prefix));
 }
