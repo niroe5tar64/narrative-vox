@@ -152,6 +152,24 @@ async function withMockVoicevoxServer(
   }
 }
 
+const FIXTURE_PROJECT_ID = "introducing-rescript";
+const FIXTURE_RUN_ID = "run-20260214-1020";
+
+async function writeRunContract(runDir: string): Promise<void> {
+  const contract = {
+    version: 1 as const,
+    projectId: FIXTURE_PROJECT_ID,
+    runId: FIXTURE_RUN_ID,
+    runDir,
+    createdAt: "2026-02-14T10:20:00.000Z",
+  };
+  await writeFile(
+    path.join(runDir, "run-contract.json"),
+    `${JSON.stringify(contract, null, 2)}\n`,
+    "utf-8",
+  );
+}
+
 async function createStage5Fixture(withQuery: boolean): Promise<{
   runDir: string;
   stage5VvprojPath: string;
@@ -162,11 +180,12 @@ async function createStage5Fixture(withQuery: boolean): Promise<{
   );
   const runDir = path.join(
     tempRoot,
-    "introducing-rescript",
-    "run-20260214-1020",
+    FIXTURE_PROJECT_ID,
+    FIXTURE_RUN_ID,
   );
   const stage5Dir = path.join(runDir, "voicevox_project");
   await mkdir(stage5Dir, { recursive: true });
+  await writeRunContract(runDir);
 
   const query = sampleQuery(0.42);
   const vvproj = {
@@ -212,11 +231,12 @@ async function createStage5FixtureMultiple(withQuery: boolean): Promise<{
   );
   const runDir = path.join(
     tempRoot,
-    "introducing-rescript",
-    "run-20260214-1020",
+    FIXTURE_PROJECT_ID,
+    FIXTURE_RUN_ID,
   );
   const stage5Dir = path.join(runDir, "voicevox_project");
   await mkdir(stage5Dir, { recursive: true });
+  await writeRunContract(runDir);
 
   const query = sampleQuery(0.3);
   const vvproj = {
@@ -933,6 +953,39 @@ test("build-audio records compression failure when ffmpeg exits with error", asy
         true,
       );
       assert.equal(manifest.output.compressed_audio_path, undefined);
+    },
+  );
+});
+
+test("build-audio reads project_id and run_id from run-contract.json", async () => {
+  const { runDir, stage5VvprojPath } = await createStage5Fixture(true);
+
+  await withMockVoicevoxServer(
+    (req, res) => {
+      if (respondHealthCheck(req, res)) {
+        return;
+      }
+      const requestUrl = new URL(req.url ?? "/", "http://127.0.0.1");
+      if (req.method === "POST" && requestUrl.pathname === "/synthesis") {
+        res.writeHead(200, { "content-type": "audio/wav" });
+        res.end(buildMockWav([1, 2, 3, 4]));
+        return;
+      }
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "not found" }));
+    },
+    async (voicevoxApiUrl) => {
+      const result = await buildAudioWithoutCompression({
+        stage5VvprojPath,
+        runDir,
+        voicevoxApiUrl,
+      });
+
+      const manifest = JSON.parse(
+        await readFile(result.manifestPath, "utf-8"),
+      ) as BuildAudioManifest;
+      assert.equal(manifest.meta.project_id, FIXTURE_PROJECT_ID);
+      assert.equal(manifest.meta.run_id, FIXTURE_RUN_ID);
     },
   );
 });
