@@ -3,7 +3,7 @@ import path from "node:path";
 import { buildAudio } from "@narrative-vox/application/build-audio.ts";
 import { buildProject } from "@narrative-vox/application/build-project.ts";
 import { buildText } from "@narrative-vox/application/build-text.ts";
-import { syncUserDict } from "@narrative-vox/application/dict-sync.ts";
+import { syncUserDict } from "@narrative-vox/application/dict-sync/index.ts";
 import { patchVoicevoxText } from "@narrative-vox/application/patch-voicevox-text.ts";
 import { resolveVoicevoxApiUrl } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 import { validateBuildPrerequisites } from "@narrative-vox/quality/build-prerequisites.ts";
@@ -48,7 +48,7 @@ const usageByCommand: Record<CommandName, string> = {
   "render-prompt":
     "Usage:\n  bun apps/cli/src/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/pipeline/projects/ID.json> [--episode-id E##]",
   "dict-sync":
-    "Usage:\n  bun apps/cli/src/main.ts dict-sync [--voicevox-url <http://127.0.0.1:50021>] [--dict <configs/voice/voicevox/user_dict.json>]",
+    "Usage:\n  bun apps/cli/src/main.ts dict-sync [--voicevox-url <http://127.0.0.1:50021>] [--dict <configs/voice/voicevox/user_dict.json>] [--dry-run] [--legacy-sync]",
 };
 
 function printUsage(command?: string) {
@@ -270,7 +270,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     });
     if (syncResult.errors.length > 0) {
       for (const err of syncResult.errors) {
-        console.log(`  [error] ${err}`);
+        console.log(`  [error] [${err.op}] "${err.surface}": ${err.error}`);
       }
       throw new Error(
         `dict-sync completed with ${syncResult.errors.length} error(s)`,
@@ -288,7 +288,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       `- build-text: ${path.relative(process.cwd(), buildTextResult.voicevoxTextJsonPath)}, ${path.relative(process.cwd(), buildTextResult.voicevoxTextPath)}, ${path.relative(process.cwd(), buildTextResult.dictionaryCsvPath)}`,
     );
     console.log(
-      `- dict-sync: deleted=${syncResult.deleted}, added=${syncResult.added}`,
+      `- dict-sync: updated=${syncResult.applied.updated}, added=${syncResult.applied.added}, deleted=${syncResult.applied.deleted} (unchanged: ${syncResult.diff.unchanged})`,
     );
     console.log(
       `- build-project: ${path.relative(process.cwd(), result.importJsonPath)}, ${path.relative(process.cwd(), result.vvprojPath)}, ${path.relative(process.cwd(), result.projectMetaJsonPath)}`,
@@ -331,17 +331,24 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     const apiUrl = await resolveVoicevoxApiUrl(
       optionAsString(options, "voicevox-url"),
     );
+    const dryRun = Boolean(options["dry-run"]);
+    const legacySync = Boolean(options["legacy-sync"]);
     const result = await syncUserDict({
       apiUrl,
       dictPath: optionAsString(options, "dict"),
+      dryRun,
+      legacySync,
     });
 
     console.log(
-      `Dict sync done: deleted=${result.deleted}, added=${result.added}`,
+      `Dict sync done: updated=${result.applied.updated}, added=${result.applied.added}, deleted=${result.applied.deleted} (unchanged: ${result.diff.unchanged})`,
     );
     if (result.errors.length > 0) {
       for (const err of result.errors) {
-        console.log(`  [error] ${err}`);
+        console.log(`  [error] [${err.op}] "${err.surface}": ${err.error}`);
+      }
+      if (result.aborted) {
+        throw new Error("dict-sync aborted due to consecutive errors");
       }
       throw new Error(
         `dict-sync completed with ${result.errors.length} error(s)`,

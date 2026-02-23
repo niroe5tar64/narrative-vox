@@ -43,6 +43,35 @@ export async function deleteUserDictWord(
   }
 }
 
+export async function updateUserDictWord(
+  apiUrl: string,
+  uuid: string,
+  word: UserDictWordEntry,
+): Promise<void> {
+  const base = normalizeVoicevoxApiUrl(apiUrl);
+  const endpoint = new URL(
+    `/user_dict_word/${encodeURIComponent(uuid)}`,
+    base,
+  );
+  endpoint.searchParams.set("surface", word.surface);
+  endpoint.searchParams.set("pronunciation", word.pronunciation);
+  endpoint.searchParams.set("accent_type", String(word.accent_type ?? 0));
+  if (word.word_type) {
+    endpoint.searchParams.set("word_type", word.word_type);
+  }
+  if (word.priority !== undefined) {
+    endpoint.searchParams.set("priority", String(word.priority));
+  }
+
+  const response = await fetch(endpoint, { method: "PUT" });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `PUT /user_dict_word/${uuid} failed for "${word.surface}": ${response.status} ${response.statusText} ${body}`,
+    );
+  }
+}
+
 export async function addUserDictWord(
   apiUrl: string,
   word: UserDictWordEntry,
