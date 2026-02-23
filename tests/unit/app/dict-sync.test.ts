@@ -6,11 +6,12 @@ import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 
-import { syncUserDict } from "@narrative-vox/application/dict-sync.ts";
+import { syncUserDict } from "@narrative-vox/application/dict-sync/index.ts";
 
 function createMockVoicevoxServer(options?: {
   existingDict?: Record<string, unknown>;
   addFailSurface?: string;
+  putFailSurface?: string;
 }) {
   const existingDict = options?.existingDict ?? {};
   const calls: { method: string; url: string; body?: string }[] = [];
@@ -33,6 +34,19 @@ function createMockVoicevoxServer(options?: {
       }
 
       if (method === "DELETE" && url.startsWith("/user_dict_word/")) {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+
+      if (method === "PUT" && url.startsWith("/user_dict_word/")) {
+        const parsedUrl = new URL(url, "http://localhost");
+        const surface = parsedUrl.searchParams.get("surface");
+        if (options?.putFailSurface && surface === options.putFailSurface) {
+          res.writeHead(422, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ detail: "invalid word" }));
+          return;
+        }
         res.writeHead(204);
         res.end();
         return;
@@ -77,7 +91,9 @@ function stopServer(server: ReturnType<typeof createServer>): Promise<void> {
   });
 }
 
-test("syncUserDict: adds words from dict file to empty engine", async () => {
+// --- Legacy sync tests (legacy=true, behaviour unchanged) ---
+
+test("syncUserDict(legacy): adds words from dict file to empty engine", async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
   const dictPath = path.join(tmpDir, "user_dict.json");
   await writeFile(
@@ -99,10 +115,10 @@ test("syncUserDict: adds words from dict file to empty engine", async () => {
   const apiUrl = await startServer(server);
 
   try {
-    const result = await syncUserDict({ apiUrl, dictPath });
+    const result = await syncUserDict({ apiUrl, dictPath, legacySync: true });
 
-    assert.equal(result.deleted, 0);
-    assert.equal(result.added, 2);
+    assert.equal(result.applied.deleted, 0);
+    assert.equal(result.applied.added, 2);
     assert.equal(result.errors.length, 0);
 
     const postCalls = calls.filter((c) => c.method === "POST");
@@ -120,7 +136,7 @@ test("syncUserDict: adds words from dict file to empty engine", async () => {
   }
 });
 
-test("syncUserDict: deletes existing entries before adding", async () => {
+test("syncUserDict(legacy): deletes existing entries before adding", async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
   const dictPath = path.join(tmpDir, "user_dict.json");
   await writeFile(
@@ -153,10 +169,10 @@ test("syncUserDict: deletes existing entries before adding", async () => {
   const apiUrl = await startServer(server);
 
   try {
-    const result = await syncUserDict({ apiUrl, dictPath });
+    const result = await syncUserDict({ apiUrl, dictPath, legacySync: true });
 
-    assert.equal(result.deleted, 2);
-    assert.equal(result.added, 1);
+    assert.equal(result.applied.deleted, 2);
+    assert.equal(result.applied.added, 1);
     assert.equal(result.errors.length, 0);
 
     const deleteCalls = calls.filter((c) => c.method === "DELETE");
@@ -168,7 +184,7 @@ test("syncUserDict: deletes existing entries before adding", async () => {
   }
 });
 
-test("syncUserDict: reports errors for failed additions without throwing", async () => {
+test("syncUserDict(legacy): reports errors for failed additions without throwing", async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
   const dictPath = path.join(tmpDir, "user_dict.json");
   await writeFile(
@@ -186,11 +202,11 @@ test("syncUserDict: reports errors for failed additions without throwing", async
   const apiUrl = await startServer(server);
 
   try {
-    const result = await syncUserDict({ apiUrl, dictPath });
+    const result = await syncUserDict({ apiUrl, dictPath, legacySync: true });
 
-    assert.equal(result.added, 1);
+    assert.equal(result.applied.added, 1);
     assert.equal(result.errors.length, 1);
-    assert.ok(result.errors[0].includes('"Bad"'));
+    assert.ok(result.errors[0].error.includes('"Bad"'));
   } finally {
     await stopServer(server);
   }
@@ -223,7 +239,7 @@ test("syncUserDict: validates dict file against schema", async () => {
   }
 });
 
-test("syncUserDict: empty words array syncs correctly", async () => {
+test("syncUserDict(legacy): empty words array syncs correctly", async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
   const dictPath = path.join(tmpDir, "user_dict.json");
   await writeFile(dictPath, JSON.stringify({ version: 1, words: [] }));
@@ -242,11 +258,165 @@ test("syncUserDict: empty words array syncs correctly", async () => {
   const apiUrl = await startServer(server);
 
   try {
+    const result = await syncUserDict({ apiUrl, dictPath, legacySync: true });
+
+    assert.equal(result.applied.deleted, 1);
+    assert.equal(result.applied.added, 0);
+    assert.equal(result.errors.length, 0);
+  } finally {
+    await stopServer(server);
+  }
+});
+
+// --- Diff-based sync tests ---
+
+test("syncUserDict(diff): adds new words only", async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
+  const dictPath = path.join(tmpDir, "user_dict.json");
+  await writeFile(
+    dictPath,
+    JSON.stringify({
+      version: 1,
+      words: [
+        { surface: "NewWord", pronunciation: "ニューワード", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+      ],
+    }),
+  );
+
+  const { server, calls } = createMockVoicevoxServer();
+  const apiUrl = await startServer(server);
+
+  try {
     const result = await syncUserDict({ apiUrl, dictPath });
 
-    assert.equal(result.deleted, 1);
-    assert.equal(result.added, 0);
+    assert.equal(result.applied.added, 1);
+    assert.equal(result.applied.updated, 0);
+    assert.equal(result.applied.deleted, 0);
+    assert.equal(result.diff.unchanged, 0);
     assert.equal(result.errors.length, 0);
+
+    const postCalls = calls.filter((c) => c.method === "POST");
+    assert.equal(postCalls.length, 1);
+  } finally {
+    await stopServer(server);
+  }
+});
+
+test("syncUserDict(diff): skips unchanged entries", async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
+  const dictPath = path.join(tmpDir, "user_dict.json");
+  await writeFile(
+    dictPath,
+    JSON.stringify({
+      version: 1,
+      words: [
+        { surface: "Same", pronunciation: "セイム", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+      ],
+    }),
+  );
+
+  const existingDict = {
+    "uuid-same": {
+      surface: "Same",
+      pronunciation: "セイム",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+      mora_count: 3,
+    },
+  };
+  const { server, calls } = createMockVoicevoxServer({ existingDict });
+  const apiUrl = await startServer(server);
+
+  try {
+    const result = await syncUserDict({ apiUrl, dictPath });
+
+    assert.equal(result.diff.unchanged, 1);
+    assert.equal(result.applied.added, 0);
+    assert.equal(result.applied.updated, 0);
+    assert.equal(result.applied.deleted, 0);
+    assert.equal(result.errors.length, 0);
+
+    // No mutating API calls
+    const mutateCalls = calls.filter((c) => c.method !== "GET");
+    assert.equal(mutateCalls.length, 0);
+  } finally {
+    await stopServer(server);
+  }
+});
+
+test("syncUserDict(diff): updates changed entries", async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
+  const dictPath = path.join(tmpDir, "user_dict.json");
+  await writeFile(
+    dictPath,
+    JSON.stringify({
+      version: 1,
+      words: [
+        { surface: "Word", pronunciation: "ワードニュー", accent_type: 1, word_type: "PROPER_NOUN", priority: 5 },
+      ],
+    }),
+  );
+
+  const existingDict = {
+    "uuid-word": {
+      surface: "Word",
+      pronunciation: "ワード",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+      mora_count: 2,
+    },
+  };
+  const { server, calls } = createMockVoicevoxServer({ existingDict });
+  const apiUrl = await startServer(server);
+
+  try {
+    const result = await syncUserDict({ apiUrl, dictPath });
+
+    assert.equal(result.applied.updated, 1);
+    assert.equal(result.applied.added, 0);
+    assert.equal(result.applied.deleted, 0);
+    assert.equal(result.diff.unchanged, 0);
+    assert.equal(result.errors.length, 0);
+
+    const putCalls = calls.filter((c) => c.method === "PUT");
+    assert.equal(putCalls.length, 1);
+    assert.ok(putCalls[0].url.includes("uuid-word"));
+  } finally {
+    await stopServer(server);
+  }
+});
+
+test("syncUserDict(diff): deletes remote-only entries", async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dict-sync-"));
+  const dictPath = path.join(tmpDir, "user_dict.json");
+  await writeFile(dictPath, JSON.stringify({ version: 1, words: [] }));
+
+  const existingDict = {
+    "uuid-old": {
+      surface: "Old",
+      pronunciation: "オールド",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+      mora_count: 3,
+    },
+  };
+  const { server, calls } = createMockVoicevoxServer({ existingDict });
+  const apiUrl = await startServer(server);
+
+  try {
+    const result = await syncUserDict({ apiUrl, dictPath });
+
+    assert.equal(result.applied.deleted, 1);
+    assert.equal(result.applied.added, 0);
+    assert.equal(result.applied.updated, 0);
+    assert.equal(result.errors.length, 0);
+
+    const deleteCalls = calls.filter((c) => c.method === "DELETE");
+    assert.equal(deleteCalls.length, 1);
+    assert.ok(deleteCalls[0].url.includes("uuid-old"));
   } finally {
     await stopServer(server);
   }
