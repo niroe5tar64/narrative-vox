@@ -12,6 +12,6 @@
   - `default_character_map.json`: character_key -> VOICEVOX voice 設定（任意・ローカル、未作成時は `content/characters/*.json` から自動構築）
   - `build-text-config.example.json`: Build Text 設定テンプレート
   - `build-text-config.json`: Build Text の既定設定（コミット対象）
-  - `reading-dictionary.json`: Build Text の読み辞書
+  - `patch-config.json`: patch-voicevox-text のテキスト正規化・辞書パッチ設定
   - `speed-profiles.json`: Build Project の速度プリセット定義
 - `templates/`: 将来的な設定テンプレート拡張領域

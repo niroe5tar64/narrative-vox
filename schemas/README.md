@@ -19,5 +19,5 @@
 - `schemas/content-style.schema.json` — コンテンツスタイル定義
 - `schemas/character.schema.json` — キャラクター定義（profile 含む）
 - `schemas/project-config.schema.json` — プロジェクト設定
-- `schemas/reading-dictionary.schema.json` — 読み辞書
+- `schemas/voicevox-text-patch-config.schema.json` — patch-voicevox-text パッチ設定
 - `schemas/speed-profiles.schema.json` — 速度プロファイル

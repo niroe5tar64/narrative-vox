@@ -421,10 +421,6 @@ const VOICEVOX_CONFIGS: Record<string, VoicevoxConfigEntry> = {
     relPath: "configs/voice/voicevox/speed-profiles.json",
     schemaName: "speed-profiles",
   },
-  "reading-dictionary": {
-    relPath: "configs/voice/voicevox/reading-dictionary.json",
-    schemaName: "reading-dictionary",
-  },
   "user-dict": {
     relPath: "configs/voice/voicevox/user-dict.json",
     schemaName: null,

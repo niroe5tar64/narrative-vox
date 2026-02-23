@@ -65,9 +65,6 @@ export type SpeakerInfo = {
 };
 export type VoicevoxStatus = { status: "running"; version: string };
 
-export type ReadingEntry = { surface: string; reading: string };
-export type ReadingDictionary = { version: number; entries: ReadingEntry[] };
-
 export type UserDictWord = {
   surface: string;
   pronunciation: string;
