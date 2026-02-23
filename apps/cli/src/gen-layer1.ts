@@ -126,15 +126,42 @@ export async function runClaudeWithPrompt(prompt: string): Promise<string> {
     });
   }
 
-  const [exitCode, rawOutput] = await Promise.all([
-    proc.exited,
-    new Response(proc.stdout).text(),
-  ]);
+  // stdout を行単位でリアルタイム表示しながら収集
+  const outputChunks: string[] = [];
+  const stdoutStream = proc.stdout;
+  if (stdoutStream) {
+    const reader = stdoutStream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (buffer.length > 0) {
+            outputChunks.push(buffer);
+            process.stdout.write(buffer + "\n");
+          }
+          break;
+        }
+        const text = decoder.decode(value, { stream: true });
+        outputChunks.push(text);
+        buffer += text;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          process.stdout.write(line + "\n");
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
 
+  const exitCode = await proc.exited;
   if (exitCode !== 0) {
     throw new Error(`claude --print - exited with code ${exitCode}`);
   }
-  return rawOutput;
+  return outputChunks.join("");
 }
 
 // ---------------------------------------------------------------------------
