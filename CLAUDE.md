@@ -23,11 +23,14 @@ bun run typecheck
 
 # パイプラインコマンド（すべて --help でフラグ確認可能）
 bun run build-text -- --script path/to/E01_script.md
+bun run patch-voicevox-text -- --voicevox-text-json path/to/voicevox_text/E01_voicevox_text.json
 bun run build-project -- --voicevox-text-json path/to/voicevox_text/E01_voicevox_text.json
 bun run build-audio -- --vvproj path/to/voicevox_project/E01.vvproj
 bun run build-all -- --script path/to/E01_script.md
 bun run check-run -- --run-dir path/to/run-dir
 bun run prepare-run -- --source-run-dir path/to/existing-run
+bun run render-prompt -- --genre tech-explainer --step blueprint --project-config path/to/project.json --episode-id E01
+bun run dict-sync -- --voicevox-url http://localhost:50021
 
 # VOICEVOX Engine（Docker）
 bun run voicevox:up / voicevox:down / voicevox:check
@@ -39,13 +42,20 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 
 ## アーキテクチャ
 
-### ソース構成（`src/`）
+### ソース構成（モノレポ）
 
-- **`cli/`** — CLIエントリポイント（`main.ts` が7コマンドをディスパッチ）、`prepare-run.ts`、`render-prompt.ts`
-- **`app/`** — ユースケース実装（`build-text.ts` / `build-project.ts` / `build-audio.ts` と配下モジュール）
-- **`domain/`** — ドメイン型・ルール（話者タグ、台本構造、run-id、キャラクター定義など）
-- **`infra/`** — 外部I/O（filesystem、JSON、schema解決、VOICEVOX APIクライアント）
-- **`quality/`** — `check-run.ts`（スキーマ＋構造バリデーション）、`schema-validator.ts`（AJVラッパー）
+**`apps/`** — アプリケーションエントリポイント
+
+- **`apps/cli/`** — CLIエントリポイント（`main.ts` が9コマンドをディスパッチ）、`prepare-run.ts`、`render-prompt.ts`
+- **`apps/api/`** — Bun + Hono APIサーバー（パイプライン実行・設定・ファイル操作エンドポイント）
+- **`apps/web/`** — Vite + React フロントエンド
+
+**`packages/`** — 共有ライブラリ（レイヤードアーキテクチャ）
+
+- **`packages/application/`** — ユースケース実装（`build-text.ts` / `patch-voicevox-text.ts` / `build-project.ts` / `build-audio.ts` / `dict-sync/` と配下モジュール）
+- **`packages/domain/`** — ドメイン型・ルール（話者タグ、台本構造、run-id、キャラクター定義など）
+- **`packages/infrastructure/`** — 外部I/O（filesystem、JSON、schema解決、VOICEVOX APIクライアント、`schema-validator.ts`（AJVラッパー））
+- **`packages/quality/`** — `check-run.ts`（スキーマ＋構造バリデーション）
 
 ### 主要パターン
 
