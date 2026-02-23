@@ -1,72 +1,115 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import {
+  CheckCircle2,
+  Circle,
+  Loader2,
+  Play,
+  RotateCcw,
+  Square,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { ApiError, api } from "@/api/client";
-import { buildArgs, CommandForm } from "@/components/pipeline/CommandForm";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
-import { NextCommandSuggest } from "@/components/pipeline/NextCommandSuggest";
 import { RunEpisodePicker } from "@/components/pipeline/RunEpisodePicker";
+import { Button } from "@/components/ui/button";
 import { usePipelineLog } from "@/hooks/usePipelineLog";
 
 // ---------------------------------------------------------------------------
-// Path inference for next command
+// Step definitions
 // ---------------------------------------------------------------------------
 
-function inferNextOptions(
-  from: string,
-  to: string,
-  cur: Record<string, string>,
-): Record<string, string> {
-  const script = cur["--script"] ?? "";
-  const vtJson = cur["--voicevox-text-json"] ?? "";
+const MAIN_STEPS = [
+  {
+    key: "build-text",
+    label: "テキスト変換",
+    note: "台本 (.md) → VOICEVOX テキスト (.json)",
+  },
+  {
+    key: "patch-voicevox-text",
+    label: "テキスト正規化",
+    note: "辞書パッチ・読み仮名補正",
+  },
+  {
+    key: "build-project",
+    label: "プロジェクト生成",
+    note: "テキスト → VOICEVOX プロジェクト (.vvproj)",
+  },
+  {
+    key: "build-audio",
+    label: "音声合成",
+    note: "VOICEVOX が必要",
+  },
+] as const;
 
-  // build-text → patch: script path → voicevox_text JSON path
-  if (from === "build-text" && to === "patch-voicevox-text") {
-    const v = script.replace(
-      /\/script\/(.+)_script\.md$/,
-      "/voicevox_text/$1_voicevox_text.json",
-    );
-    return v !== script ? { "--voicevox-text-json": v } : {};
-  }
-  // patch → build-project: .json → .patched.json
-  if (from === "patch-voicevox-text" && to === "build-project") {
-    const v = vtJson.replace(
-      /_voicevox_text\.json$/,
-      "_voicevox_text.patched.json",
-    );
-    return { "--voicevox-text-json": v !== vtJson ? v : vtJson };
-  }
-  // build-project → build-audio: voicevox_text → voicevox_project .vvproj
-  if (from === "build-project" && to === "build-audio") {
-    const v = vtJson.replace(
-      /\/voicevox_text\/(.+?)_voicevox_text(\.patched)?\.json$/,
-      "/voicevox_project/$1.vvproj",
-    );
-    return v !== vtJson ? { "--vvproj": v } : {};
-  }
-  // build-all → build-audio: script → .vvproj
-  if (from === "build-all" && to === "build-audio") {
-    const v = script.replace(
-      /\/script\/(.+)_script\.md$/,
-      "/voicevox_project/$1.vvproj",
-    );
-    return v !== script ? { "--vvproj": v } : {};
-  }
-  return {};
+type StepKey = (typeof MAIN_STEPS)[number]["key"];
+
+// ---------------------------------------------------------------------------
+// Path derivation
+// ---------------------------------------------------------------------------
+
+type Paths = {
+  script: string;
+  voicevoxTextRaw: string;
+  voicevoxTextPatched: string;
+  vvproj: string;
+  runDir: string;
+};
+
+function derivePaths(runKey: string, episodeId: string): Paths | null {
+  if (!runKey || !episodeId) return null;
+  const idx = runKey.indexOf("/");
+  if (idx < 0) return null;
+  const projectId = runKey.slice(0, idx);
+  const runId = runKey.slice(idx + 1);
+  const base = `data/projects/${projectId}/${runId}`;
+  return {
+    script: `${base}/script/${episodeId}_script.md`,
+    voicevoxTextRaw: `${base}/voicevox_text/${episodeId}_voicevox_text.json`,
+    voicevoxTextPatched: `${base}/voicevox_text/${episodeId}_voicevox_text.patched.json`,
+    vvproj: `${base}/voicevox_project/${episodeId}.vvproj`,
+    runDir: base,
+  };
 }
+
+function getStepArgs(stepKey: StepKey, paths: Paths): string[] {
+  switch (stepKey) {
+    case "build-text":
+      return ["--script", paths.script];
+    case "patch-voicevox-text":
+      return ["--voicevox-text-json", paths.voicevoxTextRaw];
+    case "build-project":
+      return ["--voicevox-text-json", paths.voicevoxTextPatched];
+    case "build-audio":
+      return ["--vvproj", paths.vvproj];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Step status types
+// ---------------------------------------------------------------------------
+
+type StepStatus = "idle" | "running" | "done" | "error";
 
 // ---------------------------------------------------------------------------
 // PipelinePage
 // ---------------------------------------------------------------------------
 
 export function PipelinePage() {
-  const [command, setCommand] = useState("build-text");
-  const [optionValues, setOptionValues] = useState<Record<string, string>>({});
+  const [runKey, setRunKey] = useState("");
+  const [episodeId, setEpisodeId] = useState("E01");
+  const [stepStatuses, setStepStatuses] = useState<
+    Partial<Record<StepKey, StepStatus>>
+  >({});
+  const [activeStep, setActiveStep] = useState<StepKey | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [runningCommand, setRunningCommand] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const { logs, status, reset } = usePipelineLog(jobId);
+
+  const paths = derivePaths(runKey, episodeId);
 
   // VOICEVOX ステータスポーリング
   const voicevoxQuery = useQuery({
@@ -77,25 +120,48 @@ export function PipelinePage() {
   });
 
   // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  const resetStatuses = () => {
+    setStepStatuses({});
+    setActiveStep(null);
+    setJobId(null);
+    setRunningCommand(null);
+    reset();
+    setApiError(null);
+  };
+
+  const startJob = (command: string, args: string[]) => {
+    reset();
+    setJobId(null);
+    setRunningCommand(null);
+    setApiError(null);
+    runMutation.mutate({ command, args });
+  };
+
+  // ---------------------------------------------------------------------------
   // Mutations
   // ---------------------------------------------------------------------------
 
   const runMutation = useMutation({
-    mutationFn: () => {
-      const args = buildArgs(command, optionValues);
-      return api.pipeline.run(command, args);
-    },
+    mutationFn: ({ command, args }: { command: string; args: string[] }) =>
+      api.pipeline.run(command, args),
     onSuccess: (result) => {
       setJobId(result.jobId);
       setRunningCommand(result.command);
       setApiError(null);
     },
     onError: (e) => {
-      setApiError(
+      const msg =
         e instanceof ApiError
           ? `${e.title}${e.detail ? `: ${e.detail}` : ""}`
-          : String(e),
-      );
+          : String(e);
+      setApiError(msg);
+      if (activeStep) {
+        setStepStatuses((prev) => ({ ...prev, [activeStep]: "error" }));
+        setActiveStep(null);
+      }
     },
   });
 
@@ -106,54 +172,104 @@ export function PipelinePage() {
     },
   });
 
+  // Log status → step status 反映
+  const isJobActive = status === "connecting" || status === "running";
+
+  // status が done/error/cancelled になったときにステップ状態を更新
+  const activeStepRef = useRef(activeStep);
+  activeStepRef.current = activeStep;
+  const runningCommandRef = useRef(runningCommand);
+  runningCommandRef.current = runningCommand;
+
+  useEffect(() => {
+    const step = activeStepRef.current;
+    const cmd = runningCommandRef.current;
+    if (status === "done") {
+      if (step) {
+        setStepStatuses((prev) => ({ ...prev, [step]: "done" }));
+        setActiveStep(null);
+      } else if (cmd === "build-all") {
+        setStepStatuses((prev) => ({
+          ...prev,
+          "build-text": "done",
+          "patch-voicevox-text": "done",
+          "build-project": "done",
+        }));
+      }
+    } else if (status === "error" || status === "cancelled") {
+      if (step) {
+        setStepStatuses((prev) => ({ ...prev, [step]: "error" }));
+        setActiveStep(null);
+      }
+    }
+  }, [status]);
+
   // ---------------------------------------------------------------------------
-  // Handlers
+  // Step run handler
   // ---------------------------------------------------------------------------
 
-  const handleRun = () => {
-    reset();
-    setJobId(null);
-    setRunningCommand(null);
-    setApiError(null);
-    runMutation.mutate();
+  const handleRunStep = (stepKey: StepKey) => {
+    if (!paths) return;
+    const args = getStepArgs(stepKey, paths);
+    setActiveStep(stepKey);
+    setStepStatuses((prev) => ({ ...prev, [stepKey]: "running" }));
+    startJob(stepKey, args);
+  };
+
+  const handleRunBuildAll = () => {
+    if (!paths) return;
+    startJob("build-all", ["--script", paths.script]);
+  };
+
+  const handleRunUtil = (command: string, args: string[]) => {
+    startJob(command, args);
   };
 
   const handleCancel = () => {
     cancelMutation.mutate();
   };
 
-  const handleOptionChange = (flag: string, value: string) => {
-    setOptionValues((prev) => ({ ...prev, [flag]: value }));
+  // ---------------------------------------------------------------------------
+  // Context change handler
+  // ---------------------------------------------------------------------------
+
+  const handleRunKeyChange = (key: string) => {
+    setRunKey(key);
+    resetStatuses();
   };
 
-  const handleNextCommand = (nextCmd: string) => {
-    const inferred = inferNextOptions(runningCommand ?? "", nextCmd, optionValues);
-    setCommand(nextCmd);
-    setOptionValues(inferred);
+  const handleEpisodeIdChange = (id: string) => {
+    setEpisodeId(id);
+    resetStatuses();
   };
 
-  const handlePickerApply = (opts: Record<string, string>) => {
-    setOptionValues((prev) => ({ ...prev, ...opts }));
+  // ---------------------------------------------------------------------------
+  // Render helpers
+  // ---------------------------------------------------------------------------
+
+  const getStepStatus = (stepKey: StepKey): StepStatus =>
+    stepStatuses[stepKey] ?? "idle";
+
+  const isNextStep = (index: number): boolean => {
+    if (index === 0) return getStepStatus(MAIN_STEPS[0].key) === "idle";
+    const prevStep = MAIN_STEPS[index - 1];
+    return (
+      getStepStatus(prevStep.key) === "done" &&
+      getStepStatus(MAIN_STEPS[index].key) === "idle"
+    );
   };
+
+  const isAnyStepRunning = isJobActive;
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
-  const isActive = status === "connecting" || status === "running";
-  const isFinished =
-    status === "done" || status === "error" || status === "cancelled";
-
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Pipeline</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            CLI コマンドを実行してリアルタイムログを確認できます。
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold text-slate-900">Pipeline</h1>
 
         {/* VOICEVOX ステータスバッジ */}
         <div className="flex items-center gap-1.5 text-xs shrink-0 mt-1">
@@ -170,33 +286,209 @@ export function PipelinePage() {
               <span className="text-slate-500">VOICEVOX offline</span>
             </>
           ) : (
-            <span className="text-slate-400 animate-pulse">VOICEVOX 確認中...</span>
+            <span className="text-slate-400 animate-pulse">
+              VOICEVOX 確認中...
+            </span>
           )}
         </div>
       </div>
 
-      {/* Run + Episode picker */}
-      <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1.5">
-        <p className="text-xs text-slate-500 font-medium">
-          Run からパスを補完
-        </p>
+      {/* Context: Run + Episode */}
+      <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-2">
+        <p className="text-xs font-medium text-slate-500">対象</p>
         <RunEpisodePicker
-          command={command}
-          onApply={handlePickerApply}
-          disabled={isActive}
+          runKey={runKey}
+          episodeId={episodeId}
+          onRunKeyChange={handleRunKeyChange}
+          onEpisodeIdChange={handleEpisodeIdChange}
+          disabled={isAnyStepRunning}
         />
       </div>
 
-      {/* Form */}
-      <CommandForm
-        command={command}
-        onCommandChange={setCommand}
-        optionValues={optionValues}
-        onOptionChange={handleOptionChange}
-        status={status}
-        onRun={handleRun}
-        onCancel={handleCancel}
-      />
+      {/* Steps */}
+      <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1">
+        <p className="text-xs font-medium text-slate-500 mb-3">ステップ実行</p>
+
+        <div className="space-y-1">
+          {MAIN_STEPS.map((step, index) => {
+            const stepStatus = getStepStatus(step.key);
+            const isNext = isNextStep(index);
+            const isRunningThis = stepStatus === "running";
+            const canRun = !!paths && !isAnyStepRunning;
+
+            return (
+              <div
+                key={step.key}
+                className={[
+                  "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                  isNext
+                    ? "bg-emerald-50 border border-emerald-200"
+                    : "hover:bg-slate-50",
+                ].join(" ")}
+              >
+                {/* Status icon */}
+                <div className="mt-0.5 shrink-0">
+                  {stepStatus === "done" ? (
+                    <CheckCircle2 className="size-4.5 text-emerald-500" />
+                  ) : stepStatus === "error" ? (
+                    <XCircle className="size-4.5 text-red-500" />
+                  ) : stepStatus === "running" ? (
+                    <Loader2 className="size-4.5 animate-spin text-blue-500" />
+                  ) : (
+                    <Circle className="size-4.5 text-slate-300" />
+                  )}
+                </div>
+
+                {/* Label + note + path */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-slate-400 font-mono">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {step.label}
+                    </span>
+                    {isNext && (
+                      <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                        次のステップ
+                      </span>
+                    )}
+                    {stepStatus === "error" && (
+                      <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
+                        エラー
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
+                  {paths && (
+                    <p className="text-xs text-slate-400 font-mono truncate mt-0.5">
+                      {step.key === "build-text" && paths.script}
+                      {step.key === "patch-voicevox-text" &&
+                        paths.voicevoxTextRaw}
+                      {step.key === "build-project" &&
+                        paths.voicevoxTextPatched}
+                      {step.key === "build-audio" && paths.vvproj}
+                    </p>
+                  )}
+                </div>
+
+                {/* Action button */}
+                <div className="shrink-0">
+                  {isRunningThis ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleCancel}
+                      className="gap-1 text-xs text-red-600 hover:text-red-700"
+                    >
+                      <Square className="size-3" />
+                      停止
+                    </Button>
+                  ) : stepStatus === "done" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRunStep(step.key)}
+                      disabled={!canRun}
+                      className="gap-1 text-xs text-slate-500"
+                    >
+                      <RotateCcw className="size-3" />
+                      再実行
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => handleRunStep(step.key)}
+                      disabled={!canRun}
+                      className={[
+                        "gap-1 text-xs",
+                        isNext
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : "",
+                      ].join(" ")}
+                    >
+                      <Play className="size-3" />
+                      実行
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Shortcut: build-all */}
+        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+          <p className="text-xs text-slate-400">ショートカット</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAnyStepRunning && runningCommand === "build-all" ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleCancel}
+                className="gap-1.5 text-red-600 hover:text-red-700"
+              >
+                <Square className="size-3.5" />
+                停止
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleRunBuildAll}
+                disabled={!paths || isAnyStepRunning}
+                className="gap-1.5"
+              >
+                <Play className="size-3.5" />
+                ステップ ①②③ をまとめて実行
+              </Button>
+            )}
+            <span className="text-xs text-slate-400">
+              ※ ステップ④（音声合成）は別途実行が必要
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Utilities */}
+      <details className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur overflow-hidden">
+        <summary className="px-4 py-3 text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-50 select-none">
+          ユーティリティ
+        </summary>
+        <div className="px-4 pb-3 pt-2 flex gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              paths && handleRunUtil("check-run", ["--run-dir", paths.runDir])
+            }
+            disabled={!paths || isAnyStepRunning}
+          >
+            run を検証
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              paths &&
+              handleRunUtil("prepare-run", [
+                "--source-run-dir",
+                paths.runDir,
+              ])
+            }
+            disabled={!paths || isAnyStepRunning}
+          >
+            run を引き継ぎ
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => handleRunUtil("dict-sync", [])}
+            disabled={isAnyStepRunning}
+          >
+            辞書同期
+          </Button>
+        </div>
+      </details>
 
       {/* API error */}
       {apiError && (
@@ -211,14 +503,6 @@ export function PipelinePage() {
           logs={logs}
           status={status}
           command={runningCommand ?? undefined}
-        />
-      )}
-
-      {/* Next command suggestion */}
-      {isFinished && status === "done" && runningCommand && (
-        <NextCommandSuggest
-          prevCommand={runningCommand}
-          onSelect={handleNextCommand}
         />
       )}
     </div>
