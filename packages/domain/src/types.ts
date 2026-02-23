@@ -1,6 +1,34 @@
-export type CandidateSource = "ruby" | "token" | "morph";
+export type CandidateSource = "ruby" | "token" | "morph" | "force_patch";
 export type ReadingSource = "" | "ruby" | "morph" | "inferred";
 export type CandidatePriority = "HIGH" | "MEDIUM" | "LOW";
+
+export interface NormalizationRule {
+  id: string;
+  pattern: string;
+  replacement: string;
+  enabled: boolean;
+  description?: string;
+}
+
+export interface ForceReading {
+  surface: string;
+  reading: string;
+  priority: CandidatePriority;
+  note?: string;
+}
+
+export interface PatchConfig {
+  version: 1;
+  text_normalization: {
+    enabled: boolean;
+    rules: NormalizationRule[];
+  };
+  dict_patch: {
+    enabled: boolean;
+    force_readings: ForceReading[];
+    suppress_surfaces: string[];
+  };
+}
 
 export interface VoicevoxTextUtterance {
   utterance_id: string;

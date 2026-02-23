@@ -30,11 +30,6 @@ import {
 } from "./build-text/dictionary.ts";
 import { resolveBuildTextOutputPaths } from "./build-text/output-paths.ts";
 import {
-  applyReadingDictionary,
-  loadReadingDictionary,
-  type ReadingDictionary,
-} from "./build-text/reading-dictionary.ts";
-import {
   decidePauseLengthMs,
   evaluateSpeakability,
   normalizeScriptLine,
@@ -49,10 +44,6 @@ export {
   priorityForCandidate,
   toDictionaryCandidates,
 } from "./build-text/dictionary.ts";
-export {
-  applyReadingDictionary,
-  loadReadingDictionary,
-} from "./build-text/reading-dictionary.ts";
 export {
   decidePauseLengthMs,
   evaluateSpeakability,
@@ -74,7 +65,6 @@ interface BuildTextOptions {
   runId?: string;
   episodeId?: string;
   buildTextConfigPath?: string;
-  readingDictionaryPath?: string;
 }
 
 interface BuildTextResult {
@@ -127,7 +117,6 @@ function buildUtterancesAndCandidates(
   source: string,
   morphTokenizer: Awaited<ReturnType<typeof getJapaneseMorphTokenizer>>,
   buildTextConfig: BuildTextConfig,
-  readingDictionary: ReadingDictionary,
 ): {
   utterances: VoicevoxTextUtterance[];
   dictionaryCandidates: ReturnType<typeof toDictionaryCandidates>;
@@ -156,11 +145,7 @@ function buildUtterancesAndCandidates(
     }
     collectRubyCandidates(normalized, termCandidates);
     const withoutRuby = replaceRubyWithReading(normalized);
-    const withDictionary = applyReadingDictionary(
-      withoutRuby,
-      readingDictionary,
-    );
-    const sentences = splitIntoSentences(withDictionary);
+    const sentences = splitIntoSentences(withoutRuby);
     for (const [sentenceIndex, sentence] of sentences.entries()) {
       collectTermCandidatesWithMorphology(
         sentence,
@@ -283,7 +268,6 @@ export async function buildText({
   runId,
   episodeId,
   buildTextConfigPath,
-  readingDictionaryPath,
 }: BuildTextOptions): Promise<BuildTextResult> {
   const metadata = resolveBuildTextOutputPaths({
     scriptPath,
@@ -310,17 +294,10 @@ export async function buildText({
   const buildTextConfig = buildTextConfigPath
     ? await loadBuildTextConfig(buildTextConfigPath)
     : normalizeBuildTextConfig();
-  const resolvedReadingDictionaryPath = path.resolve(
-    readingDictionaryPath ?? "configs/voice/voicevox/reading-dictionary.json",
-  );
-  const readingDictionary = await loadReadingDictionary(
-    resolvedReadingDictionaryPath,
-  );
   const { utterances, dictionaryCandidates } = buildUtterancesAndCandidates(
     source,
     morphTokenizer,
     buildTextConfig,
-    readingDictionary,
   );
 
   if (utterances.length === 0) {

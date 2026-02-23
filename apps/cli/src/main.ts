@@ -4,6 +4,7 @@ import { buildAudio } from "@narrative-vox/application/build-audio.ts";
 import { buildProject } from "@narrative-vox/application/build-project.ts";
 import { buildText } from "@narrative-vox/application/build-text.ts";
 import { syncUserDict } from "@narrative-vox/application/dict-sync.ts";
+import { patchVoicevoxText } from "@narrative-vox/application/patch-voicevox-text.ts";
 import { resolveVoicevoxApiUrl } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 import { validateBuildPrerequisites } from "@narrative-vox/quality/build-prerequisites.ts";
 import { checkRun } from "@narrative-vox/quality/check-run.ts";
@@ -19,6 +20,7 @@ import { renderPrompt } from "./render-prompt.ts";
 
 type CommandName =
   | "build-text"
+  | "patch-voicevox-text"
   | "build-project"
   | "build-audio"
   | "build-all"
@@ -30,13 +32,15 @@ type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "build-text":
-    "Usage:\n  bun apps/cli/src/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--reading-dictionary <configs/voice/voicevox/reading-dictionary.json>] [--run-dir <data/projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+    "Usage:\n  bun apps/cli/src/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
+  "patch-voicevox-text":
+    "Usage:\n  bun apps/cli/src/main.ts patch-voicevox-text --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--patch-config <configs/voice/voicevox/patch-config.json>] [--run-dir <data/projects/.../run-...>]",
   "build-project":
-    "Usage:\n  bun apps/cli/src/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--run-dir <data/projects/.../run-...>] [--synthesis-defaults configs/voice/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voice/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voice/voicevox/speed-profiles.json>] [--intonation-scale <number>]",
+    "Usage:\n  bun apps/cli/src/main.ts build-project --voicevox-text-json <voicevox_text/E##_voicevox_text.json> [--use-patched] [--run-dir <data/projects/.../run-...>] [--synthesis-defaults configs/voice/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voice/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--app-version <version>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voice/voicevox/speed-profiles.json>] [--intonation-scale <number>]",
   "build-audio":
     "Usage:\n  bun apps/cli/src/main.ts build-audio --vvproj <voicevox_project/E##.vvproj> [--run-dir <data/projects/.../run-...>] [--voicevox-url <http://127.0.0.1:50021>] [--compressed-format mp3|m4a|ogg|none] [--compressed-bitrate-kbps <num>] [--ffmpeg-path <path>]",
   "build-all":
-    "Usage:\n  bun apps/cli/src/main.ts build-all --script <script/E##_script.md> [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [--dict <configs/voice/voicevox/user-dict.json>] [build-text/build-project options]",
+    "Usage:\n  bun apps/cli/src/main.ts build-all --script <script/E##_script.md> [--patch] [--patch-config <configs/voice/voicevox/patch-config.json>] [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [--dict <configs/voice/voicevox/user-dict.json>] [build-text/build-project options]",
   "check-run":
     "Usage:\n  bun apps/cli/src/main.ts check-run --run-dir <data/projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voice/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voice/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voice/voicevox/speed-profiles.json>]",
   "prepare-run":
@@ -55,6 +59,7 @@ function printUsage(command?: string) {
 
   console.log(`Usage:
   ${usageByCommand["build-text"].replace("Usage:\n  ", "")}
+  ${usageByCommand["patch-voicevox-text"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-project"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-audio"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-all"].replace("Usage:\n  ", "")}
@@ -63,6 +68,18 @@ function printUsage(command?: string) {
   ${usageByCommand["render-prompt"].replace("Usage:\n  ", "")}
   ${usageByCommand["dict-sync"].replace("Usage:\n  ", "")}
 `);
+}
+
+function insertPatchedStemInPath(filePath: string): string {
+  const dir = path.dirname(filePath);
+  const base = path.basename(filePath);
+  const extIndex = base.indexOf(".");
+  if (extIndex === -1) {
+    return path.join(dir, `${base}.patched`);
+  }
+  const stem = base.slice(0, extIndex);
+  const ext = base.slice(extIndex);
+  return path.join(dir, `${stem}.patched${ext}`);
 }
 
 function buildProjectOptions(options: CliOptions) {
@@ -107,7 +124,6 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
       buildTextConfigPath: optionAsString(options, "build-text-config"),
-      readingDictionaryPath: optionAsString(options, "reading-dictionary"),
     });
 
     console.log(
@@ -119,13 +135,34 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     console.log(`- ${path.relative(process.cwd(), result.voicevoxTextPath)}`);
     console.log(`- ${path.relative(process.cwd(), result.dictionaryCsvPath)}`);
   },
-  "build-project": async (options) => {
-    const result = await buildProject({
+  "patch-voicevox-text": async (options) => {
+    const result = await patchVoicevoxText({
       voicevoxTextJsonPath: ensureOption(
         options,
         "voicevox-text-json",
-        "build-project",
+        "patch-voicevox-text",
       ),
+      patchConfigPath: optionAsString(options, "patch-config"),
+      runDir: optionAsString(options, "run-dir"),
+    });
+    console.log(
+      `Patch done: normalized=${result.normalizedUtteranceCount}, added=${result.addedCandidateCount}, removed=${result.removedCandidateCount}`,
+    );
+    console.log(`- ${path.relative(process.cwd(), result.patchedJsonPath)}`);
+    console.log(`- ${path.relative(process.cwd(), result.patchedCsvPath)}`);
+  },
+  "build-project": async (options) => {
+    const voicevoxTextJsonPath = ensureOption(
+      options,
+      "voicevox-text-json",
+      "build-project",
+    );
+    const usePatched = Boolean(options["use-patched"]);
+    const resolvedJsonPath = usePatched
+      ? insertPatchedStemInPath(voicevoxTextJsonPath)
+      : voicevoxTextJsonPath;
+    const result = await buildProject({
+      voicevoxTextJsonPath: resolvedJsonPath,
       ...buildProjectOptions(options),
     });
 
@@ -208,8 +245,21 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       runId: optionAsString(options, "run-id"),
       episodeId: optionAsString(options, "episode-id"),
       buildTextConfigPath: optionAsString(options, "build-text-config"),
-      readingDictionaryPath: optionAsString(options, "reading-dictionary"),
     });
+
+    const usePatch = Boolean(options["patch"]);
+    let voicevoxTextJsonPath = buildTextResult.voicevoxTextJsonPath;
+    if (usePatch) {
+      const patchResult = await patchVoicevoxText({
+        voicevoxTextJsonPath,
+        patchConfigPath: optionAsString(options, "patch-config"),
+        runDir: runDir ?? undefined,
+      });
+      voicevoxTextJsonPath = patchResult.patchedJsonPath;
+      console.log(
+        `- patch: normalized=${patchResult.normalizedUtteranceCount}, added=${patchResult.addedCandidateCount}`,
+      );
+    }
 
     const apiUrl = await resolveVoicevoxApiUrl(
       optionAsString(options, "voicevox-url"),
@@ -228,7 +278,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
     }
 
     const result = await buildProject({
-      voicevoxTextJsonPath: buildTextResult.voicevoxTextJsonPath,
+      voicevoxTextJsonPath,
       ...buildProjectOptions(options),
       runDir,
     });

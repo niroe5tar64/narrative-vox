@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "text_normalization": {
+    "enabled": true,
+    "rules": [
+      {
+        "id": "url",
+        "pattern": "https?://\\S+",
+        "replacement": "ユーアールエル",
+        "enabled": true,
+        "description": "URLを読み替え"
+      },
+      {
+        "id": "inline_code_strip",
+        "pattern": "`([^`]+)`",
+        "replacement": "$1",
+        "enabled": true,
+        "description": "バッククォートを除去してコード内容を残す"
+      },
+      {
+        "id": "number_ms",
+        "pattern": "(\\d+)ms",
+        "replacement": "$1ミリ秒",
+        "enabled": true,
+        "description": "ms単位を日本語に"
+      },
+      {
+        "id": "number_px",
+        "pattern": "(\\d+)px",
+        "replacement": "$1ピクセル",
+        "enabled": true,
+        "description": "px単位を日本語に"
+      },
+      {
+        "id": "arrow_right",
+        "pattern": "→",
+        "replacement": "から",
+        "enabled": true,
+        "description": "右矢印を読み替え"
+      },
+      {
+        "id": "strip_brackets_code",
+        "pattern": "【[^】]*】",
+        "replacement": "",
+        "enabled": false,
+        "description": "【】囲みを除去（必要時に有効化）"
+      }
+    ]
+  },
+  "dict_patch": {
+    "enabled": true,
+    "force_readings": [
+      {
+        "surface": "API",
+        "reading": "エーピーアイ",
+        "priority": "HIGH",
+        "note": "force_patch"
+      },
+      {
+        "surface": "CLI",
+        "reading": "シーエルアイ",
+        "priority": "HIGH",
+        "note": "force_patch"
+      }
+    ],
+    "suppress_surfaces": []
+  }
+}

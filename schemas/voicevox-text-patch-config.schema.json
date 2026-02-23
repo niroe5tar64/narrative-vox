@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/voicevox-text-patch-config.schema.json",
+  "title": "VoiceVox Text Patch Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "text_normalization", "dict_patch"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "text_normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "rules"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "pattern", "replacement", "enabled"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "pattern": {
+                "type": "string",
+                "minLength": 1
+              },
+              "replacement": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "dict_patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "force_readings", "suppress_surfaces"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "force_readings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["surface", "reading", "priority"],
+            "properties": {
+              "surface": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reading": {
+                "type": "string",
+                "minLength": 1
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["HIGH", "MEDIUM", "LOW"]
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "suppress_surfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
