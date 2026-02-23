@@ -152,11 +152,22 @@ function validateScriptSpeakerStructure(
     speakerKeys.add(speakerTag.speakerKey);
   }
 
-  if (speakerKeys.size !== contentStyle.format.speaker_count) {
-    const speakerList = [...speakerKeys].sort().join(", ") || "(none)";
-    throw new Error(
-      `${scriptRef} has ${speakerKeys.size} unique speaker keys (${speakerList}), but style "${contentStyle.style_id}" (${contentStyle.format.speaker_mode}) requires speaker_count=${contentStyle.format.speaker_count}`,
-    );
+  const mode = contentStyle.format.speaker_mode;
+  const count = contentStyle.format.speaker_count;
+  if (mode === "panel") {
+    if (speakerKeys.size < 2 || speakerKeys.size > count) {
+      const speakerList = [...speakerKeys].sort().join(", ") || "(none)";
+      throw new Error(
+        `${scriptRef} has ${speakerKeys.size} unique speaker keys (${speakerList}), but style "${contentStyle.style_id}" (panel) requires 2..${count} speakers for panel mode`,
+      );
+    }
+  } else {
+    if (speakerKeys.size !== count) {
+      const speakerList = [...speakerKeys].sort().join(", ") || "(none)";
+      throw new Error(
+        `${scriptRef} has ${speakerKeys.size} unique speaker keys (${speakerList}), but style "${contentStyle.style_id}" (${mode}) requires speaker_count=${count}`,
+      );
+    }
   }
 }
 

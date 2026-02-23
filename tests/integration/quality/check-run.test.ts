@@ -948,3 +948,166 @@ test("checkRun throws when run-contract.json fails schema validation", async () 
     /Schema validation failed \(run-contract\.schema\.json\)/,
   );
 });
+
+// --- Commit B: panel mode speaker_mode tests ---
+
+const PANEL_STYLE_ID = `tmp-panel-style-${randomUUID()}`;
+const PANEL_PROJECT_ID = `tmp-panel-project-${randomUUID()}`;
+const panelProjectConfigPath = path.resolve(
+  "configs",
+  "pipeline",
+  "projects",
+  `${PANEL_PROJECT_ID}.json`,
+);
+const panelStylePath = path.resolve(
+  "configs",
+  "content",
+  "styles",
+  `${PANEL_STYLE_ID}.json`,
+);
+
+async function preparePanelStyleRun(
+  scriptText: string,
+): Promise<{ runDir: string; cleanup: () => Promise<void> }> {
+  const baseConfig = JSON.parse(
+    await readFile(
+      path.resolve("configs/pipeline/projects/introducing-rescript.json"),
+      "utf-8",
+    ),
+  ) as Record<string, unknown>;
+  const panelProjectConfig = {
+    ...baseConfig,
+    PROJECT_ID: PANEL_PROJECT_ID,
+    STYLE_ID: PANEL_STYLE_ID,
+  };
+  const panelStyle = {
+    style_id: PANEL_STYLE_ID,
+    style_name: "パネル形式",
+    description: "複数人のパネルディスカッション形式",
+    format: {
+      speaker_mode: "panel",
+      speaker_count: 3,
+      speaker_roles: [
+        { role: "lead", utterance_share: 0.4 },
+        { role: "questioner", utterance_share: 0.3 },
+        { role: "commentator", utterance_share: 0.3 },
+      ],
+    },
+    pacing: {
+      target_duration_minutes: { min: 15, max: 20 },
+      utterance_length: { target_chars: 100, max_chars: 200 },
+      section_transition_style: "verbal_bridge",
+      pause_between_sections_ms: 800,
+      reflection_pause_ms: 3000,
+    },
+    language: {
+      formality: "polite",
+      sentence_endings: "mixed",
+      technical_term_treatment: "define_on_first_use",
+      code_verbalization: "structure_then_meaning",
+    },
+    segment_structure: {
+      chat_content_ratio: 0.1,
+      opening_style: "casual_greeting",
+      closing_style: "preview_next",
+      allow_tangent: false,
+      repetition_strategy: "key_points_repeated",
+    },
+    interaction: {
+      question_frequency: "per_section",
+      listener_address: "occasional",
+      reaction_utterances: true,
+    },
+    content_treatment: {
+      analogy_usage: "per_concept",
+      example_density: "moderate",
+      humor_level: "light",
+      emphasis_technique: "question_answer",
+    },
+  };
+
+  await writeFile(
+    panelProjectConfigPath,
+    `${JSON.stringify(panelProjectConfig, null, 2)}\n`,
+    "utf-8",
+  );
+  await writeFile(
+    panelStylePath,
+    `${JSON.stringify(panelStyle, null, 2)}\n`,
+    "utf-8",
+  );
+
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => {
+    const meta = (data.meta ?? {}) as Record<string, unknown>;
+    return { ...data, meta: { ...meta, project_id: PANEL_PROJECT_ID } };
+  });
+
+  const cleanup = async () => {
+    await rm(panelProjectConfigPath, { force: true });
+    await rm(panelStylePath, { force: true });
+  };
+
+  return { runDir, cleanup };
+}
+
+function buildPanelScript(speakerKeys: string[]): string {
+  const lines: string[] = ["## 1. オープニング"];
+  for (const [i, key] of speakerKeys.entries()) {
+    lines.push(`[speaker:${key}] 発言${i + 1}です。`);
+  }
+  return lines.join("\n");
+}
+
+test("checkRun accepts panel mode with 2 speakers (below speaker_count=3)", async () => {
+  const { runDir, cleanup } = await preparePanelStyleRun(
+    buildPanelScript(["teacher", "student"]),
+  );
+  try {
+    const result = await checkRun({ runDir });
+    assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
+  } finally {
+    await cleanup();
+  }
+});
+
+test("checkRun accepts panel mode with exactly speaker_count=3 speakers", async () => {
+  const { runDir, cleanup } = await preparePanelStyleRun(
+    buildPanelScript(["teacher", "student", "narrator"]),
+  );
+  try {
+    const result = await checkRun({ runDir });
+    assert.deepEqual(result.validatedEpisodeIds, ["E01"]);
+  } finally {
+    await cleanup();
+  }
+});
+
+test("checkRun rejects panel mode with 4 speakers (exceeds speaker_count=3)", async () => {
+  // Use 4 speaker keys — error happens at Step 3 before character map check
+  const { runDir, cleanup } = await preparePanelStyleRun(
+    buildPanelScript(["teacher", "student", "narrator", "extra"]),
+  );
+  try {
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      /requires 2\.\.3 speakers for panel mode/,
+    );
+  } finally {
+    await cleanup();
+  }
+});
+
+test("checkRun rejects panel mode with 1 speaker (below minimum)", async () => {
+  const { runDir, cleanup } = await preparePanelStyleRun(
+    buildPanelScript(["teacher"]),
+  );
+  try {
+    await assert.rejects(
+      () => checkRun({ runDir }),
+      /requires 2\.\.3 speakers for panel mode/,
+    );
+  } finally {
+    await cleanup();
+  }
+});
