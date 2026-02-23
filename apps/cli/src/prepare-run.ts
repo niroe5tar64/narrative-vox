@@ -147,7 +147,7 @@ export async function runPrepareRun(options: CliOptions) {
   }
 
   const projectsDir = path.resolve(
-    optionAsString(options, "projects-dir") || "projects",
+    optionAsString(options, "projects-dir") || "data/projects",
   );
   const noPrompt = Boolean(options["no-prompt"]);
   const interactive = !noPrompt && process.stdin.isTTY && process.stdout.isTTY;

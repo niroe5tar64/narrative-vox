@@ -382,12 +382,18 @@ function inferProjectAndRunIds(runDir: string): {
   runId: string;
 } {
   const runIdCandidate = path.basename(runDir);
-  const runId = /^run-\d{8}-\d{4}$/.test(runIdCandidate)
-    ? runIdCandidate
-    : "unknown";
+  if (!/^run-\d{8}-\d{4}$/.test(runIdCandidate)) {
+    throw new Error(
+      `run-dir のベース名が run-YYYYMMDD-HHMM 形式ではありません: "${runIdCandidate}". run-dir を確認してください。`,
+    );
+  }
   const projectIdCandidate = path.basename(path.dirname(runDir));
-  const projectId = projectIdCandidate || "unknown";
-  return { projectId, runId };
+  if (!projectIdCandidate) {
+    throw new Error(
+      `run-dir の親ディレクトリ名（projectId）を取得できませんでした: "${runDir}"`,
+    );
+  }
+  return { projectId: projectIdCandidate, runId: runIdCandidate };
 }
 
 function inferEpisodeId(
@@ -402,7 +408,13 @@ function inferEpisodeId(
     return fileStem;
   }
   const firstKey = project.talk.audioKeys[0] ?? "";
-  return firstKey.split("_")[0] || "unknown";
+  const episodeId = firstKey.split("_")[0];
+  if (!episodeId) {
+    throw new Error(
+      `vvproj ファイルの audioKeys から episodeId を推論できませんでした: "${stage5VvprojPath}"`,
+    );
+  }
+  return episodeId;
 }
 
 function toFailure(
