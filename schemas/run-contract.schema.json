@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run-contract.schema.json",
+  "title": "RunContract",
+  "type": "object",
+  "required": ["version", "projectId", "runId", "runDir", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "projectId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+    "runId":     { "type": "string", "pattern": "^run-\\d{8}-\\d{4}$" },
+    "runDir":    { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

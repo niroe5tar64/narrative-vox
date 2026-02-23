@@ -22,4 +22,5 @@ export const SchemaPaths = {
     SCHEMAS_DIR,
     "voicevox-text-patch-config.schema.json",
   ),
+  runContract: path.join(SCHEMAS_DIR, "run-contract.schema.json"),
 } as const;
