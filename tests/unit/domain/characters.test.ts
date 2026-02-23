@@ -6,9 +6,9 @@ import path from "node:path";
 
 import {
   buildRunCharacters,
-  loadCharacterDefinitions,
   normalizeCharacterMap,
 } from "@narrative-vox/domain/characters.ts";
+import { loadCharacterDefinitions } from "@narrative-vox/infrastructure/character-loader.ts";
 
 const sampleCharacterProfile = {
   gender: "neutral",

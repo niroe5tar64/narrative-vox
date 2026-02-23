@@ -2,7 +2,7 @@ import path from "node:path";
 import type { VoicevoxTextData } from "@narrative-vox/domain/types.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import { writePatchedArtifacts } from "./patch-voicevox-text/artifact-writer.ts";
 import { patchDictionaryCandidates } from "./patch-voicevox-text/dict-patcher.ts";
 import {

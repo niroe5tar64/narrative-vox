@@ -27,6 +27,7 @@
     "lint:fix": "biome check --write",
     "check": "bun run lint && bun run typecheck",
     "validate": "bun run format --write && bun run lint:fix && bun run typecheck",
+    "lint:layers": "bun run scripts/check-layer-deps.ts",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.json"
   },

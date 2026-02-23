@@ -6,7 +6,7 @@ import {
   deleteUserDictWord,
   fetchUserDict,
 } from "@narrative-vox/infrastructure/voicevox-user-dict.ts";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 
 const DEFAULT_DICT_PATH = "configs/voice/voicevox/user-dict.json";
 const SCHEMA_PATH = "schemas/user-dict.schema.json";

@@ -11,7 +11,7 @@ import type {
   VoicevoxTextUtterance,
 } from "@narrative-vox/domain/types.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import {
   type BuildTextArtifactPaths,
   writeBuildTextArtifacts,

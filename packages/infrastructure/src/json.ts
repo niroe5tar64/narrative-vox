@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "./schema-validator.ts";
 
 export async function readJson(filePath: string): Promise<unknown> {
   const raw = await readFile(filePath, "utf-8");

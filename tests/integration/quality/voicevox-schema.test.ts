@@ -2,7 +2,7 @@ import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 
 const sampleRunDir = path.resolve("tests/fixtures/sample-run");
 

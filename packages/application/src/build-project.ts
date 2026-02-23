@@ -19,7 +19,7 @@ import {
   resolveVoicevoxApiUrl,
   type VoicevoxAudioQuery,
 } from "@narrative-vox/infrastructure/voicevox-engine.ts";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import { applyProsodyAdjustments } from "./build-project/prosody.ts";
 import {
   applySpeedPreset,

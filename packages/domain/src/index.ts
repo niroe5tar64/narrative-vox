@@ -1,4 +1,5 @@
 export * from "./characters.ts";
+export * from "./speed-profiles.ts";
 export * from "./run-contract.ts";
 export * from "./run-id.ts";
 export * from "./script-patterns.ts";

@@ -2,9 +2,9 @@ import path from "node:path";
 import {
   buildRunCharacters,
   type CharacterMap,
-  loadCharacterDefinitions,
   normalizeCharacterMap,
 } from "@narrative-vox/domain/characters.ts";
+import { loadCharacterDefinitions } from "./character-loader.ts";
 import { pathExists } from "./fs-utils.ts";
 import { loadJson } from "./json.ts";
 import { SchemaPaths } from "./schema-paths.ts";

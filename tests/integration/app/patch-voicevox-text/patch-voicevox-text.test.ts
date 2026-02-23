@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { patchVoicevoxText } from "@narrative-vox/application/patch-voicevox-text.ts";
-import { validateAgainstSchema } from "@narrative-vox/quality/schema-validator.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import type { VoicevoxTextData } from "@narrative-vox/domain/types.ts";
 
