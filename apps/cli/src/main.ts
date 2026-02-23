@@ -15,10 +15,20 @@ import {
   optionAsString,
   parseCliArgs,
 } from "./cli-args.ts";
+import {
+  genBlueprint,
+  genDigest,
+  genMaterial,
+  genScript,
+} from "./gen-layer1.ts";
 import { runPrepareRun } from "./prepare-run.ts";
 import { renderPrompt } from "./render-prompt.ts";
 
 type CommandName =
+  | "gen-blueprint"
+  | "gen-material"
+  | "gen-script"
+  | "gen-digest"
   | "build-text"
   | "patch-voicevox-text"
   | "build-project"
@@ -31,6 +41,14 @@ type CommandName =
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
+  "gen-blueprint":
+    "Usage:\n  bun apps/cli/src/main.ts gen-blueprint --project-id <id> [--episode-id E01]",
+  "gen-material":
+    "Usage:\n  bun apps/cli/src/main.ts gen-material --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
+  "gen-script":
+    "Usage:\n  bun apps/cli/src/main.ts gen-script --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
+  "gen-digest":
+    "Usage:\n  bun apps/cli/src/main.ts gen-digest --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
   "build-text":
     "Usage:\n  bun apps/cli/src/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "patch-voicevox-text":
@@ -116,6 +134,33 @@ function buildPrerequisiteOptionFields(options: CliOptions) {
 }
 
 const commandHandlers: Record<CommandName, CommandHandler> = {
+  "gen-blueprint": async (options) => {
+    await genBlueprint({
+      projectId: ensureOption(options, "project-id", "gen-blueprint"),
+      episodeId: optionAsString(options, "episode-id") ?? "E01",
+    });
+  },
+  "gen-material": async (options) => {
+    await genMaterial({
+      projectId: ensureOption(options, "project-id", "gen-material"),
+      episodeId: ensureOption(options, "episode-id", "gen-material"),
+      runDir: ensureOption(options, "run-dir", "gen-material"),
+    });
+  },
+  "gen-script": async (options) => {
+    await genScript({
+      projectId: ensureOption(options, "project-id", "gen-script"),
+      episodeId: ensureOption(options, "episode-id", "gen-script"),
+      runDir: ensureOption(options, "run-dir", "gen-script"),
+    });
+  },
+  "gen-digest": async (options) => {
+    await genDigest({
+      projectId: ensureOption(options, "project-id", "gen-digest"),
+      episodeId: ensureOption(options, "episode-id", "gen-digest"),
+      runDir: ensureOption(options, "run-dir", "gen-digest"),
+    });
+  },
   "build-text": async (options) => {
     const result = await buildText({
       scriptPath: ensureOption(options, "script", "build-text"),

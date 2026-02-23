@@ -12,6 +12,12 @@ import type { AppVariables } from "../types.ts";
 // ---------------------------------------------------------------------------
 
 const ALLOWED_COMMANDS = [
+  // Layer 1
+  "gen-blueprint",
+  "gen-material",
+  "gen-script",
+  "gen-digest",
+  // Layer 2 (既存)
   "build-text",
   "patch-voicevox-text",
   "build-project",
