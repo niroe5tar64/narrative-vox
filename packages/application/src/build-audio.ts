@@ -1,7 +1,10 @@
 import { execFile } from "node:child_process";
 import { mkdir, readdir, rm, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { RUN_CONTRACT_FILENAME } from "@narrative-vox/domain/run-contract.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
+import { pathExists } from "@narrative-vox/infrastructure/fs-utils.ts";
+import { loadRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {
   DEFAULT_VOICEVOX_RETRY_CONFIG,
@@ -377,10 +380,18 @@ function inferRunDirFromVvprojPath(
   return path.dirname(vvprojDir);
 }
 
-function inferProjectAndRunIds(runDir: string): {
-  projectId: string;
-  runId: string;
-} {
+async function inferProjectAndRunIds(
+  runDir: string,
+): Promise<{ projectId: string; runId: string }> {
+  const contractPath = path.join(runDir, RUN_CONTRACT_FILENAME);
+  if (await pathExists(contractPath)) {
+    const contract = await loadRunContract(runDir);
+    return { projectId: contract.projectId, runId: contract.runId };
+  }
+  // フォールバック: パスベース推論（warn + 従来ロジック）
+  process.stderr.write(
+    `[warn] run-contract.json が見つかりません。パスから推論します: ${runDir}\n`,
+  );
   const runIdCandidate = path.basename(runDir);
   if (!/^run-\d{8}-\d{4}$/.test(runIdCandidate)) {
     throw new Error(
@@ -512,7 +523,7 @@ export async function buildAudio({
     SchemaPaths.voicevoxProjectImport,
   );
 
-  const { projectId, runId } = inferProjectAndRunIds(resolvedRunDir);
+  const { projectId, runId } = await inferProjectAndRunIds(resolvedRunDir);
   const episodeId = inferEpisodeId(resolvedStage5VvprojPath, stage5Data);
 
   const audioDir = path.join(resolvedRunDir, "audio");
