@@ -898,3 +898,53 @@ test("checkRun rejects STYLE_ID and content-style style_id mismatch", async () =
     await rm(stylePath, { force: true });
   }
 });
+
+// --- Commit A: RunContract Step 0 tests ---
+
+test("checkRun warns when run-contract.json is missing", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  // No run-contract.json written — should still succeed with a warning
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((w) => w.includes("run-contract.json not found")),
+    `Expected warning about missing run-contract.json, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun succeeds without warning when run-contract.json is valid", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const runId = "run-20260211-9999";
+  const runContract = {
+    version: 1,
+    projectId: "introducing-rescript",
+    runId,
+    runDir,
+    createdAt: "2026-02-11T99:00:00.000Z",
+  };
+  // Fix: use a valid date-time
+  runContract.createdAt = "2026-02-11T09:00:00.000Z";
+  await writeFile(
+    path.join(runDir, "run-contract.json"),
+    `${JSON.stringify(runContract, null, 2)}\n`,
+    "utf-8",
+  );
+  const result = await checkRun({ runDir });
+  assert.ok(
+    !result.warnings.some((w) => w.includes("run-contract.json")),
+    `Unexpected warning about run-contract.json: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun throws when run-contract.json fails schema validation", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  // Write a schema-invalid run-contract (missing required fields)
+  await writeFile(
+    path.join(runDir, "run-contract.json"),
+    `${JSON.stringify({ invalid: true }, null, 2)}\n`,
+    "utf-8",
+  );
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /Schema validation failed \(run-contract\.schema\.json\)/,
+  );
+});

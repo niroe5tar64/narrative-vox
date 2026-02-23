@@ -6,6 +6,7 @@ import {
   parseSpeakerTag,
 } from "@narrative-vox/domain/speaker-tag.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
+import { loadRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import { validateBuildPrerequisites } from "./build-prerequisites.ts";
 
@@ -283,6 +284,16 @@ export async function checkRun({
 }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
   const warnings: string[] = [];
+
+  // 0. RunContract validation (warn if missing, error if invalid)
+  const runContractPath = path.join(resolvedRunDir, "run-contract.json");
+  if (await dirExists(runContractPath)) {
+    await loadRunContract(resolvedRunDir); // throws on schema error
+  } else {
+    warnings.push(
+      "run-contract.json not found (run may predate RunContract support)",
+    );
+  }
 
   // 1. Blueprint validation
   const blueprintPath = path.join(
