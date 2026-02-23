@@ -1111,3 +1111,129 @@ test("checkRun rejects panel mode with 1 speaker (below minimum)", async () => {
     await cleanup();
   }
 });
+
+// --- Commit C: Layer 2 warn-only validation tests ---
+
+const validVoicevoxText = {
+  schema_version: "1.0",
+  meta: {
+    project_id: "introducing-rescript",
+    run_id: "run-20260211-9999",
+    episode_id: "E01",
+    source_script_path: "script/E01_script.md",
+    generated_at: "2026-02-11T09:00:00.000Z",
+  },
+  utterances: [
+    {
+      utterance_id: "U001",
+      section_id: 1,
+      section_title: "オープニング",
+      text: "テストです。",
+      pause_length_ms: 500,
+    },
+  ],
+  dictionary_candidates: [],
+  quality_checks: {
+    utterance_count: 1,
+    max_chars_per_utterance: 6,
+    has_ruby_notation: false,
+    speakability: {
+      score: 90,
+      average_chars_per_utterance: 6,
+      long_utterance_ratio: 0,
+      terminal_punctuation_ratio: 1,
+    },
+    warnings: [],
+  },
+};
+
+const validVoicevoxProjectMeta = {
+  generated_at: "2026-02-11T09:00:00.000Z",
+  adjustments: {
+    speed_preset: "normal",
+  },
+};
+
+test("checkRun skips Layer 2 validation when voicevox_text dir is absent", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  // No voicevox_text dir — should succeed without additional warnings about it
+  const result = await checkRun({ runDir });
+  assert.ok(
+    !result.warnings.some((w) => w.includes("voicevox_text")),
+    `Unexpected voicevox_text warning: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun adds no warning for valid voicevox_text JSON", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify(validVoicevoxText, null, 2)}\n`,
+    "utf-8",
+  );
+  const result = await checkRun({ runDir });
+  assert.ok(
+    !result.warnings.some((w) => w.includes("voicevox_text")),
+    `Unexpected voicevox_text warning: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun warns (not throws) for schema-invalid voicevox_text JSON", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify({ invalid: true }, null, 2)}\n`,
+    "utf-8",
+  );
+  // Should not throw
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some(
+      (w) =>
+        w.includes("voicevox_text/E01_voicevox_text.json") &&
+        w.includes("schema validation failed"),
+    ),
+    `Expected voicevox_text schema warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun adds no warning for valid voicevox_project_meta JSON", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const voicevoxProjectDir = path.join(runDir, "voicevox_project");
+  await mkdir(voicevoxProjectDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxProjectDir, "E01_voicevox_project_meta.json"),
+    `${JSON.stringify(validVoicevoxProjectMeta, null, 2)}\n`,
+    "utf-8",
+  );
+  const result = await checkRun({ runDir });
+  assert.ok(
+    !result.warnings.some((w) => w.includes("voicevox_project")),
+    `Unexpected voicevox_project warning: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun warns (not throws) for schema-invalid voicevox_project_meta JSON", async () => {
+  const runDir = await prepareMinimalRun(["E01"], { E01: buildValidScript() });
+  const voicevoxProjectDir = path.join(runDir, "voicevox_project");
+  await mkdir(voicevoxProjectDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxProjectDir, "E01_voicevox_project_meta.json"),
+    `${JSON.stringify({ extra_field: "not_allowed" }, null, 2)}\n`,
+    "utf-8",
+  );
+  // Should not throw
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some(
+      (w) =>
+        w.includes("voicevox_project/E01_voicevox_project_meta.json") &&
+        w.includes("schema validation failed"),
+    ),
+    `Expected voicevox_project schema warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+});

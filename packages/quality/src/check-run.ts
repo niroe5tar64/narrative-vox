@@ -496,6 +496,43 @@ export async function checkRun({
     speedProfilesPath,
   });
 
+  // 7. Layer 2 validation (warn-only — files may not exist yet)
+  const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
+  const voicevoxTextDir = path.join(resolvedRunDir, "voicevox_text");
+  if (await dirExists(voicevoxTextDir)) {
+    const textFiles = (await readdir(voicevoxTextDir))
+      .filter((name) => VOICEVOX_TEXT_FILE_RE.test(name))
+      .sort();
+    for (const fileName of textFiles) {
+      const filePath = path.join(voicevoxTextDir, fileName);
+      try {
+        await loadJson(filePath, SchemaPaths.voicevoxText);
+      } catch (e) {
+        warnings.push(
+          `voicevox_text/${fileName}: schema validation failed — ${(e as Error).message}`,
+        );
+      }
+    }
+  }
+
+  const VVPROJ_META_RE = /^(E[0-9]{2})_voicevox_project_meta\.json$/;
+  const voicevoxProjectDir = path.join(resolvedRunDir, "voicevox_project");
+  if (await dirExists(voicevoxProjectDir)) {
+    const metaFiles = (await readdir(voicevoxProjectDir))
+      .filter((name) => VVPROJ_META_RE.test(name))
+      .sort();
+    for (const fileName of metaFiles) {
+      const filePath = path.join(voicevoxProjectDir, fileName);
+      try {
+        await loadJson(filePath, SchemaPaths.voicevoxProjectMeta);
+      } catch (e) {
+        warnings.push(
+          `voicevox_project/${fileName}: schema validation failed — ${(e as Error).message}`,
+        );
+      }
+    }
+  }
+
   return {
     runDir: resolvedRunDir,
     materialEpisodeCount: materialEpisodeIds.length,
