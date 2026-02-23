@@ -7,6 +7,13 @@
       "accent_type": 3,
       "word_type": "PROPER_NOUN",
       "priority": 5
+    },
+    {
+      "surface": "TypeScript",
+      "pronunciation": "タイプスクリプト",
+      "accent_type": 5,
+      "word_type": "PROPER_NOUN",
+      "priority": 5
     }
   ]
 }

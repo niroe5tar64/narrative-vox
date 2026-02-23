@@ -242,6 +242,36 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+    audioQuery: (text: string, speakerId: number) =>
+      apiFetch<unknown>(
+        `/voicevox/audio_query?text=${encodeURIComponent(text)}&speaker=${speakerId}`,
+        { method: "POST" },
+      ),
+    synthesis: async (speakerId: number, audioQuery: unknown): Promise<string> => {
+      const res = await fetch(`/api/voicevox/synthesis?speaker=${speakerId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(audioQuery),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        throw new ApiError(
+          res.status,
+          (err.title as string) ?? "Synthesis failed",
+          err.detail as string | undefined,
+        );
+      }
+      const buf = await res.arrayBuffer();
+      return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+    },
+    moraPitch: (accentPhrases: unknown[], speakerId: number) =>
+      apiFetch<unknown[]>(
+        `/voicevox/mora_pitch?speaker=${speakerId}`,
+        {
+          method: "POST",
+          body: JSON.stringify(accentPhrases),
+        },
+      ),
   },
 
   pipeline: {
