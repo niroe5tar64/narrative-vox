@@ -3,12 +3,14 @@ import { cp, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
+import { createRunContract } from "@narrative-vox/domain/run-contract.ts";
 import {
   makeRunIdNow,
   RUN_ID_RE,
   validateRunId,
 } from "@narrative-vox/domain/run-id.ts";
 import { pathExists } from "@narrative-vox/infrastructure/fs-utils.ts";
+import { saveRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import type { CliOptions } from "./cli-args.ts";
 import { optionAsString, parseCliArgs } from "./cli-args.ts";
 
@@ -241,6 +243,13 @@ export async function runPrepareRun(options: CliOptions) {
       sourceRunDir,
       runDir,
     });
+
+    const contract = createRunContract({
+      projectId,
+      runId: path.basename(path.resolve(runDir)),
+      runDir: path.resolve(runDir),
+    });
+    await saveRunContract(contract);
 
     console.log("Run prepared");
     console.log(`- project: ${projectId}`);
