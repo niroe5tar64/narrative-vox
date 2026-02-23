@@ -36,6 +36,18 @@ export const PIPELINE_COMMANDS: CommandDef[] = [
     ],
   },
   {
+    value: "patch-voicevox-text",
+    label: "patch-voicevox-text",
+    description: "テキスト正規化・辞書パッチ適用",
+    options: [
+      {
+        flag: "--voicevox-text-json",
+        label: "VOICEVOX text JSON path",
+        placeholder: "data/projects/.../voicevox_text/E01_voicevox_text.json",
+      },
+    ],
+  },
+  {
     value: "build-project",
     label: "build-project",
     description: "テキスト → VOICEVOX プロジェクト生成",
@@ -62,7 +74,7 @@ export const PIPELINE_COMMANDS: CommandDef[] = [
   {
     value: "build-all",
     label: "build-all",
-    description: "台本 → 音声まで全工程",
+    description: "台本 → プロジェクト生成（build-audio は含まない）",
     options: [
       {
         flag: "--script",

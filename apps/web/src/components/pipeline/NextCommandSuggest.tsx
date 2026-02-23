@@ -11,6 +11,10 @@ const NEXT_COMMAND: Record<
   { command: string; description: string } | null
 > = {
   "build-text": {
+    command: "patch-voicevox-text",
+    description: "テキスト正規化・辞書パッチ適用",
+  },
+  "patch-voicevox-text": {
     command: "build-project",
     description: "テキスト → VOICEVOX プロジェクト生成",
   },
@@ -19,7 +23,10 @@ const NEXT_COMMAND: Record<
     description: "プロジェクト → 音声合成",
   },
   "build-audio": null,
-  "build-all": null,
+  "build-all": {
+    command: "build-audio",
+    description: "プロジェクト → 音声合成",
+  },
   "check-run": null,
   "prepare-run": {
     command: "build-text",

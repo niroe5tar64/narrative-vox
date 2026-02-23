@@ -13,6 +13,7 @@ import type { AppVariables } from "../types.ts";
 
 const ALLOWED_COMMANDS = [
   "build-text",
+  "patch-voicevox-text",
   "build-project",
   "build-audio",
   "build-all",
