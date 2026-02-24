@@ -1,4 +1,4 @@
-import { readdir, rename, stat } from "node:fs/promises";
+import { readdir, readFile, rename, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono } from "hono";
 import { config } from "../config.ts";
@@ -68,6 +68,116 @@ async function buildTree(absDir: string, relBase: string): Promise<TreeNode[]> {
     }
   }
   return nodes;
+}
+
+// ===== Run Status =====
+
+const EPISODE_ID_RE = /^(E\d{2})_/;
+
+/** ディレクトリ内のファイル名からエピソードIDを抽出（存在しない場合は空配列） */
+async function globEpisodeIds(dir: string, suffix: string): Promise<string[]> {
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return [];
+  }
+  const ids: string[] = [];
+  for (const name of entries) {
+    if (!name.endsWith(suffix)) continue;
+    const m = EPISODE_ID_RE.exec(name);
+    if (m) ids.push(m[1]);
+  }
+  return ids.sort();
+}
+
+type StageStatus = "completed" | "partial" | "idle";
+
+type StageInfo =
+  | { status: "completed" }
+  | { status: "partial" | "idle"; episodeIds: string[] };
+
+type RunStatus = {
+  projectId: string;
+  runId: string;
+  stages: {
+    blueprint: { status: StageStatus };
+    material: StageInfo;
+    script: StageInfo;
+    context: StageInfo;
+    voicevox_text: StageInfo;
+    voicevox_project: StageInfo;
+    audio: StageInfo;
+  };
+  plannedEpisodeIds: string[];
+};
+
+function toStageInfo(
+  episodeIds: string[],
+  planned: string[],
+): StageInfo {
+  if (planned.length > 0 && episodeIds.length >= planned.length) {
+    return { status: "completed" };
+  }
+  if (episodeIds.length > 0) {
+    return { status: "partial", episodeIds };
+  }
+  return { status: "idle", episodeIds: [] };
+}
+
+async function deriveRunStatus(
+  runDir: string,
+  projectId: string,
+  runId: string,
+): Promise<RunStatus> {
+  // blueprint
+  const blueprintFile = join(runDir, "blueprint", "project_blueprint.json");
+  let blueprintExists = false;
+  let plannedEpisodeIds: string[] = [];
+  try {
+    await stat(blueprintFile);
+    blueprintExists = true;
+    const raw = await readFile(blueprintFile, "utf-8");
+    const data = JSON.parse(raw) as {
+      episode_plan?: { episode_id?: string }[];
+    };
+    if (Array.isArray(data.episode_plan)) {
+      for (const ep of data.episode_plan) {
+        if (typeof ep.episode_id === "string") {
+          plannedEpisodeIds.push(ep.episode_id);
+        }
+      }
+    }
+  } catch {
+    // blueprint not yet created
+  }
+
+  const [materialIds, scriptIds, contextIds, voicevoxTextIds, vvprojIds, audioIds] =
+    await Promise.all([
+      globEpisodeIds(join(runDir, "material"), "_material.json"),
+      globEpisodeIds(join(runDir, "script"), "_script.md"),
+      globEpisodeIds(join(runDir, "context"), "_episode_digest.json"),
+      globEpisodeIds(join(runDir, "voicevox_text"), "_voicevox_text.json"),
+      globEpisodeIds(join(runDir, "voicevox_project"), ".vvproj"),
+      globEpisodeIds(join(runDir, "audio"), ".wav"),
+    ]);
+
+  // voicevox_text: patched ファイルは除外（_voicevox_text.patched.json は suffix が違うので自然に除外）
+
+  return {
+    projectId,
+    runId,
+    stages: {
+      blueprint: { status: blueprintExists ? "completed" : "idle" },
+      material: toStageInfo(materialIds, plannedEpisodeIds),
+      script: toStageInfo(scriptIds, plannedEpisodeIds),
+      context: toStageInfo(contextIds, plannedEpisodeIds),
+      voicevox_text: toStageInfo(voicevoxTextIds, plannedEpisodeIds),
+      voicevox_project: toStageInfo(vvprojIds, plannedEpisodeIds),
+      audio: toStageInfo(audioIds, plannedEpisodeIds),
+    },
+    plannedEpisodeIds,
+  };
 }
 
 // ===== GET /api/runs =====
@@ -191,6 +301,35 @@ runsRouter.get("/:projectId/:runId/tree", async (c) => {
     if (e instanceof SafePathError)
       return problem(c, { title: "Forbidden", status: STATUS_403 });
     return problem(c, { title: "Failed to get run tree", status: STATUS_500 });
+  }
+});
+
+// ===== GET /api/runs/:projectId/:runId/status =====
+
+runsRouter.get("/:projectId/:runId/status", async (c) => {
+  const projectId = c.req.param("projectId");
+  const runId = c.req.param("runId");
+
+  if (!isValidProjectId(projectId)) {
+    return problem(c, { title: "Invalid projectId", status: STATUS_400 });
+  }
+  if (!isValidRunId(runId)) {
+    return problem(c, { title: "Invalid runId", status: STATUS_400 });
+  }
+
+  try {
+    const runAbsPath = await safeResolve(`data/projects/${projectId}/${runId}`);
+    const s = await stat(runAbsPath).catch(() => null);
+    if (!s || !s.isDirectory()) {
+      return problem(c, { title: "Run not found", status: STATUS_404 });
+    }
+
+    const runStatus = await deriveRunStatus(runAbsPath, projectId, runId);
+    return c.json(runStatus);
+  } catch (e) {
+    if (e instanceof SafePathError)
+      return problem(c, { title: "Forbidden", status: STATUS_403 });
+    return problem(c, { title: "Failed to get run status", status: STATUS_500 });
   }
 });
 

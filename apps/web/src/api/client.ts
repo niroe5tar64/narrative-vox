@@ -82,6 +82,27 @@ export type RunItem = {
   createdAt: string;
 };
 
+export type StageStatus = "completed" | "partial" | "idle";
+
+export type StageInfo =
+  | { status: "completed" }
+  | { status: "partial" | "idle"; episodeIds: string[] };
+
+export type RunStatus = {
+  projectId: string;
+  runId: string;
+  stages: {
+    blueprint: { status: StageStatus };
+    material: StageInfo;
+    script: StageInfo;
+    context: StageInfo;
+    voicevox_text: StageInfo;
+    voicevox_project: StageInfo;
+    audio: StageInfo;
+  };
+  plannedEpisodeIds: string[];
+};
+
 export type RunListResult = {
   items: RunItem[];
   total: number;
@@ -300,6 +321,9 @@ export const api = {
 
     tree: (projectId: string, runId: string) =>
       apiFetch<{ tree: TreeNode }>(`/runs/${projectId}/${runId}/tree`),
+
+    status: (projectId: string, runId: string) =>
+      apiFetch<RunStatus>(`/runs/${projectId}/${runId}/status`),
 
     getFile: async (
       projectId: string,

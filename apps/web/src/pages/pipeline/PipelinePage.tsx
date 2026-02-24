@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { ApiError, api } from "@/api/client";
+import { type RunStatus, ApiError, api } from "@/api/client";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,12 +167,26 @@ export function PipelinePage() {
   // 現在の runKey から runDir を抽出
   const paths = derivePaths(runKey, episodeId);
 
+  // runKey から projectId / runId を分離
+  const runIdFromKey = runKey ? runKey.slice(runKey.indexOf("/") + 1) : "";
+
   // VOICEVOX ステータスポーリング
   const voicevoxQuery = useQuery({
     queryKey: ["voicevox-status"],
     queryFn: api.voicevox.status,
     refetchInterval: 30_000,
     retry: false,
+  });
+
+  // Run ステータス（ファイルシステムから推論）
+  // isAnyStepRunning は後で定義されるが、循環を避けるため status で直接判定
+  const isJobActiveForQuery = status === "connecting" || status === "running";
+  const runStatusQuery = useQuery({
+    queryKey: ["run-status", projectId, runIdFromKey],
+    queryFn: () => api.runs.status(projectId, runIdFromKey),
+    enabled: !!projectId && !!runIdFromKey,
+    staleTime: 10_000,
+    refetchInterval: isJobActiveForQuery ? 5_000 : false,
   });
 
   // プロジェクト一覧
@@ -287,6 +301,10 @@ export function PipelinePage() {
             })
             .catch(() => {});
         }
+        // ステップ完了後: run status を更新
+        queryClient
+          .invalidateQueries({ queryKey: ["run-status"] })
+          .catch(() => {});
       } else if (cmd === "build-all") {
         setStepStatuses((prev) => ({
           ...prev,
@@ -364,17 +382,99 @@ export function PipelinePage() {
   const getStepStatus = (stepKey: StepKey): StepStatus =>
     stepStatuses[stepKey] ?? "idle";
 
-  const isAnyStepRunning = isJobActive;
-
-  // Layer 1 の各ステップで実行可能かどうか
-  const canRunLayer1Step = (requiresRun: boolean): boolean => {
-    if (!projectId || isAnyStepRunning) return false;
-    if (requiresRun && !runKey) return false;
-    return true;
+  /** RunStatus から Layer1 ステップの完了を判定（セッション状態と合成） */
+  const getLayer1StepDisplayStatus = (stepKey: Layer1StepKey): StepStatus => {
+    const session = getStepStatus(stepKey);
+    if (session === "running" || session === "error") return session;
+    if (session === "done") return "done";
+    if (!runStatus || !episodeId) return "idle";
+    switch (stepKey) {
+      case "gen-blueprint":
+        return runStatus.stages.blueprint.status === "completed" ? "done" : "idle";
+      case "gen-material":
+        return episodeInStage(runStatus.stages.material, episodeId) ? "done" : "idle";
+      case "gen-script":
+        return episodeInStage(runStatus.stages.script, episodeId) ? "done" : "idle";
+      case "gen-digest":
+        return episodeInStage(runStatus.stages.context, episodeId) ? "done" : "idle";
+    }
   };
 
-  // Layer 2 の各ステップで実行可能かどうか
-  const canRunLayer2Step = !!paths && !isAnyStepRunning;
+  /** RunStatus から Layer2 ステップの完了を判定（セッション状態と合成） */
+  const getLayer2StepDisplayStatus = (stepKey: Layer2StepKey): StepStatus => {
+    const session = getStepStatus(stepKey);
+    if (session === "running" || session === "error") return session;
+    if (session === "done") return "done";
+    if (!runStatus || !episodeId) return "idle";
+    switch (stepKey) {
+      case "build-text":
+        return episodeInStage(runStatus.stages.voicevox_text, episodeId)
+          ? "done"
+          : "idle";
+      case "patch-voicevox-text":
+        // patched ファイルの存在は voicevox_text ステージで区別不可なので "idle" のまま
+        return "idle";
+      case "build-project":
+        return episodeInStage(runStatus.stages.voicevox_project, episodeId)
+          ? "done"
+          : "idle";
+      case "build-audio":
+        return episodeInStage(runStatus.stages.audio, episodeId) ? "done" : "idle";
+    }
+  };
+
+  const isAnyStepRunning = isJobActive;
+
+  const runStatus: RunStatus | undefined = runStatusQuery.data;
+
+  /** エピソードIDがステージに含まれているか */
+  const episodeInStage = (
+    stage: RunStatus["stages"][keyof RunStatus["stages"]],
+    id: string,
+  ): boolean => {
+    if (stage.status === "completed") return true;
+    if (stage.status === "idle") return false;
+    return stage.episodeIds.includes(id);
+  };
+
+  /** Layer 1 の各ステップで実行可能かどうか（RunStatus ベース） */
+  const canRunLayer1Step = (stepKey: Layer1StepKey): boolean => {
+    if (!projectId || isAnyStepRunning) return false;
+    switch (stepKey) {
+      case "gen-blueprint":
+        return true;
+      case "gen-material":
+        return !!runStatus && runStatus.stages.blueprint.status === "completed";
+      case "gen-script":
+        return (
+          !!runStatus &&
+          !!episodeId &&
+          episodeInStage(runStatus.stages.material, episodeId)
+        );
+      case "gen-digest":
+        return (
+          !!runStatus &&
+          !!episodeId &&
+          episodeInStage(runStatus.stages.script, episodeId)
+        );
+    }
+  };
+
+  /** Layer 2 の各ステップで実行可能かどうか（RunStatus ベース） */
+  const canRunLayer2Step = (stepKey: Layer2StepKey): boolean => {
+    if (!paths || isAnyStepRunning) return false;
+    if (!runStatus) return true; // status 未取得時はフォールバックで許可
+    switch (stepKey) {
+      case "build-text":
+        return episodeInStage(runStatus.stages.script, episodeId);
+      case "patch-voicevox-text":
+        return episodeInStage(runStatus.stages.voicevox_text, episodeId);
+      case "build-project":
+        return episodeInStage(runStatus.stages.voicevox_text, episodeId);
+      case "build-audio":
+        return episodeInStage(runStatus.stages.voicevox_project, episodeId);
+    }
+  };
 
   // ---------------------------------------------------------------------------
   // Render
@@ -451,14 +551,29 @@ export function PipelinePage() {
             </select>
           </div>
 
-          {/* Episode ID input */}
-          <div className="w-24 space-y-1.5">
+          {/* Episode ID select/input */}
+          <div className="w-28 space-y-1.5">
             <Label>Episode</Label>
-            <Input
-              value={episodeId}
-              onChange={(e) => handleEpisodeIdChange(e.target.value)}
-              disabled={isAnyStepRunning}
-            />
+            {runStatus && runStatus.plannedEpisodeIds.length > 0 ? (
+              <select
+                value={episodeId}
+                onChange={(e) => handleEpisodeIdChange(e.target.value)}
+                disabled={isAnyStepRunning}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {runStatus.plannedEpisodeIds.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                value={episodeId}
+                onChange={(e) => handleEpisodeIdChange(e.target.value)}
+                disabled={isAnyStepRunning}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -471,9 +586,9 @@ export function PipelinePage() {
 
         <div className="space-y-1">
           {LAYER1_STEPS.map((step, index) => {
-            const stepStatus = getStepStatus(step.key);
+            const stepStatus = getLayer1StepDisplayStatus(step.key);
             const isRunningThis = stepStatus === "running";
-            const canRun = canRunLayer1Step(step.requiresRun);
+            const canRun = canRunLayer1Step(step.key);
 
             return (
               <div
@@ -509,11 +624,27 @@ export function PipelinePage() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
-                  {step.requiresRun && !runKey && projectId && (
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      ← run を選択してください
-                    </p>
-                  )}
+                  {step.key === "gen-material" &&
+                    projectId &&
+                    (!runStatus ||
+                      runStatus.stages.blueprint.status !== "completed") && (
+                      <p className="text-xs text-amber-600 mt-0.5">
+                        ← ブループリント生成が必要です
+                      </p>
+                    )}
+                  {(step.key === "gen-script" || step.key === "gen-digest") &&
+                    runStatus &&
+                    episodeId &&
+                    !episodeInStage(
+                      step.key === "gen-script"
+                        ? runStatus.stages.material
+                        : runStatus.stages.script,
+                      episodeId,
+                    ) && (
+                      <p className="text-xs text-amber-600 mt-0.5">
+                        ← 前ステップの完了が必要です
+                      </p>
+                    )}
                 </div>
 
                 {/* Action button */}
@@ -565,15 +696,15 @@ export function PipelinePage() {
 
         <div className="space-y-1">
           {LAYER2_STEPS.map((step, index) => {
-            const stepStatus = getStepStatus(step.key);
+            const stepStatus = getLayer2StepDisplayStatus(step.key);
             const isRunningThis = stepStatus === "running";
-            const canRun = canRunLayer2Step;
-            const isNext =
-              index === 0
-                ? getStepStatus(LAYER2_STEPS[0].key) === "idle" && !!paths
-                : getStepStatus(LAYER2_STEPS[index - 1].key) === "done" &&
-                  getStepStatus(step.key) === "idle" &&
-                  !!paths;
+            const canRun = canRunLayer2Step(step.key);
+            // isNext: 前ステップが完了 && 自分は未完了 && runが選択済み
+            const isThisCompleted = getLayer2StepDisplayStatus(step.key) === "done";
+            const isPrevCompleted =
+              index === 0 ||
+              getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) === "done";
+            const isNext = !isThisCompleted && !!paths && isPrevCompleted;
 
             return (
               <div
@@ -692,7 +823,7 @@ export function PipelinePage() {
               <Button
                 size="sm"
                 onClick={handleRunBuildAll}
-                disabled={!paths || isAnyStepRunning}
+                disabled={!canRunLayer2Step("build-text") || isAnyStepRunning}
                 className="gap-1.5"
               >
                 <Play className="size-3.5" />
