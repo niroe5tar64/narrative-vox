@@ -13,8 +13,8 @@ import { useEffect, useRef, useState } from "react";
 import { type RunStatus, ApiError, api } from "@/api/client";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TabBar } from "@/components/ui/tab-bar";
 import { usePipelineLog } from "@/hooks/usePipelineLog";
 
 // ---------------------------------------------------------------------------
@@ -144,6 +144,18 @@ function getLayer2StepArgs(stepKey: Layer2StepKey, paths: Paths): string[] {
 type StepStatus = "idle" | "running" | "done" | "error";
 
 // ---------------------------------------------------------------------------
+// Tab definitions
+// ---------------------------------------------------------------------------
+
+type PipelineTab = "layer1" | "layer2" | "utility";
+
+const PIPELINE_TABS: { id: PipelineTab; label: string }[] = [
+  { id: "layer1", label: "Layer 1 — LLM 生成" },
+  { id: "layer2", label: "Layer 2 — 音声合成" },
+  { id: "utility", label: "ユーティリティ" },
+];
+
+// ---------------------------------------------------------------------------
 // PipelinePage
 // ---------------------------------------------------------------------------
 
@@ -152,6 +164,7 @@ export function PipelinePage() {
   const [projectId, setProjectId] = useState("");
   const [runKey, setRunKey] = useState("");
   const [episodeId, setEpisodeId] = useState("E01");
+  const [pipelineTab, setPipelineTab] = useState<PipelineTab>("layer1");
   const [stepStatuses, setStepStatuses] = useState<
     Partial<Record<StepKey, StepStatus>>
   >({});
@@ -508,6 +521,13 @@ export function PipelinePage() {
         </div>
       </div>
 
+      {/* Tab bar */}
+      <TabBar
+        tabs={PIPELINE_TABS}
+        activeTab={pipelineTab}
+        onTabChange={setPipelineTab}
+      />
+
       {/* Context: Project + Run + Episode */}
       <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-3">
         <p className="text-xs font-medium text-slate-500">対象</p>
@@ -554,329 +574,327 @@ export function PipelinePage() {
           {/* Episode ID select/input */}
           <div className="w-28 space-y-1.5">
             <Label>Episode</Label>
-            {runStatus && runStatus.plannedEpisodeIds.length > 0 ? (
-              <select
-                value={episodeId}
-                onChange={(e) => handleEpisodeIdChange(e.target.value)}
-                disabled={isAnyStepRunning}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {runStatus.plannedEpisodeIds.map((id) => (
-                  <option key={id} value={id}>
-                    {id}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <Input
-                value={episodeId}
-                onChange={(e) => handleEpisodeIdChange(e.target.value)}
-                disabled={isAnyStepRunning}
-              />
-            )}
+            {/* blueprint 生成済みなら plannedEpisodeIds、未生成なら ["E01"] */}
+            <select
+              value={episodeId}
+              onChange={(e) => handleEpisodeIdChange(e.target.value)}
+              disabled={isAnyStepRunning}
+              className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {(runStatus?.plannedEpisodeIds.length
+                ? runStatus.plannedEpisodeIds
+                : ["E01"]
+              ).map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Layer 1: LLM 生成 */}
-      <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1">
-        <p className="text-xs font-medium text-slate-500 mb-3">
-          Layer 1 — LLM 生成（claude --print 経由）
-        </p>
+      {/* Tab content */}
+      {pipelineTab === "layer1" && (
+        <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1">
+          <p className="text-xs font-medium text-slate-500 mb-3">
+            Layer 1 — LLM 生成（claude --print 経由）
+          </p>
 
-        <div className="space-y-1">
-          {LAYER1_STEPS.map((step, index) => {
-            const stepStatus = getLayer1StepDisplayStatus(step.key);
-            const isRunningThis = stepStatus === "running";
-            const canRun = canRunLayer1Step(step.key);
+          <div className="space-y-1">
+            {LAYER1_STEPS.map((step, index) => {
+              const stepStatus = getLayer1StepDisplayStatus(step.key);
+              const isRunningThis = stepStatus === "running";
+              const canRun = canRunLayer1Step(step.key);
 
-            return (
-              <div
-                key={step.key}
-                className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
-              >
-                {/* Status icon */}
-                <div className="mt-0.5 shrink-0">
-                  {stepStatus === "done" ? (
-                    <CheckCircle2 className="size-4.5 text-emerald-500" />
-                  ) : stepStatus === "error" ? (
-                    <XCircle className="size-4.5 text-red-500" />
-                  ) : stepStatus === "running" ? (
-                    <Loader2 className="size-4.5 animate-spin text-blue-500" />
-                  ) : (
-                    <Circle className="size-4.5 text-slate-300" />
-                  )}
-                </div>
-
-                {/* Label + note */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-slate-400 font-mono">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {step.label}
-                    </span>
-                    {stepStatus === "error" && (
-                      <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
-                        エラー
-                      </span>
+              return (
+                <div
+                  key={step.key}
+                  className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
+                >
+                  {/* Status icon */}
+                  <div className="mt-0.5 shrink-0">
+                    {stepStatus === "done" ? (
+                      <CheckCircle2 className="size-4.5 text-emerald-500" />
+                    ) : stepStatus === "error" ? (
+                      <XCircle className="size-4.5 text-red-500" />
+                    ) : stepStatus === "running" ? (
+                      <Loader2 className="size-4.5 animate-spin text-blue-500" />
+                    ) : (
+                      <Circle className="size-4.5 text-slate-300" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
-                  {step.key === "gen-material" &&
-                    projectId &&
-                    (!runStatus ||
-                      runStatus.stages.blueprint.status !== "completed") && (
-                      <p className="text-xs text-amber-600 mt-0.5">
-                        ← ブループリント生成が必要です
-                      </p>
-                    )}
-                  {(step.key === "gen-script" || step.key === "gen-digest") &&
-                    runStatus &&
-                    episodeId &&
-                    !episodeInStage(
-                      step.key === "gen-script"
-                        ? runStatus.stages.material
-                        : runStatus.stages.script,
-                      episodeId,
-                    ) && (
-                      <p className="text-xs text-amber-600 mt-0.5">
-                        ← 前ステップの完了が必要です
-                      </p>
-                    )}
-                </div>
 
-                {/* Action button */}
-                <div className="shrink-0">
-                  {isRunningThis ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleCancel}
-                      className="gap-1 text-xs text-red-600 hover:text-red-700"
-                    >
-                      <Square className="size-3" />
-                      停止
-                    </Button>
-                  ) : stepStatus === "done" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRunLayer1Step(step.key)}
-                      disabled={!canRun}
-                      className="gap-1 text-xs text-slate-500"
-                    >
-                      <RotateCcw className="size-3" />
-                      再実行
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => handleRunLayer1Step(step.key)}
-                      disabled={!canRun}
-                      className="gap-1 text-xs"
-                    >
-                      <Play className="size-3" />
-                      実行
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Layer 2: 音声合成パイプライン */}
-      <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1">
-        <p className="text-xs font-medium text-slate-500 mb-3">
-          Layer 2 — 音声合成パイプライン
-        </p>
-
-        <div className="space-y-1">
-          {LAYER2_STEPS.map((step, index) => {
-            const stepStatus = getLayer2StepDisplayStatus(step.key);
-            const isRunningThis = stepStatus === "running";
-            const canRun = canRunLayer2Step(step.key);
-            // isNext: 前ステップが完了 && 自分は未完了 && runが選択済み
-            const isThisCompleted = getLayer2StepDisplayStatus(step.key) === "done";
-            const isPrevCompleted =
-              index === 0 ||
-              getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) === "done";
-            const isNext = !isThisCompleted && !!paths && isPrevCompleted;
-
-            return (
-              <div
-                key={step.key}
-                className={[
-                  "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
-                  isNext
-                    ? "bg-emerald-50 border border-emerald-200"
-                    : "hover:bg-slate-50",
-                ].join(" ")}
-              >
-                {/* Status icon */}
-                <div className="mt-0.5 shrink-0">
-                  {stepStatus === "done" ? (
-                    <CheckCircle2 className="size-4.5 text-emerald-500" />
-                  ) : stepStatus === "error" ? (
-                    <XCircle className="size-4.5 text-red-500" />
-                  ) : stepStatus === "running" ? (
-                    <Loader2 className="size-4.5 animate-spin text-blue-500" />
-                  ) : (
-                    <Circle className="size-4.5 text-slate-300" />
-                  )}
-                </div>
-
-                {/* Label + note + path */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-slate-400 font-mono">
-                      {String(index + LAYER1_STEPS.length + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {step.label}
-                    </span>
-                    {isNext && (
-                      <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-                        次のステップ
+                  {/* Label + note */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-slate-400 font-mono">
+                        {String(index + 1).padStart(2, "0")}
                       </span>
-                    )}
-                    {stepStatus === "error" && (
-                      <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
-                        エラー
+                      <span className="text-sm font-medium text-slate-800">
+                        {step.label}
                       </span>
+                      {stepStatus === "error" && (
+                        <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
+                          エラー
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
+                    {step.key === "gen-material" &&
+                      projectId &&
+                      (!runStatus ||
+                        runStatus.stages.blueprint.status !== "completed") && (
+                        <p className="text-xs text-amber-600 mt-0.5">
+                          ← ブループリント生成が必要です
+                        </p>
+                      )}
+                    {(step.key === "gen-script" || step.key === "gen-digest") &&
+                      runStatus &&
+                      episodeId &&
+                      !episodeInStage(
+                        step.key === "gen-script"
+                          ? runStatus.stages.material
+                          : runStatus.stages.script,
+                        episodeId,
+                      ) && (
+                        <p className="text-xs text-amber-600 mt-0.5">
+                          ← 前ステップの完了が必要です
+                        </p>
+                      )}
+                  </div>
+
+                  {/* Action button */}
+                  <div className="shrink-0">
+                    {isRunningThis ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleCancel}
+                        className="gap-1 text-xs text-red-600 hover:text-red-700"
+                      >
+                        <Square className="size-3" />
+                        停止
+                      </Button>
+                    ) : stepStatus === "done" ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRunLayer1Step(step.key)}
+                        disabled={!canRun}
+                        className="gap-1 text-xs text-slate-500"
+                      >
+                        <RotateCcw className="size-3" />
+                        再実行
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleRunLayer1Step(step.key)}
+                        disabled={!canRun}
+                        className="gap-1 text-xs"
+                      >
+                        <Play className="size-3" />
+                        実行
+                      </Button>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
-                  {paths && (
-                    <p className="text-xs text-slate-400 font-mono truncate mt-0.5">
-                      {step.key === "build-text" && paths.script}
-                      {step.key === "patch-voicevox-text" &&
-                        paths.voicevoxTextRaw}
-                      {step.key === "build-project" &&
-                        paths.voicevoxTextPatched}
-                      {step.key === "build-audio" && paths.vvproj}
-                    </p>
-                  )}
                 </div>
-
-                {/* Action button */}
-                <div className="shrink-0">
-                  {isRunningThis ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleCancel}
-                      className="gap-1 text-xs text-red-600 hover:text-red-700"
-                    >
-                      <Square className="size-3" />
-                      停止
-                    </Button>
-                  ) : stepStatus === "done" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRunLayer2Step(step.key)}
-                      disabled={!canRun}
-                      className="gap-1 text-xs text-slate-500"
-                    >
-                      <RotateCcw className="size-3" />
-                      再実行
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => handleRunLayer2Step(step.key)}
-                      disabled={!canRun}
-                      className={[
-                        "gap-1 text-xs",
-                        isNext ? "bg-emerald-600 hover:bg-emerald-700" : "",
-                      ].join(" ")}
-                    >
-                      <Play className="size-3" />
-                      実行
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Shortcut: build-all */}
-        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
-          <p className="text-xs text-slate-400">ショートカット</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {isAnyStepRunning && runningCommand === "build-all" ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={handleCancel}
-                className="gap-1.5 text-red-600 hover:text-red-700"
-              >
-                <Square className="size-3.5" />
-                停止
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleRunBuildAll}
-                disabled={!canRunLayer2Step("build-text") || isAnyStepRunning}
-                className="gap-1.5"
-              >
-                <Play className="size-3.5" />
-                ステップ ⑤⑥⑦ をまとめて実行
-              </Button>
-            )}
-            <span className="text-xs text-slate-400">
-              ※ ステップ⑧（音声合成）は別途実行が必要
-            </span>
+              );
+            })}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Utilities */}
-      <details className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur overflow-hidden">
-        <summary className="px-4 py-3 text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-50 select-none">
-          ユーティリティ
-        </summary>
-        <div className="px-4 pb-3 pt-2 flex gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() =>
-              paths && handleRunUtil("check-run", ["--run-dir", paths.runDir])
-            }
-            disabled={!paths || isAnyStepRunning}
-          >
-            run を検証
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() =>
-              paths &&
-              handleRunUtil("prepare-run", [
-                "--source-run-dir",
-                paths.runDir,
-              ])
-            }
-            disabled={!paths || isAnyStepRunning}
-          >
-            run を引き継ぎ
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => handleRunUtil("dict-sync", [])}
-            disabled={isAnyStepRunning}
-          >
-            辞書同期
-          </Button>
+      {pipelineTab === "layer2" && (
+        <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4 space-y-1">
+          <p className="text-xs font-medium text-slate-500 mb-3">
+            Layer 2 — 音声合成パイプライン
+          </p>
+
+          <div className="space-y-1">
+            {LAYER2_STEPS.map((step, index) => {
+              const stepStatus = getLayer2StepDisplayStatus(step.key);
+              const isRunningThis = stepStatus === "running";
+              const canRun = canRunLayer2Step(step.key);
+              // isNext: 前ステップが完了 && 自分は未完了 && runが選択済み
+              const isThisCompleted = getLayer2StepDisplayStatus(step.key) === "done";
+              const isPrevCompleted =
+                index === 0 ||
+                getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) === "done";
+              const isNext = !isThisCompleted && !!paths && isPrevCompleted;
+
+              return (
+                <div
+                  key={step.key}
+                  className={[
+                    "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                    isNext
+                      ? "bg-emerald-50 border border-emerald-200"
+                      : "hover:bg-slate-50",
+                  ].join(" ")}
+                >
+                  {/* Status icon */}
+                  <div className="mt-0.5 shrink-0">
+                    {stepStatus === "done" ? (
+                      <CheckCircle2 className="size-4.5 text-emerald-500" />
+                    ) : stepStatus === "error" ? (
+                      <XCircle className="size-4.5 text-red-500" />
+                    ) : stepStatus === "running" ? (
+                      <Loader2 className="size-4.5 animate-spin text-blue-500" />
+                    ) : (
+                      <Circle className="size-4.5 text-slate-300" />
+                    )}
+                  </div>
+
+                  {/* Label + note + path */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-slate-400 font-mono">
+                        {String(index + LAYER1_STEPS.length + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-sm font-medium text-slate-800">
+                        {step.label}
+                      </span>
+                      {isNext && (
+                        <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                          次のステップ
+                        </span>
+                      )}
+                      {stepStatus === "error" && (
+                        <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
+                          エラー
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
+                    {paths && (
+                      <p className="text-xs text-slate-400 font-mono truncate mt-0.5">
+                        {step.key === "build-text" && paths.script}
+                        {step.key === "patch-voicevox-text" &&
+                          paths.voicevoxTextRaw}
+                        {step.key === "build-project" &&
+                          paths.voicevoxTextPatched}
+                        {step.key === "build-audio" && paths.vvproj}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action button */}
+                  <div className="shrink-0">
+                    {isRunningThis ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleCancel}
+                        className="gap-1 text-xs text-red-600 hover:text-red-700"
+                      >
+                        <Square className="size-3" />
+                        停止
+                      </Button>
+                    ) : stepStatus === "done" ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRunLayer2Step(step.key)}
+                        disabled={!canRun}
+                        className="gap-1 text-xs text-slate-500"
+                      >
+                        <RotateCcw className="size-3" />
+                        再実行
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleRunLayer2Step(step.key)}
+                        disabled={!canRun}
+                        className={[
+                          "gap-1 text-xs",
+                          isNext ? "bg-emerald-600 hover:bg-emerald-700" : "",
+                        ].join(" ")}
+                      >
+                        <Play className="size-3" />
+                        実行
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Shortcut: build-all */}
+          <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+            <p className="text-xs text-slate-400">ショートカット</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {isAnyStepRunning && runningCommand === "build-all" ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleCancel}
+                  className="gap-1.5 text-red-600 hover:text-red-700"
+                >
+                  <Square className="size-3.5" />
+                  停止
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleRunBuildAll}
+                  disabled={!canRunLayer2Step("build-text") || isAnyStepRunning}
+                  className="gap-1.5"
+                >
+                  <Play className="size-3.5" />
+                  ステップ ⑤⑥⑦ をまとめて実行
+                </Button>
+              )}
+              <span className="text-xs text-slate-400">
+                ※ ステップ⑧（音声合成）は別途実行が必要
+              </span>
+            </div>
+          </div>
         </div>
-      </details>
+      )}
+
+      {pipelineTab === "utility" && (
+        <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4">
+          <p className="text-xs font-medium text-slate-500 mb-3">ユーティリティ</p>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                paths && handleRunUtil("check-run", ["--run-dir", paths.runDir])
+              }
+              disabled={!paths || isAnyStepRunning}
+            >
+              run を検証
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                paths &&
+                handleRunUtil("prepare-run", [
+                  "--source-run-dir",
+                  paths.runDir,
+                ])
+              }
+              disabled={!paths || isAnyStepRunning}
+            >
+              run を引き継ぎ
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleRunUtil("dict-sync", [])}
+              disabled={isAnyStepRunning}
+            >
+              辞書同期
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* API error */}
       {apiError && (
@@ -885,14 +903,12 @@ export function PipelinePage() {
         </div>
       )}
 
-      {/* Terminal */}
-      {(logs.length > 0 || status !== "idle") && (
-        <LogTerminal
-          logs={logs}
-          status={status}
-          command={runningCommand ?? undefined}
-        />
-      )}
+      {/* Terminal (常時表示) */}
+      <LogTerminal
+        logs={logs}
+        status={status}
+        command={runningCommand ?? undefined}
+      />
     </div>
   );
 }
