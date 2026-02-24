@@ -106,6 +106,13 @@ export async function runClaudeWithPrompt(prompt: string): Promise<string> {
     stderr: "pipe",
   });
 
+  // 生成中のハートビート（パイプバッファ問題の補完として5秒ごとに進捗表示）
+  const startTime = Date.now();
+  const heartbeat = setInterval(() => {
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    process.stdout.write(`[claude] Still generating... (${elapsed}s)\n`);
+  }, 5000);
+
   // stderr をコンソールに流す
   const stderrStream = proc.stderr;
   if (stderrStream) {
@@ -129,32 +136,36 @@ export async function runClaudeWithPrompt(prompt: string): Promise<string> {
   // stdout を行単位でリアルタイム表示しながら収集
   const outputChunks: string[] = [];
   const stdoutStream = proc.stdout;
-  if (stdoutStream) {
-    const reader = stdoutStream.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (buffer.length > 0) {
-            outputChunks.push(buffer);
-            process.stdout.write(buffer + "\n");
+  try {
+    if (stdoutStream) {
+      const reader = stdoutStream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            if (buffer.length > 0) {
+              outputChunks.push(buffer);
+              process.stdout.write(buffer + "\n");
+            }
+            break;
           }
-          break;
+          const text = decoder.decode(value, { stream: true });
+          outputChunks.push(text);
+          buffer += text;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            process.stdout.write(line + "\n");
+          }
         }
-        const text = decoder.decode(value, { stream: true });
-        outputChunks.push(text);
-        buffer += text;
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          process.stdout.write(line + "\n");
-        }
+      } finally {
+        reader.releaseLock();
       }
-    } finally {
-      reader.releaseLock();
     }
+  } finally {
+    clearInterval(heartbeat);
   }
 
   const exitCode = await proc.exited;
