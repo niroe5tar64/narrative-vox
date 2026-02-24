@@ -27,6 +27,11 @@ coverage/
 # generated pipeline runs (safest: ignore all runs)
 projects/*/run-*/
 
+# keep only documentation files under data/
+data/**
+!data/**/
+!data/**/README.md
+
 # optional local output buckets
 outputs/
 artifacts/
