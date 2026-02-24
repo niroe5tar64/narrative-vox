@@ -49,6 +49,12 @@
         "episode_duration_target": {
           "type": "string",
           "const": "10-12min"
+        },
+        "repo_root_path": {
+          "type": "string"
+        },
+        "deep_dive_focus": {
+          "type": "string"
         }
       }
     },
