@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Check,
   CheckCircle2,
   Circle,
+  Copy,
   Loader2,
   Play,
   RotateCcw,
@@ -10,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { type RunStatus, ApiError, api } from "@/api/client";
+import { ApiError, api, type RunStatus } from "@/api/client";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -174,6 +176,10 @@ export function PipelinePage() {
   const [apiError, setApiError] = useState<string | null>(null);
   // Flag to auto-select run after gen-blueprint completes
   const [pendingAutoSelectRun, setPendingAutoSelectRun] = useState(false);
+  // Which step's command was just copied to clipboard
+  const [copiedStep, setCopiedStep] = useState<string | null>(null);
+  // Command currently being previewed in LogTerminal
+  const [hoveredCommand, setHoveredCommand] = useState<string | null>(null);
 
   const { logs, status, reset } = usePipelineLog(jobId);
 
@@ -403,13 +409,21 @@ export function PipelinePage() {
     if (!runStatus || !episodeId) return "idle";
     switch (stepKey) {
       case "gen-blueprint":
-        return runStatus.stages.blueprint.status === "completed" ? "done" : "idle";
+        return runStatus.stages.blueprint.status === "completed"
+          ? "done"
+          : "idle";
       case "gen-material":
-        return episodeInStage(runStatus.stages.material, episodeId) ? "done" : "idle";
+        return episodeInStage(runStatus.stages.material, episodeId)
+          ? "done"
+          : "idle";
       case "gen-script":
-        return episodeInStage(runStatus.stages.script, episodeId) ? "done" : "idle";
+        return episodeInStage(runStatus.stages.script, episodeId)
+          ? "done"
+          : "idle";
       case "gen-digest":
-        return episodeInStage(runStatus.stages.context, episodeId) ? "done" : "idle";
+        return episodeInStage(runStatus.stages.context, episodeId)
+          ? "done"
+          : "idle";
     }
   };
 
@@ -432,7 +446,9 @@ export function PipelinePage() {
           ? "done"
           : "idle";
       case "build-audio":
-        return episodeInStage(runStatus.stages.audio, episodeId) ? "done" : "idle";
+        return episodeInStage(runStatus.stages.audio, episodeId)
+          ? "done"
+          : "idle";
     }
   };
 
@@ -601,19 +617,43 @@ export function PipelinePage() {
             Layer 1 — LLM 生成（claude --print 経由）
           </p>
 
-          <div className="space-y-1">
+          <ul className="space-y-1 list-none p-0 m-0">
             {LAYER1_STEPS.map((step, index) => {
               const stepStatus = getLayer1StepDisplayStatus(step.key);
               const isRunningThis = stepStatus === "running";
               const canRun = canRunLayer1Step(step.key);
+              // isNext: 前ステップが完了 && 自分は未完了 && 前提が整っている
+              const isThisCompleted =
+                getLayer1StepDisplayStatus(step.key) === "done";
+              const isPrevCompleted =
+                index === 0 ||
+                getLayer1StepDisplayStatus(LAYER1_STEPS[index - 1].key) ===
+                  "done";
+              const isNext = !isThisCompleted && isPrevCompleted && canRun;
+
+              const cmdArgs = projectId
+                ? getLayer1StepArgs(
+                    step.key,
+                    projectId,
+                    episodeId,
+                    paths?.runDir ?? "",
+                  )
+                : null;
+              const commandString = cmdArgs
+                ? `bun run ${step.key} -- ${cmdArgs.join(" ")}`
+                : null;
 
               return (
-                <div
+                <li
                   key={step.key}
-                  className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 group"
+                  onMouseEnter={() =>
+                    commandString ? setHoveredCommand(commandString) : undefined
+                  }
+                  onMouseLeave={() => setHoveredCommand(null)}
                 >
                   {/* Status icon */}
-                  <div className="mt-0.5 shrink-0">
+                  <div className="shrink-0">
                     {stepStatus === "done" ? (
                       <CheckCircle2 className="size-4.5 text-emerald-500" />
                     ) : stepStatus === "error" ? (
@@ -634,6 +674,11 @@ export function PipelinePage() {
                       <span className="text-sm font-medium text-slate-800">
                         {step.label}
                       </span>
+                      {isNext && (
+                        <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                          次のステップ
+                        </span>
+                      )}
                       {stepStatus === "error" && (
                         <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded">
                           エラー
@@ -641,37 +686,36 @@ export function PipelinePage() {
                       )}
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
-                    {step.key === "gen-material" &&
-                      projectId &&
-                      (!runStatus ||
-                        runStatus.stages.blueprint.status !== "completed") && (
-                        <p className="text-xs text-amber-600 mt-0.5">
-                          ← ブループリント生成が必要です
-                        </p>
-                      )}
-                    {(step.key === "gen-script" || step.key === "gen-digest") &&
-                      runStatus &&
-                      episodeId &&
-                      !episodeInStage(
-                        step.key === "gen-script"
-                          ? runStatus.stages.material
-                          : runStatus.stages.script,
-                        episodeId,
-                      ) && (
-                        <p className="text-xs text-amber-600 mt-0.5">
-                          ← 前ステップの完了が必要です
-                        </p>
-                      )}
                   </div>
 
+                  {/* Copy icon */}
+                  {commandString && (
+                    <button
+                      type="button"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(commandString);
+                        setCopiedStep(step.key);
+                        setTimeout(() => setCopiedStep(null), 2000);
+                      }}
+                    >
+                      {copiedStep === step.key ? (
+                        <Check className="size-4 text-emerald-500" />
+                      ) : (
+                        <Copy className="size-4 text-slate-400 hover:text-slate-600" />
+                      )}
+                    </button>
+                  )}
+
                   {/* Action button */}
-                  <div className="shrink-0">
+                  <div className="shrink-0 w-[4.5rem]">
                     {isRunningThis ? (
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={handleCancel}
-                        className="gap-1 text-xs text-red-600 hover:text-red-700"
+                        className="w-full gap-1 text-xs text-red-600 hover:text-red-700 cursor-pointer"
                       >
                         <Square className="size-3" />
                         停止
@@ -682,7 +726,7 @@ export function PipelinePage() {
                         variant="ghost"
                         onClick={() => handleRunLayer1Step(step.key)}
                         disabled={!canRun}
-                        className="gap-1 text-xs text-slate-500"
+                        className="w-full gap-1 text-xs text-slate-500 cursor-pointer"
                       >
                         <RotateCcw className="size-3" />
                         再実行
@@ -692,17 +736,17 @@ export function PipelinePage() {
                         size="sm"
                         onClick={() => handleRunLayer1Step(step.key)}
                         disabled={!canRun}
-                        className="gap-1 text-xs"
+                        className="w-full gap-1 text-xs cursor-pointer"
                       >
                         <Play className="size-3" />
                         実行
                       </Button>
                     )}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       )}
 
@@ -712,30 +756,36 @@ export function PipelinePage() {
             Layer 2 — 音声合成パイプライン
           </p>
 
-          <div className="space-y-1">
+          <ul className="space-y-1 list-none p-0 m-0">
             {LAYER2_STEPS.map((step, index) => {
               const stepStatus = getLayer2StepDisplayStatus(step.key);
               const isRunningThis = stepStatus === "running";
               const canRun = canRunLayer2Step(step.key);
               // isNext: 前ステップが完了 && 自分は未完了 && runが選択済み
-              const isThisCompleted = getLayer2StepDisplayStatus(step.key) === "done";
+              const isThisCompleted =
+                getLayer2StepDisplayStatus(step.key) === "done";
               const isPrevCompleted =
                 index === 0 ||
-                getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) === "done";
+                getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) ===
+                  "done";
               const isNext = !isThisCompleted && !!paths && isPrevCompleted;
 
+              const cmdArgs = paths ? getLayer2StepArgs(step.key, paths) : null;
+              const commandString = cmdArgs
+                ? `bun run ${step.key} -- ${cmdArgs.join(" ")}`
+                : null;
+
               return (
-                <div
+                <li
                   key={step.key}
-                  className={[
-                    "flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors",
-                    isNext
-                      ? "bg-emerald-50 border border-emerald-200"
-                      : "hover:bg-slate-50",
-                  ].join(" ")}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-slate-50 group"
+                  onMouseEnter={() =>
+                    commandString ? setHoveredCommand(commandString) : undefined
+                  }
+                  onMouseLeave={() => setHoveredCommand(null)}
                 >
                   {/* Status icon */}
-                  <div className="mt-0.5 shrink-0">
+                  <div className="shrink-0">
                     {stepStatus === "done" ? (
                       <CheckCircle2 className="size-4.5 text-emerald-500" />
                     ) : stepStatus === "error" ? (
@@ -751,12 +801,15 @@ export function PipelinePage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-slate-400 font-mono">
-                        {String(index + LAYER1_STEPS.length + 1).padStart(2, "0")}
+                        {String(index + LAYER1_STEPS.length + 1).padStart(
+                          2,
+                          "0",
+                        )}
                       </span>
                       <span className="text-sm font-medium text-slate-800">
                         {step.label}
                       </span>
-                      {isNext && (
+                      {isNext && canRun && (
                         <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
                           次のステップ
                         </span>
@@ -768,26 +821,36 @@ export function PipelinePage() {
                       )}
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{step.note}</p>
-                    {paths && (
-                      <p className="text-xs text-slate-400 font-mono truncate mt-0.5">
-                        {step.key === "build-text" && paths.script}
-                        {step.key === "patch-voicevox-text" &&
-                          paths.voicevoxTextRaw}
-                        {step.key === "build-project" &&
-                          paths.voicevoxTextPatched}
-                        {step.key === "build-audio" && paths.vvproj}
-                      </p>
-                    )}
                   </div>
 
+                  {/* Copy icon */}
+                  {commandString && (
+                    <button
+                      type="button"
+                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(commandString);
+                        setCopiedStep(step.key);
+                        setTimeout(() => setCopiedStep(null), 2000);
+                      }}
+                    >
+                      {copiedStep === step.key ? (
+                        <Check className="size-4 text-emerald-500" />
+                      ) : (
+                        <Copy className="size-4 text-slate-400 hover:text-slate-600" />
+                      )}
+                    </button>
+                  )}
+
                   {/* Action button */}
-                  <div className="shrink-0">
+                  <div className="shrink-0 w-[4.5rem]">
                     {isRunningThis ? (
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={handleCancel}
-                        className="gap-1 text-xs text-red-600 hover:text-red-700"
+                        className="w-full gap-1 text-xs text-red-600 hover:text-red-700 cursor-pointer"
                       >
                         <Square className="size-3" />
                         停止
@@ -798,7 +861,7 @@ export function PipelinePage() {
                         variant="ghost"
                         onClick={() => handleRunLayer2Step(step.key)}
                         disabled={!canRun}
-                        className="gap-1 text-xs text-slate-500"
+                        className="w-full gap-1 text-xs text-slate-500 cursor-pointer"
                       >
                         <RotateCcw className="size-3" />
                         再実行
@@ -808,20 +871,17 @@ export function PipelinePage() {
                         size="sm"
                         onClick={() => handleRunLayer2Step(step.key)}
                         disabled={!canRun}
-                        className={[
-                          "gap-1 text-xs",
-                          isNext ? "bg-emerald-600 hover:bg-emerald-700" : "",
-                        ].join(" ")}
+                        className="w-full gap-1 text-xs"
                       >
                         <Play className="size-3" />
                         実行
                       </Button>
                     )}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           {/* Shortcut: build-all */}
           <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
@@ -832,7 +892,7 @@ export function PipelinePage() {
                   size="sm"
                   variant="secondary"
                   onClick={handleCancel}
-                  className="gap-1.5 text-red-600 hover:text-red-700"
+                  className="gap-1.5 text-red-600 hover:text-red-700 cursor-pointer"
                 >
                   <Square className="size-3.5" />
                   停止
@@ -842,7 +902,7 @@ export function PipelinePage() {
                   size="sm"
                   onClick={handleRunBuildAll}
                   disabled={!canRunLayer2Step("build-text") || isAnyStepRunning}
-                  className="gap-1.5"
+                  className="gap-1.5 cursor-pointer"
                 >
                   <Play className="size-3.5" />
                   ステップ ⑤⑥⑦ をまとめて実行
@@ -858,11 +918,14 @@ export function PipelinePage() {
 
       {pipelineTab === "utility" && (
         <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur p-4">
-          <p className="text-xs font-medium text-slate-500 mb-3">ユーティリティ</p>
+          <p className="text-xs font-medium text-slate-500 mb-3">
+            ユーティリティ
+          </p>
           <div className="flex gap-2 flex-wrap">
             <Button
               size="sm"
               variant="secondary"
+              className="cursor-pointer"
               onClick={() =>
                 paths && handleRunUtil("check-run", ["--run-dir", paths.runDir])
               }
@@ -873,12 +936,10 @@ export function PipelinePage() {
             <Button
               size="sm"
               variant="secondary"
+              className="cursor-pointer"
               onClick={() =>
                 paths &&
-                handleRunUtil("prepare-run", [
-                  "--source-run-dir",
-                  paths.runDir,
-                ])
+                handleRunUtil("prepare-run", ["--source-run-dir", paths.runDir])
               }
               disabled={!paths || isAnyStepRunning}
             >
@@ -887,6 +948,7 @@ export function PipelinePage() {
             <Button
               size="sm"
               variant="secondary"
+              className="cursor-pointer"
               onClick={() => handleRunUtil("dict-sync", [])}
               disabled={isAnyStepRunning}
             >
@@ -908,6 +970,7 @@ export function PipelinePage() {
         logs={logs}
         status={status}
         command={runningCommand ?? undefined}
+        previewCommand={hoveredCommand ?? undefined}
       />
     </div>
   );
