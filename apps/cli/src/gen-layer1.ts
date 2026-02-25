@@ -202,13 +202,12 @@ export function extractJson(output: string): unknown {
 
 export interface GenBlueprintOptions {
   projectId: string;
-  episodeId: string;
 }
 
 export async function genBlueprint(
   options: GenBlueprintOptions,
 ): Promise<void> {
-  const { projectId, episodeId } = options;
+  const { projectId } = options;
 
   // 1. project config 読み込み
   console.log(`[gen-blueprint] Loading project config: ${projectId}`);
@@ -229,10 +228,6 @@ export async function genBlueprint(
       configMap[key] = value;
     }
   }
-  if (episodeId) {
-    configMap.EPISODE_ID = episodeId;
-  }
-
   const { resolvedPrompt } = resolvePromptTemplate(templateRaw, configMap);
   const promptSection = extractPromptSection(resolvedPrompt);
 

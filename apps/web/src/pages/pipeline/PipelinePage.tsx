@@ -113,7 +113,7 @@ function getLayer1StepArgs(
 ): string[] {
   switch (stepKey) {
     case "gen-blueprint":
-      return ["--project-id", projectId, "--episode-id", episodeId];
+      return ["--project-id", projectId];
     default:
       return [
         "--project-id",

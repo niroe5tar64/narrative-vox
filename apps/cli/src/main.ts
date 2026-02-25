@@ -42,7 +42,7 @@ type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
   "gen-blueprint":
-    "Usage:\n  bun apps/cli/src/main.ts gen-blueprint --project-id <id> [--episode-id E01]",
+    "Usage:\n  bun apps/cli/src/main.ts gen-blueprint --project-id <id>",
   "gen-material":
     "Usage:\n  bun apps/cli/src/main.ts gen-material --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
   "gen-script":
@@ -135,9 +135,13 @@ function buildPrerequisiteOptionFields(options: CliOptions) {
 
 const commandHandlers: Record<CommandName, CommandHandler> = {
   "gen-blueprint": async (options) => {
+    if (optionAsString(options, "episode-id")) {
+      throw new Error(
+        "--episode-id is not supported for gen-blueprint. Remove this option.",
+      );
+    }
     await genBlueprint({
       projectId: ensureOption(options, "project-id", "gen-blueprint"),
-      episodeId: optionAsString(options, "episode-id") ?? "E01",
     });
   },
   "gen-material": async (options) => {
