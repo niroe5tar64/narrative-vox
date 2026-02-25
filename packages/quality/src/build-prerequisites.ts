@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { loadSpeedProfiles } from "@narrative-vox/infrastructure/speed-profiles.ts";
 import { parseSpeakerTag } from "@narrative-vox/domain/speaker-tag.ts";
 import {
   normalizeSynthesisDefaults,
@@ -12,6 +11,7 @@ import {
   resolveSynthesisDefaultsPath,
 } from "@narrative-vox/infrastructure/config-resolver.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
+import { loadSpeedProfiles } from "@narrative-vox/infrastructure/speed-profiles.ts";
 import { resolveVoicevoxApiUrl } from "@narrative-vox/infrastructure/voicevox-engine.ts";
 
 export interface BuildPrerequisiteOptions {

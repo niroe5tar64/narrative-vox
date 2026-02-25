@@ -1,4 +1,7 @@
-import type { NormalizationRule, VoicevoxTextUtterance } from "@narrative-vox/domain/types.ts";
+import type {
+  NormalizationRule,
+  VoicevoxTextUtterance,
+} from "@narrative-vox/domain/types.ts";
 
 export function applyNormalizationRules(
   utterances: VoicevoxTextUtterance[],

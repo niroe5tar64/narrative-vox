@@ -1,8 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
-  type RunContract,
   RUN_CONTRACT_FILENAME,
+  type RunContract,
 } from "@narrative-vox/domain/run-contract.ts";
 import { loadJson } from "./json.ts";
 import { SchemaPaths } from "./schema-paths.ts";

@@ -178,11 +178,7 @@ async function createStage5Fixture(withQuery: boolean): Promise<{
   const tempRoot = await mkdtemp(
     path.join(os.tmpdir(), "narrative-vox-audio-test-"),
   );
-  const runDir = path.join(
-    tempRoot,
-    FIXTURE_PROJECT_ID,
-    FIXTURE_RUN_ID,
-  );
+  const runDir = path.join(tempRoot, FIXTURE_PROJECT_ID, FIXTURE_RUN_ID);
   const stage5Dir = path.join(runDir, "voicevox_project");
   await mkdir(stage5Dir, { recursive: true });
   await writeRunContract(runDir);
@@ -229,11 +225,7 @@ async function createStage5FixtureMultiple(withQuery: boolean): Promise<{
   const tempRoot = await mkdtemp(
     path.join(os.tmpdir(), "narrative-vox-audio-test-"),
   );
-  const runDir = path.join(
-    tempRoot,
-    FIXTURE_PROJECT_ID,
-    FIXTURE_RUN_ID,
-  );
+  const runDir = path.join(tempRoot, FIXTURE_PROJECT_ID, FIXTURE_RUN_ID);
   const stage5Dir = path.join(runDir, "voicevox_project");
   await mkdir(stage5Dir, { recursive: true });
   await writeRunContract(runDir);

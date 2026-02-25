@@ -112,10 +112,7 @@ type RunStatus = {
   plannedEpisodeIds: string[];
 };
 
-function toStageInfo(
-  episodeIds: string[],
-  planned: string[],
-): StageInfo {
+function toStageInfo(episodeIds: string[], planned: string[]): StageInfo {
   if (planned.length > 0 && episodeIds.length >= planned.length) {
     return { status: "completed" };
   }
@@ -133,7 +130,7 @@ async function deriveRunStatus(
   // blueprint
   const blueprintFile = join(runDir, "blueprint", "project_blueprint.json");
   let blueprintExists = false;
-  let plannedEpisodeIds: string[] = [];
+  const plannedEpisodeIds: string[] = [];
   try {
     await stat(blueprintFile);
     blueprintExists = true;
@@ -152,15 +149,21 @@ async function deriveRunStatus(
     // blueprint not yet created
   }
 
-  const [materialIds, scriptIds, contextIds, voicevoxTextIds, vvprojIds, audioIds] =
-    await Promise.all([
-      globEpisodeIds(join(runDir, "material"), "_material.json"),
-      globEpisodeIds(join(runDir, "script"), "_script.md"),
-      globEpisodeIds(join(runDir, "context"), "_episode_digest.json"),
-      globEpisodeIds(join(runDir, "voicevox_text"), "_voicevox_text.json"),
-      globEpisodeIds(join(runDir, "voicevox_project"), ".vvproj"),
-      globEpisodeIds(join(runDir, "audio"), ".wav"),
-    ]);
+  const [
+    materialIds,
+    scriptIds,
+    contextIds,
+    voicevoxTextIds,
+    vvprojIds,
+    audioIds,
+  ] = await Promise.all([
+    globEpisodeIds(join(runDir, "material"), "_material.json"),
+    globEpisodeIds(join(runDir, "script"), "_script.md"),
+    globEpisodeIds(join(runDir, "context"), "_episode_digest.json"),
+    globEpisodeIds(join(runDir, "voicevox_text"), "_voicevox_text.json"),
+    globEpisodeIds(join(runDir, "voicevox_project"), ".vvproj"),
+    globEpisodeIds(join(runDir, "audio"), ".wav"),
+  ]);
 
   // voicevox_text: patched ファイルは除外（_voicevox_text.patched.json は suffix が違うので自然に除外）
 
@@ -329,7 +332,10 @@ runsRouter.get("/:projectId/:runId/status", async (c) => {
   } catch (e) {
     if (e instanceof SafePathError)
       return problem(c, { title: "Forbidden", status: STATUS_403 });
-    return problem(c, { title: "Failed to get run status", status: STATUS_500 });
+    return problem(c, {
+      title: "Failed to get run status",
+      status: STATUS_500,
+    });
   }
 });
 

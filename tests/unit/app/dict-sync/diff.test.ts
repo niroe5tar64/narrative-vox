@@ -1,7 +1,10 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { computeDictDiff } from "@narrative-vox/application/dict-sync/diff.ts";
-import type { EngineUserDict, UserDictWordEntry } from "@narrative-vox/infrastructure/voicevox-user-dict.ts";
+import type {
+  EngineUserDict,
+  UserDictWordEntry,
+} from "@narrative-vox/infrastructure/voicevox-user-dict.ts";
 
 const BASE_ENTRY = {
   accent_type: 0,
@@ -12,7 +15,13 @@ const BASE_ENTRY = {
 
 test("computeDictDiff: all new → toAdd", () => {
   const local: UserDictWordEntry[] = [
-    { surface: "Alpha", pronunciation: "アルファ", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+    {
+      surface: "Alpha",
+      pronunciation: "アルファ",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
   ];
   const remote: EngineUserDict = {};
 
@@ -27,7 +36,13 @@ test("computeDictDiff: all new → toAdd", () => {
 
 test("computeDictDiff: unchanged entries", () => {
   const local: UserDictWordEntry[] = [
-    { surface: "Beta", pronunciation: "ベータ", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+    {
+      surface: "Beta",
+      pronunciation: "ベータ",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
   ];
   const remote: EngineUserDict = {
     "uuid-beta": { surface: "Beta", pronunciation: "ベータ", ...BASE_ENTRY },
@@ -43,7 +58,13 @@ test("computeDictDiff: unchanged entries", () => {
 
 test("computeDictDiff: content change → toUpdate", () => {
   const local: UserDictWordEntry[] = [
-    { surface: "Gamma", pronunciation: "ガンマニュー", accent_type: 1, word_type: "PROPER_NOUN", priority: 5 },
+    {
+      surface: "Gamma",
+      pronunciation: "ガンマニュー",
+      accent_type: 1,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
   ];
   const remote: EngineUserDict = {
     "uuid-gamma": { surface: "Gamma", pronunciation: "ガンマ", ...BASE_ENTRY },
@@ -76,14 +97,36 @@ test("computeDictDiff: remote-only → toDelete", () => {
 
 test("computeDictDiff: mixed scenario", () => {
   const local: UserDictWordEntry[] = [
-    { surface: "Keep", pronunciation: "キープ", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
-    { surface: "Change", pronunciation: "チェンジニュー", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
-    { surface: "New", pronunciation: "ニュー", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+    {
+      surface: "Keep",
+      pronunciation: "キープ",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
+    {
+      surface: "Change",
+      pronunciation: "チェンジニュー",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
+    {
+      surface: "New",
+      pronunciation: "ニュー",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+    },
   ];
   const remote: EngineUserDict = {
-    "uuid-keep":   { surface: "Keep",   pronunciation: "キープ",   ...BASE_ENTRY },
-    "uuid-change": { surface: "Change", pronunciation: "チェンジ", ...BASE_ENTRY },
-    "uuid-gone":   { surface: "Gone",   pronunciation: "ゴーン",   ...BASE_ENTRY },
+    "uuid-keep": { surface: "Keep", pronunciation: "キープ", ...BASE_ENTRY },
+    "uuid-change": {
+      surface: "Change",
+      pronunciation: "チェンジ",
+      ...BASE_ENTRY,
+    },
+    "uuid-gone": { surface: "Gone", pronunciation: "ゴーン", ...BASE_ENTRY },
   };
 
   const diff = computeDictDiff(local, remote);
@@ -104,7 +147,14 @@ test("computeDictDiff: default field values treated as equal", () => {
     // accent_type=undefined→0, word_type=undefined→"PROPER_NOUN", priority=undefined→5
   ];
   const remote: EngineUserDict = {
-    "uuid-eps": { surface: "Epsilon", pronunciation: "エプシロン", accent_type: 0, word_type: "PROPER_NOUN", priority: 5, mora_count: 5 },
+    "uuid-eps": {
+      surface: "Epsilon",
+      pronunciation: "エプシロン",
+      accent_type: 0,
+      word_type: "PROPER_NOUN",
+      priority: 5,
+      mora_count: 5,
+    },
   };
 
   const diff = computeDictDiff(local, remote);

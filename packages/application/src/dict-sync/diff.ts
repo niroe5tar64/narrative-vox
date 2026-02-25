@@ -6,7 +6,12 @@ import type { DictDiff, DictUpdate } from "./types.ts";
 
 function isSameContent(
   local: UserDictWordEntry,
-  remote: { pronunciation: string; accent_type: number; word_type: string; priority: number },
+  remote: {
+    pronunciation: string;
+    accent_type: number;
+    word_type: string;
+    priority: number;
+  },
 ): boolean {
   return (
     local.pronunciation === remote.pronunciation &&

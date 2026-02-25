@@ -1,7 +1,10 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { patchDictionaryCandidates } from "@narrative-vox/application/patch-voicevox-text/dict-patcher.ts";
-import type { DictionaryCandidate, ForceReading } from "@narrative-vox/domain/types.ts";
+import type {
+  DictionaryCandidate,
+  ForceReading,
+} from "@narrative-vox/domain/types.ts";
 
 function makeCandidate(
   surface: string,
@@ -21,7 +24,12 @@ function makeCandidate(
 test("dict-patcher: force_reading adds new surface", () => {
   const candidates: DictionaryCandidate[] = [makeCandidate("CLI", "")];
   const forceReadings: ForceReading[] = [
-    { surface: "API", reading: "エーピーアイ", priority: "HIGH", note: "force_patch" },
+    {
+      surface: "API",
+      reading: "エーピーアイ",
+      priority: "HIGH",
+      note: "force_patch",
+    },
   ];
   const { candidates: result, addedCount } = patchDictionaryCandidates(
     candidates,
@@ -37,9 +45,16 @@ test("dict-patcher: force_reading adds new surface", () => {
 });
 
 test("dict-patcher: force_reading overrides existing surface reading", () => {
-  const candidates: DictionaryCandidate[] = [makeCandidate("API", "えーぴーあい", "LOW")];
+  const candidates: DictionaryCandidate[] = [
+    makeCandidate("API", "えーぴーあい", "LOW"),
+  ];
   const forceReadings: ForceReading[] = [
-    { surface: "API", reading: "エーピーアイ", priority: "HIGH", note: "force_patch" },
+    {
+      surface: "API",
+      reading: "エーピーアイ",
+      priority: "HIGH",
+      note: "force_patch",
+    },
   ];
   const { candidates: result, addedCount } = patchDictionaryCandidates(
     candidates,
@@ -67,7 +82,10 @@ test("dict-patcher: suppress_surfaces removes candidates", () => {
   );
   assert.equal(removedCount, 1);
   assert.equal(result.length, 2);
-  assert.equal(result.some((c) => c.surface === "CLI"), false);
+  assert.equal(
+    result.some((c) => c.surface === "CLI"),
+    false,
+  );
 });
 
 test("dict-patcher: existing candidates are preserved when not in force_readings or suppress_surfaces", () => {

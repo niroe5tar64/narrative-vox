@@ -77,7 +77,10 @@ export function normalizeEmotionStylesForCharacter(
   return emotionStyles;
 }
 
-export function normalizeCharacterKey(value: string, fieldName: string): string {
+export function normalizeCharacterKey(
+  value: string,
+  fieldName: string,
+): string {
   if (!CHARACTER_KEY_RE.test(value)) {
     throw new Error(
       `Character map ${fieldName} must match ${CHARACTER_KEY_RE.toString()} (received: ${value})`,

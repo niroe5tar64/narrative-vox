@@ -1,10 +1,17 @@
-import type { DictionaryCandidate, ForceReading } from "@narrative-vox/domain/types.ts";
+import type {
+  DictionaryCandidate,
+  ForceReading,
+} from "@narrative-vox/domain/types.ts";
 
 export function patchDictionaryCandidates(
   candidates: DictionaryCandidate[],
   forceReadings: ForceReading[],
   suppressSurfaces: string[],
-): { candidates: DictionaryCandidate[]; addedCount: number; removedCount: number } {
+): {
+  candidates: DictionaryCandidate[];
+  addedCount: number;
+  removedCount: number;
+} {
   const suppressSet = new Set(suppressSurfaces);
 
   const afterSuppress = candidates.filter(

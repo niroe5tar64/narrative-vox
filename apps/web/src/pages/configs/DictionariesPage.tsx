@@ -2,12 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Play, Plus, Save, Square, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  ApiError,
-  api,
-  type UserDict,
-  type UserDictWord,
-} from "@/api/client";
+import { ApiError, api, type UserDict, type UserDictWord } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -92,7 +87,8 @@ function UserDictSection({
   const characters = charsData?.items ?? [];
 
   const [previewCharKey, setPreviewCharKey] = useState<string>("");
-  const previewChar = characters.find((c) => c.key === previewCharKey) ?? characters[0] ?? null;
+  const previewChar =
+    characters.find((c) => c.key === previewCharKey) ?? characters[0] ?? null;
 
   const [rowPreviewState, setRowPreviewState] = useState<
     Record<number, "loading" | "playing" | null>
@@ -154,24 +150,31 @@ function UserDictSection({
       if (!previewChar) return;
       setRowPreviewState((s) => ({ ...s, [idx]: "loading" }));
       try {
-        const query = await api.voicevox.audioQuery(pronunciation, previewChar.voice.styleId);
+        const query = await api.voicevox.audioQuery(
+          pronunciation,
+          previewChar.voice.styleId,
+        );
         const queryObj = query as { accent_phrases?: { accent: number }[] };
         if (queryObj.accent_phrases && queryObj.accent_phrases.length > 0) {
           queryObj.accent_phrases[0].accent = accentType;
           // accent 変更後に mora_pitch でピッチ値を再計算する（synthesis はピッチ値を直接使用）
-          queryObj.accent_phrases = await api.voicevox.moraPitch(
+          queryObj.accent_phrases = (await api.voicevox.moraPitch(
             queryObj.accent_phrases,
             previewChar.voice.styleId,
-          ) as typeof queryObj.accent_phrases;
+          )) as typeof queryObj.accent_phrases;
         }
-        const blobUrl = await api.voicevox.synthesis(previewChar.voice.styleId, query);
+        const blobUrl = await api.voicevox.synthesis(
+          previewChar.voice.styleId,
+          query,
+        );
         const audio = new Audio(blobUrl);
         playingAudioRef.current = { audio, idx, blobUrl };
         setRowPreviewState((s) => ({ ...s, [idx]: "playing" }));
         audio.play();
         audio.addEventListener("ended", () => {
           URL.revokeObjectURL(blobUrl);
-          if (playingAudioRef.current?.idx === idx) playingAudioRef.current = null;
+          if (playingAudioRef.current?.idx === idx)
+            playingAudioRef.current = null;
           setRowPreviewState((s) => ({ ...s, [idx]: null }));
         });
       } catch (e) {
@@ -234,7 +237,9 @@ function UserDictSection({
     <section className="space-y-3">
       <h3 className="text-sm font-semibold text-slate-700">User Dictionary</h3>
       <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-        <span className="text-xs font-medium text-slate-500 whitespace-nowrap">音声プレビュー：</span>
+        <span className="text-xs font-medium text-slate-500 whitespace-nowrap">
+          音声プレビュー：
+        </span>
         {characters.length === 0 ? (
           <span className="text-xs text-slate-400">キャラクター未設定</span>
         ) : (
@@ -244,7 +249,9 @@ function UserDictSection({
             onChange={(e) => setPreviewCharKey(e.target.value)}
           >
             {characters.map((c) => (
-              <option key={c.key} value={c.key}>{c.name}</option>
+              <option key={c.key} value={c.key}>
+                {c.name}
+              </option>
             ))}
           </select>
         )}
@@ -307,7 +314,10 @@ function UserDictSection({
                     />
                     {word.pronunciation && (
                       <span className="px-1 font-mono text-xs leading-tight text-slate-500">
-                        {buildPitchDiagram(word.pronunciation, word.accent_type)}
+                        {buildPitchDiagram(
+                          word.pronunciation,
+                          word.accent_type,
+                        )}
                       </span>
                     )}
                   </div>
@@ -342,12 +352,17 @@ function UserDictSection({
                 <td className="px-2 py-1 text-center">
                   {(() => {
                     const state = rowPreviewState[i] ?? null;
-                    const disabled = !word.pronunciation || !previewChar || state === "loading";
+                    const disabled =
+                      !word.pronunciation ||
+                      !previewChar ||
+                      state === "loading";
                     return (
                       <button
                         type="button"
                         disabled={disabled}
-                        onClick={() => handlePreview(i, word.pronunciation, word.accent_type)}
+                        onClick={() =>
+                          handlePreview(i, word.pronunciation, word.accent_type)
+                        }
                         className="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
                         title={
                           state === "playing"

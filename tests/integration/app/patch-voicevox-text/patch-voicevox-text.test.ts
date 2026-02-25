@@ -4,9 +4,9 @@ import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { patchVoicevoxText } from "@narrative-vox/application/patch-voicevox-text.ts";
-import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
-import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import type { VoicevoxTextData } from "@narrative-vox/domain/types.ts";
+import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 
 const EPISODE_ID = "E01";
 
@@ -100,7 +100,9 @@ async function createTestRun(tempRoot: string): Promise<{
 }
 
 test("patchVoicevoxText: schema valid output", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-patch-test-"));
+  const tempRoot = await mkdtemp(
+    path.join(os.tmpdir(), "narrative-vox-patch-test-"),
+  );
   const { voicevoxTextJsonPath } = await createTestRun(tempRoot);
 
   const patchConfigPath = path.join(tempRoot, "patch-config.json");
@@ -135,7 +137,12 @@ test("patchVoicevoxText: schema valid output", async () => {
         dict_patch: {
           enabled: true,
           force_readings: [
-            { surface: "API", reading: "エーピーアイ", priority: "HIGH", note: "force_patch" },
+            {
+              surface: "API",
+              reading: "エーピーアイ",
+              priority: "HIGH",
+              note: "force_patch",
+            },
           ],
           suppress_surfaces: [],
         },
@@ -151,14 +158,18 @@ test("patchVoicevoxText: schema valid output", async () => {
     patchConfigPath,
   });
 
-  const patchedData = JSON.parse(await readFile(result.patchedJsonPath, "utf-8"));
+  const patchedData = JSON.parse(
+    await readFile(result.patchedJsonPath, "utf-8"),
+  );
   await assert.doesNotReject(() =>
     validateAgainstSchema(patchedData, SchemaPaths.voicevoxText),
   );
 });
 
 test("patchVoicevoxText: no original overwrite", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-patch-test-"));
+  const tempRoot = await mkdtemp(
+    path.join(os.tmpdir(), "narrative-vox-patch-test-"),
+  );
   const { voicevoxTextJsonPath } = await createTestRun(tempRoot);
 
   const originalStat = await stat(voicevoxTextJsonPath);
@@ -185,7 +196,9 @@ test("patchVoicevoxText: no original overwrite", async () => {
 });
 
 test("patchVoicevoxText: patched filename convention", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-patch-test-"));
+  const tempRoot = await mkdtemp(
+    path.join(os.tmpdir(), "narrative-vox-patch-test-"),
+  );
   const { voicevoxTextJsonPath, runDir } = await createTestRun(tempRoot);
 
   const patchConfigPath = path.join(tempRoot, "patch-config.json");
@@ -199,7 +212,10 @@ test("patchVoicevoxText: patched filename convention", async () => {
     "utf-8",
   );
 
-  const result = await patchVoicevoxText({ voicevoxTextJsonPath, patchConfigPath });
+  const result = await patchVoicevoxText({
+    voicevoxTextJsonPath,
+    patchConfigPath,
+  });
 
   assert.equal(
     path.basename(result.patchedJsonPath),
@@ -217,7 +233,9 @@ test("patchVoicevoxText: patched filename convention", async () => {
 });
 
 test("patchVoicevoxText: URL and inline code normalization applied", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-patch-test-"));
+  const tempRoot = await mkdtemp(
+    path.join(os.tmpdir(), "narrative-vox-patch-test-"),
+  );
   const { voicevoxTextJsonPath } = await createTestRun(tempRoot);
 
   const patchConfigPath = path.join(tempRoot, "patch-config.json");
@@ -253,7 +271,10 @@ test("patchVoicevoxText: URL and inline code normalization applied", async () =>
     "utf-8",
   );
 
-  const result = await patchVoicevoxText({ voicevoxTextJsonPath, patchConfigPath });
+  const result = await patchVoicevoxText({
+    voicevoxTextJsonPath,
+    patchConfigPath,
+  });
 
   const patchedData = JSON.parse(
     await readFile(result.patchedJsonPath, "utf-8"),
@@ -267,7 +288,9 @@ test("patchVoicevoxText: URL and inline code normalization applied", async () =>
 });
 
 test("patchVoicevoxText: force_readings added to patched dictionary_candidates", async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-patch-test-"));
+  const tempRoot = await mkdtemp(
+    path.join(os.tmpdir(), "narrative-vox-patch-test-"),
+  );
   const { voicevoxTextJsonPath } = await createTestRun(tempRoot);
 
   const patchConfigPath = path.join(tempRoot, "patch-config.json");
@@ -279,7 +302,12 @@ test("patchVoicevoxText: force_readings added to patched dictionary_candidates",
       dict_patch: {
         enabled: true,
         force_readings: [
-          { surface: "API", reading: "エーピーアイ", priority: "HIGH", note: "force_patch" },
+          {
+            surface: "API",
+            reading: "エーピーアイ",
+            priority: "HIGH",
+            note: "force_patch",
+          },
         ],
         suppress_surfaces: [],
       },
@@ -287,15 +315,22 @@ test("patchVoicevoxText: force_readings added to patched dictionary_candidates",
     "utf-8",
   );
 
-  const result = await patchVoicevoxText({ voicevoxTextJsonPath, patchConfigPath });
+  const result = await patchVoicevoxText({
+    voicevoxTextJsonPath,
+    patchConfigPath,
+  });
 
   const patchedData = JSON.parse(
     await readFile(result.patchedJsonPath, "utf-8"),
   ) as VoicevoxTextData;
-  const api = patchedData.dictionary_candidates.find((c) => c.surface === "API");
+  const api = patchedData.dictionary_candidates.find(
+    (c) => c.surface === "API",
+  );
   assert.ok(api);
   assert.equal(api.reading_or_empty, "エーピーアイ");
 
-  const useState = patchedData.dictionary_candidates.find((c) => c.surface === "useState");
+  const useState = patchedData.dictionary_candidates.find(
+    (c) => c.surface === "useState",
+  );
   assert.ok(useState, "Original candidate should be preserved");
 });

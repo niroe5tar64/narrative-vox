@@ -45,7 +45,9 @@ interface ProjectConfig {
 function resolvePromptFilePath(genre: string, step: string): string {
   const filename = PROMPT_STEP_FILES[step];
   if (!filename) {
-    throw new Error(`Unknown step: ${step}. Valid: ${Object.keys(PROMPT_STEP_FILES).join(", ")}`);
+    throw new Error(
+      `Unknown step: ${step}. Valid: ${Object.keys(PROMPT_STEP_FILES).join(", ")}`,
+    );
   }
   const normalizedGenre = genre.replace(/_/g, "-");
   return path.resolve("prompts", normalizedGenre, filename);
@@ -56,7 +58,12 @@ function resolvePromptFilePath(genre: string, step: string): string {
 // ---------------------------------------------------------------------------
 
 async function loadProjectConfig(projectId: string): Promise<ProjectConfig> {
-  const configPath = path.resolve("configs", "pipeline", "projects", `${projectId}.json`);
+  const configPath = path.resolve(
+    "configs",
+    "pipeline",
+    "projects",
+    `${projectId}.json`,
+  );
   const raw = await readFile(configPath, "utf-8");
   return JSON.parse(raw) as ProjectConfig;
 }
@@ -198,7 +205,9 @@ export interface GenBlueprintOptions {
   episodeId: string;
 }
 
-export async function genBlueprint(options: GenBlueprintOptions): Promise<void> {
+export async function genBlueprint(
+  options: GenBlueprintOptions,
+): Promise<void> {
   const { projectId, episodeId } = options;
 
   // 1. project config 読み込み
@@ -207,7 +216,9 @@ export async function genBlueprint(options: GenBlueprintOptions): Promise<void> 
   const genreId = projectConfig.GENRE_ID;
 
   // 2. プロンプトテンプレート解決
-  console.log(`[gen-blueprint] Resolving prompt template: ${genreId}/blueprint`);
+  console.log(
+    `[gen-blueprint] Resolving prompt template: ${genreId}/blueprint`,
+  );
   const templatePath = resolvePromptFilePath(genreId, "blueprint");
   const templateRaw = await readFile(templatePath, "utf-8");
 
@@ -227,13 +238,16 @@ export async function genBlueprint(options: GenBlueprintOptions): Promise<void> 
 
   // 3. ソースファイル読み込み
   const sourceGlob = projectConfig.SOURCE_MARKDOWN_PATHS ?? "";
-  console.log(`[gen-blueprint] Loading source files: ${sourceGlob || "(none)"}`);
+  console.log(
+    `[gen-blueprint] Loading source files: ${sourceGlob || "(none)"}`,
+  );
   const sourceContents = await loadSourceFiles(sourceGlob);
 
   // 4. プロンプト構築
   let fullPrompt = promptSection;
   if (sourceContents.length > 0) {
-    fullPrompt += "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
+    fullPrompt +=
+      "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
   }
 
   // 5. claude 実行
@@ -252,7 +266,9 @@ export async function genBlueprint(options: GenBlueprintOptions): Promise<void> 
   // 8. blueprint 保存
   const blueprintPath = path.join(blueprintDir, "project_blueprint.json");
   await writeFile(blueprintPath, JSON.stringify(blueprintJson, null, 2) + "\n");
-  console.log(`[gen-blueprint] Saved: ${path.relative(process.cwd(), blueprintPath)}`);
+  console.log(
+    `[gen-blueprint] Saved: ${path.relative(process.cwd(), blueprintPath)}`,
+  );
 
   // 9. run-contract 作成・保存
   const contract = createRunContract({ projectId, runId, runDir });
@@ -264,7 +280,9 @@ export async function genBlueprint(options: GenBlueprintOptions): Promise<void> 
     await validateAgainstSchema(blueprintJson, SCHEMA_PATHS.blueprint);
     console.log("[gen-blueprint] Schema validation: OK");
   } catch (err) {
-    console.log(`[gen-blueprint] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`);
+    console.log(
+      `[gen-blueprint] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -287,7 +305,11 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
   const genreId = projectConfig.GENRE_ID;
 
   // 2. blueprint 読み込み
-  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
+  const blueprintPath = path.join(
+    runDir,
+    "blueprint",
+    "project_blueprint.json",
+  );
   console.log(`[gen-material] Loading blueprint: ${blueprintPath}`);
   const blueprintRaw = await readFile(blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
@@ -315,9 +337,13 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
 
   // 5. プロンプト構築
   let fullPrompt = promptSection;
-  fullPrompt += "\n\n---\n\n## Blueprint JSON\n\n```json\n" + JSON.stringify(blueprint, null, 2) + "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Blueprint JSON\n\n```json\n" +
+    JSON.stringify(blueprint, null, 2) +
+    "\n```";
   if (sourceContents.length > 0) {
-    fullPrompt += "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
+    fullPrompt +=
+      "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
   }
 
   // 6. claude 実行
@@ -332,14 +358,18 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
   await mkdir(materialDir, { recursive: true });
   const materialPath = path.join(materialDir, `${episodeId}_material.json`);
   await writeFile(materialPath, JSON.stringify(materialJson, null, 2) + "\n");
-  console.log(`[gen-material] Saved: ${path.relative(process.cwd(), materialPath)}`);
+  console.log(
+    `[gen-material] Saved: ${path.relative(process.cwd(), materialPath)}`,
+  );
 
   // 9. スキーマバリデーション
   try {
     await validateAgainstSchema(materialJson, SCHEMA_PATHS.episodeMaterial);
     console.log("[gen-material] Schema validation: OK");
   } catch (err) {
-    console.log(`[gen-material] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`);
+    console.log(
+      `[gen-material] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -362,13 +392,22 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   const { GENRE_ID: genreId, STYLE_ID: styleId, CAST: cast } = projectConfig;
 
   // 2. material 読み込み
-  const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
+  const materialPath = path.join(
+    runDir,
+    "material",
+    `${episodeId}_material.json`,
+  );
   console.log(`[gen-script] Loading material: ${materialPath}`);
   const materialRaw = await readFile(materialPath, "utf-8");
   const material = JSON.parse(materialRaw);
 
   // 3. style 読み込み
-  const stylePath = path.resolve("configs", "content", "styles", `${styleId}.json`);
+  const stylePath = path.resolve(
+    "configs",
+    "content",
+    "styles",
+    `${styleId}.json`,
+  );
   console.log(`[gen-script] Loading style: ${stylePath}`);
   const styleRaw = await readFile(stylePath, "utf-8");
   const style = JSON.parse(styleRaw);
@@ -376,7 +415,12 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   // 4. character 読み込み
   const characters: Record<string, unknown> = {};
   for (const [role, characterKey] of Object.entries(cast)) {
-    const charPath = path.resolve("configs", "content", "characters", `${characterKey}.json`);
+    const charPath = path.resolve(
+      "configs",
+      "content",
+      "characters",
+      `${characterKey}.json`,
+    );
     console.log(`[gen-script] Loading character [${role}]: ${charPath}`);
     const charRaw = await readFile(charPath, "utf-8");
     characters[role] = { key: characterKey, ...JSON.parse(charRaw) };
@@ -403,11 +447,23 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   const promptSection = extractPromptSection(templateRaw);
 
   let fullPrompt = promptSection;
-  fullPrompt += "\n\n---\n\n## Material JSON\n\n```json\n" + JSON.stringify(material, null, 2) + "\n```";
-  fullPrompt += "\n\n---\n\n## Style JSON\n\n```json\n" + JSON.stringify(style, null, 2) + "\n```";
-  fullPrompt += "\n\n---\n\n## Character Profiles\n\n```json\n" + JSON.stringify(characters, null, 2) + "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Material JSON\n\n```json\n" +
+    JSON.stringify(material, null, 2) +
+    "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Style JSON\n\n```json\n" +
+    JSON.stringify(style, null, 2) +
+    "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Character Profiles\n\n```json\n" +
+    JSON.stringify(characters, null, 2) +
+    "\n```";
   if (priorDigests.length > 0) {
-    fullPrompt += "\n\n---\n\n## Prior Episode Digests\n\n```json\n" + JSON.stringify(priorDigests, null, 2) + "\n```";
+    fullPrompt +=
+      "\n\n---\n\n## Prior Episode Digests\n\n```json\n" +
+      JSON.stringify(priorDigests, null, 2) +
+      "\n```";
   }
 
   // 7. claude 実行
@@ -419,7 +475,9 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   await mkdir(scriptDir, { recursive: true });
   const scriptPath = path.join(scriptDir, `${episodeId}_script.md`);
   await writeFile(scriptPath, output.trim() + "\n");
-  console.log(`[gen-script] Saved: ${path.relative(process.cwd(), scriptPath)}`);
+  console.log(
+    `[gen-script] Saved: ${path.relative(process.cwd(), scriptPath)}`,
+  );
 
   // 9. 最小構造検証
   const scriptContent = output.trim();
@@ -431,10 +489,14 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
     throw new Error("[gen-script] Script is empty");
   }
   if (!hasSectionHeaders) {
-    console.log("[gen-script] WARN: No section headers (## N.) found in script");
+    console.log(
+      "[gen-script] WARN: No section headers (## N.) found in script",
+    );
   }
   if (!hasSpeakerTags) {
-    console.log("[gen-script] WARN: No speaker tags ([speaker:xxx]) found in script");
+    console.log(
+      "[gen-script] WARN: No speaker tags ([speaker:xxx]) found in script",
+    );
   }
   if (hasSectionHeaders && hasSpeakerTags) {
     console.log("[gen-script] Structure validation: OK");
@@ -465,13 +527,21 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   const scriptContent = await readFile(scriptPath, "utf-8");
 
   // 3. material 読み込み
-  const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
+  const materialPath = path.join(
+    runDir,
+    "material",
+    `${episodeId}_material.json`,
+  );
   console.log(`[gen-digest] Loading material: ${materialPath}`);
   const materialRaw = await readFile(materialPath, "utf-8");
   const material = JSON.parse(materialRaw);
 
   // 4. blueprint 読み込み
-  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
+  const blueprintPath = path.join(
+    runDir,
+    "blueprint",
+    "project_blueprint.json",
+  );
   console.log(`[gen-digest] Loading blueprint: ${blueprintPath}`);
   const blueprintRaw = await readFile(blueprintPath, "utf-8");
   const blueprint = JSON.parse(blueprintRaw);
@@ -479,7 +549,12 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   // 5. character 読み込み
   const characters: Record<string, unknown> = {};
   for (const [role, characterKey] of Object.entries(cast)) {
-    const charPath = path.resolve("configs", "content", "characters", `${characterKey}.json`);
+    const charPath = path.resolve(
+      "configs",
+      "content",
+      "characters",
+      `${characterKey}.json`,
+    );
     const charRaw = await readFile(charPath, "utf-8");
     characters[role] = { key: characterKey, ...JSON.parse(charRaw) };
   }
@@ -491,9 +566,18 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
 
   let fullPrompt = promptSection;
   fullPrompt += "\n\n---\n\n## Script (Markdown)\n\n" + scriptContent;
-  fullPrompt += "\n\n---\n\n## Material JSON\n\n```json\n" + JSON.stringify(material, null, 2) + "\n```";
-  fullPrompt += "\n\n---\n\n## Blueprint JSON\n\n```json\n" + JSON.stringify(blueprint, null, 2) + "\n```";
-  fullPrompt += "\n\n---\n\n## Character Profiles\n\n```json\n" + JSON.stringify(characters, null, 2) + "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Material JSON\n\n```json\n" +
+    JSON.stringify(material, null, 2) +
+    "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Blueprint JSON\n\n```json\n" +
+    JSON.stringify(blueprint, null, 2) +
+    "\n```";
+  fullPrompt +=
+    "\n\n---\n\n## Character Profiles\n\n```json\n" +
+    JSON.stringify(characters, null, 2) +
+    "\n```";
 
   // 7. claude 実行
   console.log("[gen-digest] Running claude --print -...");
@@ -506,13 +590,17 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   await mkdir(contextDir, { recursive: true });
   const digestPath = path.join(contextDir, `${episodeId}_episode_digest.json`);
   await writeFile(digestPath, JSON.stringify(digestJson, null, 2) + "\n");
-  console.log(`[gen-digest] Saved: ${path.relative(process.cwd(), digestPath)}`);
+  console.log(
+    `[gen-digest] Saved: ${path.relative(process.cwd(), digestPath)}`,
+  );
 
   // 9. スキーマバリデーション
   try {
     await validateAgainstSchema(digestJson, SCHEMA_PATHS.episodeDigest);
     console.log("[gen-digest] Schema validation: OK");
   } catch (err) {
-    console.log(`[gen-digest] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`);
+    console.log(
+      `[gen-digest] Schema validation: WARN - ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

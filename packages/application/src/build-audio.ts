@@ -2,8 +2,8 @@ import { execFile } from "node:child_process";
 import { mkdir, readdir, rm, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { RUN_CONTRACT_FILENAME } from "@narrative-vox/domain/run-contract.ts";
-import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { pathExists } from "@narrative-vox/infrastructure/fs-utils.ts";
+import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { loadRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {

@@ -5,11 +5,11 @@ import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import { writePatchedArtifacts } from "./patch-voicevox-text/artifact-writer.ts";
 import { patchDictionaryCandidates } from "./patch-voicevox-text/dict-patcher.ts";
+import { applyNormalizationRules } from "./patch-voicevox-text/normalizer.ts";
 import {
   DEFAULT_PATCH_CONFIG,
   loadPatchConfig,
 } from "./patch-voicevox-text/patch-config.ts";
-import { applyNormalizationRules } from "./patch-voicevox-text/normalizer.ts";
 
 const DEFAULT_PATCH_CONFIG_PATH = "configs/voice/voicevox/patch-config.json";
 

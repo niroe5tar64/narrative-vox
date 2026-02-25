@@ -49,10 +49,7 @@ export async function updateUserDictWord(
   word: UserDictWordEntry,
 ): Promise<void> {
   const base = normalizeVoicevoxApiUrl(apiUrl);
-  const endpoint = new URL(
-    `/user_dict_word/${encodeURIComponent(uuid)}`,
-    base,
-  );
+  const endpoint = new URL(`/user_dict_word/${encodeURIComponent(uuid)}`, base);
   endpoint.searchParams.set("surface", word.surface);
   endpoint.searchParams.set("pronunciation", word.pronunciation);
   endpoint.searchParams.set("accent_type", String(word.accent_type ?? 0));

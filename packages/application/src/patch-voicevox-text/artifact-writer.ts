@@ -1,6 +1,9 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { DictionaryCandidate, VoicevoxTextData } from "@narrative-vox/domain/types.ts";
+import type {
+  DictionaryCandidate,
+  VoicevoxTextData,
+} from "@narrative-vox/domain/types.ts";
 
 const CSV_DELIMITER = ",";
 const CSV_QUOTE = '"';
@@ -16,7 +19,10 @@ const CSV_HEADERS = [
 
 type CsvHeader = (typeof CSV_HEADERS)[number];
 
-const csvAccessors: Record<CsvHeader, (candidate: DictionaryCandidate) => string> = {
+const csvAccessors: Record<
+  CsvHeader,
+  (candidate: DictionaryCandidate) => string
+> = {
   surface: (candidate) => candidate.surface,
   reading: (candidate) => candidate.reading_or_empty,
   priority: (candidate) => candidate.priority,
@@ -31,11 +37,13 @@ function escapeCsvValue(value: string): string {
 }
 
 function buildDictionaryCsv(candidates: DictionaryCandidate[]): string {
-  const headerRow = CSV_HEADERS.map((header) => escapeCsvValue(header)).join(CSV_DELIMITER);
+  const headerRow = CSV_HEADERS.map((header) => escapeCsvValue(header)).join(
+    CSV_DELIMITER,
+  );
   const rows = candidates.map((candidate) =>
-    CSV_HEADERS.map((header) => escapeCsvValue(csvAccessors[header](candidate))).join(
-      CSV_DELIMITER,
-    ),
+    CSV_HEADERS.map((header) =>
+      escapeCsvValue(csvAccessors[header](candidate)),
+    ).join(CSV_DELIMITER),
   );
   return [headerRow, ...rows].join("\n");
 }

@@ -72,7 +72,9 @@ async function checkFile(
         importPath.includes(`/${pkgName}/`)
       ) {
         const relFile = path.relative(repoRoot, filePath);
-        violations.push(`  ${relFile}: imports from ${target} ("${importPath}")`);
+        violations.push(
+          `  ${relFile}: imports from ${target} ("${importPath}")`,
+        );
       }
     }
   }

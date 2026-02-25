@@ -278,7 +278,13 @@ test("syncUserDict(diff): adds new words only", async () => {
     JSON.stringify({
       version: 1,
       words: [
-        { surface: "NewWord", pronunciation: "ニューワード", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+        {
+          surface: "NewWord",
+          pronunciation: "ニューワード",
+          accent_type: 0,
+          word_type: "PROPER_NOUN",
+          priority: 5,
+        },
       ],
     }),
   );
@@ -310,7 +316,13 @@ test("syncUserDict(diff): skips unchanged entries", async () => {
     JSON.stringify({
       version: 1,
       words: [
-        { surface: "Same", pronunciation: "セイム", accent_type: 0, word_type: "PROPER_NOUN", priority: 5 },
+        {
+          surface: "Same",
+          pronunciation: "セイム",
+          accent_type: 0,
+          word_type: "PROPER_NOUN",
+          priority: 5,
+        },
       ],
     }),
   );
@@ -353,7 +365,13 @@ test("syncUserDict(diff): updates changed entries", async () => {
     JSON.stringify({
       version: 1,
       words: [
-        { surface: "Word", pronunciation: "ワードニュー", accent_type: 1, word_type: "PROPER_NOUN", priority: 5 },
+        {
+          surface: "Word",
+          pronunciation: "ワードニュー",
+          accent_type: 1,
+          word_type: "PROPER_NOUN",
+          priority: 5,
+        },
       ],
     }),
   );

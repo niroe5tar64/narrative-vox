@@ -292,7 +292,9 @@ voicevoxProxyRouter.post("/mora_pitch", async (c) => {
       return problem(c, {
         title: "VOICEVOX Engine is not reachable",
         status: STATUS_503,
-        detail: isTimeout ? "Request timed out" : "Connection refused or network error",
+        detail: isTimeout
+          ? "Request timed out"
+          : "Connection refused or network error",
         errorCode: "VOICEVOX_ENGINE_UNAVAILABLE",
       });
     }

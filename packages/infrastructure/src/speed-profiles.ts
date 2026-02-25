@@ -8,7 +8,10 @@ export async function loadSpeedProfiles(
 ): Promise<SpeedProfiles> {
   const resolvedPath = path.resolve(filePath);
   try {
-    return await loadJson<SpeedProfiles>(resolvedPath, SchemaPaths.speedProfiles);
+    return await loadJson<SpeedProfiles>(
+      resolvedPath,
+      SchemaPaths.speedProfiles,
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(

@@ -388,7 +388,6 @@ test("build-text keeps speaker_key undefined for lines without [speaker:<key>] t
   assert.equal(textJson.utterances[1]?.speaker_key, undefined);
 });
 
-
 test("build-project resolves character voices per utterance speaker_key", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const runDir = path.join(tempRoot, "introducing-rescript", "run-test");

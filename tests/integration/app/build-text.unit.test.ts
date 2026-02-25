@@ -103,7 +103,6 @@ test("replaceRubyWithReading replaces ruby notation with reading", () => {
   assert.equal(actual, "今日はかんじとリスクリプトを学ぶ。");
 });
 
-
 test("dictionary candidate extraction keeps ruby readings and token frequencies", () => {
   const termCandidates = new Map();
   const lines = [

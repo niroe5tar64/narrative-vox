@@ -14,12 +14,12 @@ import {
 } from "@narrative-vox/infrastructure/config-resolver.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
+import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import {
   fetchAudioQueryFromEngine,
   resolveVoicevoxApiUrl,
   type VoicevoxAudioQuery,
 } from "@narrative-vox/infrastructure/voicevox-engine.ts";
-import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 import { applyProsodyAdjustments } from "./build-project/prosody.ts";
 import {
   applySpeedPreset,

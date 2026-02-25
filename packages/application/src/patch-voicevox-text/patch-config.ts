@@ -1,6 +1,6 @@
+import type { PatchConfig } from "@narrative-vox/domain/types.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
-import type { PatchConfig } from "@narrative-vox/domain/types.ts";
 
 export type { PatchConfig };
 
@@ -18,5 +18,8 @@ export const DEFAULT_PATCH_CONFIG: PatchConfig = {
 };
 
 export async function loadPatchConfig(filePath: string): Promise<PatchConfig> {
-  return await loadJson<PatchConfig>(filePath, SchemaPaths.voicevoxTextPatchConfig);
+  return await loadJson<PatchConfig>(
+    filePath,
+    SchemaPaths.voicevoxTextPatchConfig,
+  );
 }
