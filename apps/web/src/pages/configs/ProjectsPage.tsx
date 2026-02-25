@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -10,118 +9,15 @@ import {
   type ProjectConfig,
   type StyleConfig,
 } from "@/api/client";
-import { Button } from "@/components/ui/button";
-import { Fieldset } from "@/components/ui/fieldset";
-import { FormField } from "@/components/ui/form-field";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+import { ProjectEditorPane } from "@/components/configs/projects/ProjectEditorPane";
+import { ProjectsListPane } from "@/components/configs/projects/ProjectsListPane";
+import {
+  EMPTY_FORM,
+  formToProj,
+  type ProjForm,
+  projToForm,
+} from "@/components/configs/projects/projectForm";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
-import { cn } from "@/lib/utils";
-
-// ===== Form state =====
-
-type CastRow = { role: string; charKey: string };
-
-type ProjForm = {
-  PROJECT_ID: string;
-  PROJECT_TITLE: string;
-  GENRE_ID: string;
-  STYLE_ID: string;
-  EPISODE_ID: string;
-  SOURCE_MARKDOWN_PATHS: string;
-  AUDIENCE_BACKGROUND: string;
-  AUDIENCE_LEVEL: string;
-  AUDIENCE_INTEREST: string;
-  BASELINE_CONTEXT_OR_EMPTY: string;
-  EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: string;
-  PROJECT_BLUEPRINT_JSON_PATH: string;
-  REPO_ROOT_PATH: string;
-  DEEP_DIVE_FOCUS: string;
-  castRows: CastRow[];
-  NOTES: string;
-};
-
-const EMPTY_FORM: ProjForm = {
-  PROJECT_ID: "",
-  PROJECT_TITLE: "",
-  GENRE_ID: "",
-  STYLE_ID: "",
-  EPISODE_ID: "E01",
-  SOURCE_MARKDOWN_PATHS: "",
-  AUDIENCE_BACKGROUND: "",
-  AUDIENCE_LEVEL: "",
-  AUDIENCE_INTEREST: "",
-  BASELINE_CONTEXT_OR_EMPTY: "",
-  EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: "",
-  PROJECT_BLUEPRINT_JSON_PATH: "",
-  REPO_ROOT_PATH: "",
-  DEEP_DIVE_FOCUS: "",
-  castRows: [],
-  NOTES: "",
-};
-
-function projToForm(p: ProjectConfig): ProjForm {
-  return {
-    PROJECT_ID: p.PROJECT_ID,
-    PROJECT_TITLE: p.PROJECT_TITLE,
-    GENRE_ID: p.GENRE_ID,
-    STYLE_ID: p.STYLE_ID,
-    EPISODE_ID: p.EPISODE_ID,
-    SOURCE_MARKDOWN_PATHS: p.SOURCE_MARKDOWN_PATHS,
-    AUDIENCE_BACKGROUND: p.AUDIENCE_BACKGROUND,
-    AUDIENCE_LEVEL: p.AUDIENCE_LEVEL,
-    AUDIENCE_INTEREST: p.AUDIENCE_INTEREST,
-    BASELINE_CONTEXT_OR_EMPTY: p.BASELINE_CONTEXT_OR_EMPTY,
-    EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: p.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY,
-    PROJECT_BLUEPRINT_JSON_PATH: p.PROJECT_BLUEPRINT_JSON_PATH,
-    REPO_ROOT_PATH:
-      (p as unknown as Record<string, string>).REPO_ROOT_PATH ?? "",
-    DEEP_DIVE_FOCUS:
-      (p as unknown as Record<string, string>).DEEP_DIVE_FOCUS ?? "",
-    castRows: Object.entries(p.CAST).map(([role, charKey]) => ({
-      role,
-      charKey,
-    })),
-    NOTES: p.NOTES ?? "",
-  };
-}
-
-function formToProj(f: ProjForm, extraFields: string[]): ProjectConfig {
-  const base: ProjectConfig = {
-    PROJECT_ID: f.PROJECT_ID,
-    PROJECT_TITLE: f.PROJECT_TITLE,
-    GENRE_ID: f.GENRE_ID,
-    STYLE_ID: f.STYLE_ID,
-    EPISODE_ID: f.EPISODE_ID,
-    SOURCE_MARKDOWN_PATHS: f.SOURCE_MARKDOWN_PATHS,
-    AUDIENCE_BACKGROUND: f.AUDIENCE_BACKGROUND,
-    AUDIENCE_LEVEL: f.AUDIENCE_LEVEL,
-    AUDIENCE_INTEREST: f.AUDIENCE_INTEREST,
-    BASELINE_CONTEXT_OR_EMPTY: f.BASELINE_CONTEXT_OR_EMPTY,
-    EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: f.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY,
-    PROJECT_BLUEPRINT_JSON_PATH: f.PROJECT_BLUEPRINT_JSON_PATH,
-    CAST: Object.fromEntries(
-      f.castRows.filter((r) => r.role.trim()).map((r) => [r.role, r.charKey]),
-    ),
-    ...(f.NOTES && { NOTES: f.NOTES }),
-  };
-  const extra = base as unknown as Record<string, string>;
-  if (extraFields.includes("REPO_ROOT_PATH") && f.REPO_ROOT_PATH) {
-    extra.REPO_ROOT_PATH = f.REPO_ROOT_PATH;
-  }
-  if (extraFields.includes("DEEP_DIVE_FOCUS") && f.DEEP_DIVE_FOCUS) {
-    extra.DEEP_DIVE_FOCUS = f.DEEP_DIVE_FOCUS;
-  }
-  return base;
-}
-
-// ===== Field row helper =====
-
-const selectClass =
-  "h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60";
-
-// ===== Main page =====
 
 export function ProjectsPage() {
   const qc = useQueryClient();
@@ -158,15 +54,13 @@ export function ProjectsPage() {
     queryFn: () => api.styles.list(),
   });
 
-  const genres = genresData?.items ?? [];
+  const projectItems = (projects?.items ?? []) as ProjectConfig[];
+  const genres = (genresData?.items ?? []) as GenreConfig[];
   const styles = (stylesData?.items ?? []) as StyleConfig[];
   const charKeys =
     (chars?.items as CharacterConfig[] | undefined)?.map((c) => c.key) ?? [];
 
-  // Determine extra_fields for the currently selected genre
-  const selectedGenre = genres.find((g) => g.genre_id === form.GENRE_ID) as
-    | GenreConfig
-    | undefined;
+  const selectedGenre = genres.find((g) => g.genre_id === form.GENRE_ID);
   const extraFields = selectedGenre?.extra_fields ?? [];
   const showOssDiveFields =
     extraFields.includes("REPO_ROOT_PATH") ||
@@ -242,12 +136,11 @@ export function ProjectsPage() {
     setSuccess(false);
   }
 
-  function patch(p: Partial<ProjForm>) {
-    setForm((f) => ({ ...f, ...p }));
+  function patch(patchForm: Partial<ProjForm>) {
+    setForm((f) => ({ ...f, ...patchForm }));
   }
 
   function changeGenre(genreId: string) {
-    // Clear extra fields that may no longer apply
     patch({ GENRE_ID: genreId, REPO_ROOT_PATH: "", DEEP_DIVE_FOCUS: "" });
   }
 
@@ -260,9 +153,14 @@ export function ProjectsPage() {
     patch({ STYLE_ID: styleId, castRows: newCastRows });
   }
 
-  function updateCastRow(i: number, p: Partial<CastRow>) {
+  function updateCastRow(
+    i: number,
+    patchRow: { role?: string; charKey?: string },
+  ) {
     patch({
-      castRows: form.castRows.map((r, idx) => (idx === i ? { ...r, ...p } : r)),
+      castRows: form.castRows.map((r, idx) =>
+        idx === i ? { ...r, ...patchRow } : r,
+      ),
     });
   }
 
@@ -270,346 +168,39 @@ export function ProjectsPage() {
 
   return (
     <div className="flex min-h-0 gap-6">
-      {/* List */}
-      <div className="flex w-60 flex-shrink-0 flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-tight">Projects</h2>
-          <Button size="sm" onClick={startNew}>
-            <Plus className="h-4 w-4" />
-            New
-          </Button>
-        </div>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1">
-            {projects?.items.map((p) => {
-              const proj = p as ProjectConfig;
-              return (
-                <button
-                  key={proj.PROJECT_ID}
-                  type="button"
-                  onClick={() => selectProject(proj)}
-                  className={cn(
-                    "rounded-md px-3 py-2 text-left text-sm transition-colors",
-                    selected === proj.PROJECT_ID && !isNew
-                      ? "bg-emerald-600 text-white"
-                      : "hover:bg-slate-100",
-                  )}
-                >
-                  <div className="font-medium">{proj.PROJECT_ID}</div>
-                  <div className="text-xs opacity-60">{proj.PROJECT_TITLE}</div>
-                </button>
-              );
-            })}
-            {projects?.items.length === 0 && (
-              <p className="py-4 text-center text-sm text-slate-500">
-                No projects
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+      <ProjectsListPane
+        projects={projectItems}
+        selected={selected}
+        isNew={isNew}
+        isLoading={isLoading}
+        onSelect={selectProject}
+        onStartNew={startNew}
+      />
 
-      {/* Editor */}
       {showEditor ? (
-        <div className="flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">
-          <h3 className="mb-5 text-base font-semibold">
-            {isNew ? "New Project" : `Edit: ${selected}`}
-          </h3>
-          <div className="max-w-lg space-y-4">
-            <FormField
-              label="PROJECT_ID"
-              required
-              hint={
-                <>
-                  英小文字・数字・ハイフンのみ推奨（例: my-project）
-                  <br />
-                  ※ディレクトリ名にもなる識別子で作成後は変更不可
-                </>
-              }
-            >
-              <Input
-                value={form.PROJECT_ID}
-                onChange={(e) => patch({ PROJECT_ID: e.target.value })}
-                readOnly={!isNew}
-                className={!isNew ? "bg-slate-50 text-slate-500" : ""}
-                placeholder="e.g. my-project"
-              />
-            </FormField>
-
-            <FormField label="PROJECT_TITLE" required>
-              <Input
-                value={form.PROJECT_TITLE}
-                onChange={(e) => patch({ PROJECT_TITLE: e.target.value })}
-                placeholder="プロジェクトタイトル"
-              />
-            </FormField>
-
-            <FormField
-              label="EPISODE_ID"
-              required
-              hint={
-                <>
-                  現在作業するエピソードの番号（E01, E02 … の形式）
-                  <br />
-                  スキル実行時の対象エピソードになります。
-                </>
-              }
-            >
-              <Input
-                value={form.EPISODE_ID}
-                onChange={(e) => patch({ EPISODE_ID: e.target.value })}
-                placeholder="e.g. E01"
-              />
-            </FormField>
-
-            <FormField
-              label="SOURCE_MARKDOWN_PATHS"
-              required
-              hint={
-                <>
-                  glob パターンで対象 Markdown を指定（例:
-                  data/inputs/books/my-book/*.md）
-                  <br />
-                  ※oss-dive ジャンルでは空欄で可
-                </>
-              }
-            >
-              <Input
-                value={form.SOURCE_MARKDOWN_PATHS}
-                onChange={(e) =>
-                  patch({ SOURCE_MARKDOWN_PATHS: e.target.value })
-                }
-                placeholder="data/inputs/..."
-              />
-            </FormField>
-
-            <FormField label="GENRE" required>
-              {genres.length > 0 ? (
-                <select
-                  className={selectClass}
-                  value={form.GENRE_ID}
-                  onChange={(e) => changeGenre(e.target.value)}
-                >
-                  <option value="">-- 選択 --</option>
-                  {genres.map((g) => (
-                    <option key={g.genre_id} value={g.genre_id}>
-                      {g.genre_name} ({g.genre_id})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <Input
-                  value={form.GENRE_ID}
-                  onChange={(e) => patch({ GENRE_ID: e.target.value })}
-                  placeholder="e.g. tech-explainer"
-                />
-              )}
-            </FormField>
-
-            {/* OSS Dive specific fields */}
-            {showOssDiveFields && (
-              <>
-                <FormField
-                  label="REPO_ROOT_PATH"
-                  required
-                  hint="分析するOSSリポジトリの git clone 先ルートパスを指定（例: data/inputs/repos/my-project）。"
-                >
-                  <Input
-                    value={form.REPO_ROOT_PATH}
-                    onChange={(e) => patch({ REPO_ROOT_PATH: e.target.value })}
-                    placeholder="data/inputs/repos/my-project"
-                  />
-                </FormField>
-
-                <FormField
-                  label="DEEP_DIVE_FOCUS"
-                  required
-                  hint="OSSの何に着目して深掘りするかを指定。ブループリント・素材・台本全体の焦点になる（例: アーキテクチャと設計思想）。"
-                >
-                  <Textarea
-                    value={form.DEEP_DIVE_FOCUS}
-                    onChange={(e) => patch({ DEEP_DIVE_FOCUS: e.target.value })}
-                    rows={2}
-                    placeholder="アーキテクチャと設計思想"
-                  />
-                </FormField>
-              </>
-            )}
-
-            <FormField label="STYLE" required>
-              {styles.length > 0 ? (
-                <select
-                  className={selectClass}
-                  value={form.STYLE_ID}
-                  onChange={(e) => changeStyle(e.target.value)}
-                >
-                  <option value="">-- 選択 --</option>
-                  {styles.map((s) => (
-                    <option key={s.style_id} value={s.style_id}>
-                      {s.style_name} ({s.style_id})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <Input
-                  value={form.STYLE_ID}
-                  onChange={(e) => patch({ STYLE_ID: e.target.value })}
-                  placeholder="e.g. radio-talk"
-                />
-              )}
-            </FormField>
-
-            {/* CAST — STYLE_ID 選択後のみ表示 */}
-            {form.STYLE_ID && (
-              <Fieldset legend="CAST">
-                <div className="space-y-2">
-                  {form.castRows.map((row, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static order
-                    <FormField key={i} label={row.role} required>
-                      {charKeys.length > 0 ? (
-                        <select
-                          className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                          value={row.charKey}
-                          onChange={(e) =>
-                            updateCastRow(i, { charKey: e.target.value })
-                          }
-                        >
-                          {charKeys.map((k) => (
-                            <option key={k} value={k}>
-                              {k}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <Input
-                          value={row.charKey}
-                          onChange={(e) =>
-                            updateCastRow(i, { charKey: e.target.value })
-                          }
-                          placeholder="character key"
-                        />
-                      )}
-                    </FormField>
-                  ))}
-                </div>
-              </Fieldset>
-            )}
-
-            <FormField label="AUDIENCE_BACKGROUND" required>
-              <Textarea
-                value={form.AUDIENCE_BACKGROUND}
-                onChange={(e) => patch({ AUDIENCE_BACKGROUND: e.target.value })}
-                rows={2}
-                placeholder="想定読者の背景知識"
-              />
-            </FormField>
-
-            <FormField label="AUDIENCE_LEVEL" required>
-              <Input
-                value={form.AUDIENCE_LEVEL}
-                onChange={(e) => patch({ AUDIENCE_LEVEL: e.target.value })}
-                placeholder="e.g. 初学者〜中級"
-              />
-            </FormField>
-
-            <FormField label="AUDIENCE_INTEREST" required>
-              <Textarea
-                value={form.AUDIENCE_INTEREST}
-                onChange={(e) => patch({ AUDIENCE_INTEREST: e.target.value })}
-                rows={2}
-                placeholder="読者の関心事"
-              />
-            </FormField>
-
-            <FormField
-              label="BASELINE_CONTEXT_OR_EMPTY"
-              hint="台本内で「既知」として扱う具体的な前提知識（例: TypeScript での実装パターン）。AUDIENCE_BACKGROUND が「読者の属性」なら、こちらは「説明を省ける知識」。不要なら空欄。"
-            >
-              <Input
-                value={form.BASELINE_CONTEXT_OR_EMPTY}
-                onChange={(e) =>
-                  patch({ BASELINE_CONTEXT_OR_EMPTY: e.target.value })
-                }
-                placeholder="前提知識（なければ空欄）"
-              />
-            </FormField>
-
-            <FormField
-              label="EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY"
-              hint="過去runの台本ディレクトリを引き継ぐ場合に指定（初回や引き継ぎ不要な場合は空欄）"
-            >
-              <Input
-                value={form.EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}
-                onChange={(e) =>
-                  patch({ EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: e.target.value })
-                }
-                placeholder="既存台本ディレクトリ（なければ空欄）"
-              />
-            </FormField>
-
-            <FormField
-              label="PROJECT_BLUEPRINT_JSON_PATH"
-              hint="/gen-blueprint 実行後に生成された JSON のパスを指定。初回は空欄で可。"
-            >
-              <Input
-                value={form.PROJECT_BLUEPRINT_JSON_PATH}
-                onChange={(e) =>
-                  patch({ PROJECT_BLUEPRINT_JSON_PATH: e.target.value })
-                }
-                placeholder="data/projects/.../blueprint/..."
-              />
-            </FormField>
-
-            <FormField label="NOTES">
-              <Textarea
-                value={form.NOTES}
-                onChange={(e) => patch({ NOTES: e.target.value })}
-                rows={2}
-                placeholder="備考（任意）"
-              />
-            </FormField>
-
-            {/* Feedback */}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {success && (
-              <p className="text-sm text-emerald-600">Saved successfully.</p>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={() => saveMutation.mutate(form)}
-                disabled={saveMutation.isPending}
-              >
-                {saveMutation.isPending ? (
-                  <Spinner className="mr-1" />
-                ) : (
-                  <Save className="mr-1 h-4 w-4" />
-                )}
-                Save
-              </Button>
-              {!isNew && selected && (
-                <Button
-                  variant="secondary"
-                  className="text-red-600 hover:text-red-700"
-                  disabled={deleteMutation.isPending}
-                  onClick={() => {
-                    if (window.confirm(`"${selected}" を削除しますか？`)) {
-                      deleteMutation.mutate(selected);
-                    }
-                  }}
-                >
-                  <Trash2 className="mr-1 h-4 w-4" />
-                  Delete
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProjectEditorPane
+          selected={selected}
+          isNew={isNew}
+          form={form}
+          genres={genres}
+          styles={styles}
+          charKeys={charKeys}
+          showOssDiveFields={showOssDiveFields}
+          error={error}
+          success={success}
+          isSaving={saveMutation.isPending}
+          isDeleting={deleteMutation.isPending}
+          onPatch={patch}
+          onChangeGenre={changeGenre}
+          onChangeStyle={changeStyle}
+          onUpdateCastRow={updateCastRow}
+          onSave={() => saveMutation.mutate(form)}
+          onDelete={() => {
+            if (selected && window.confirm(`"${selected}" を削除しますか？`)) {
+              deleteMutation.mutate(selected);
+            }
+          }}
+        />
       ) : (
         <div className="flex flex-1 items-center justify-center text-sm text-slate-400">
           プロジェクトを選択するか、New で作成してください
