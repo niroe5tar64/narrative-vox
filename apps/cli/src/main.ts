@@ -292,7 +292,7 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       buildTextConfigPath: optionAsString(options, "build-text-config"),
     });
 
-    const usePatch = Boolean(options["patch"]);
+    const usePatch = Boolean(options.patch);
     let voicevoxTextJsonPath = buildTextResult.voicevoxTextJsonPath;
     if (usePatch) {
       const patchResult = await patchVoicevoxText({

@@ -14,5 +14,5 @@ export async function loadRunContract(runDir: string): Promise<RunContract> {
 
 export async function saveRunContract(contract: RunContract): Promise<void> {
   const filePath = path.join(contract.runDir, RUN_CONTRACT_FILENAME);
-  await writeFile(filePath, JSON.stringify(contract, null, 2) + "\n");
+  await writeFile(filePath, `${JSON.stringify(contract, null, 2)}\n`);
 }

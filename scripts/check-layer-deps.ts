@@ -62,7 +62,8 @@ async function checkFile(
   const violations: string[] = [];
   let match: RegExpExecArray | null;
   IMPORT_RE.lastIndex = 0;
-  while ((match = IMPORT_RE.exec(content)) !== null) {
+  match = IMPORT_RE.exec(content);
+  while (match !== null) {
     const importPath = match[1];
     for (const target of forbiddenTargets) {
       // Match @narrative-vox/<package-name> style or relative paths going into target packages
@@ -77,6 +78,7 @@ async function checkFile(
         );
       }
     }
+    match = IMPORT_RE.exec(content);
   }
   return violations;
 }

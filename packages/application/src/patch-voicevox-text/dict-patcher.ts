@@ -26,7 +26,10 @@ export function patchDictionaryCandidates(
   let addedCount = 0;
   for (const forceReading of forceReadings) {
     if (existingSurfaces.has(forceReading.surface)) {
-      const existing = existingSurfaces.get(forceReading.surface)!;
+      const existing = existingSurfaces.get(forceReading.surface);
+      if (!existing) {
+        continue;
+      }
       existingSurfaces.set(forceReading.surface, {
         ...existing,
         reading_or_empty: forceReading.reading,

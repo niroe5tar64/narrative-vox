@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { createRunContract } from "@narrative-vox/domain/run-contract.ts";
@@ -154,7 +154,7 @@ export async function runClaudeWithPrompt(prompt: string): Promise<string> {
           if (done) {
             if (buffer.length > 0) {
               outputChunks.push(buffer);
-              process.stdout.write(buffer + "\n");
+              process.stdout.write(`${buffer}\n`);
             }
             break;
           }
@@ -164,7 +164,7 @@ export async function runClaudeWithPrompt(prompt: string): Promise<string> {
           const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
           for (const line of lines) {
-            process.stdout.write(line + "\n");
+            process.stdout.write(`${line}\n`);
           }
         }
       } finally {
@@ -246,8 +246,7 @@ export async function genBlueprint(
   // 4. プロンプト構築
   let fullPrompt = promptSection;
   if (sourceContents.length > 0) {
-    fullPrompt +=
-      "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
+    fullPrompt += `\n\n---\n\n## Source Materials\n\n${sourceContents.join("\n\n---\n\n")}`;
   }
 
   // 5. claude 実行
@@ -265,7 +264,7 @@ export async function genBlueprint(
 
   // 8. blueprint 保存
   const blueprintPath = path.join(blueprintDir, "project_blueprint.json");
-  await writeFile(blueprintPath, JSON.stringify(blueprintJson, null, 2) + "\n");
+  await writeFile(blueprintPath, `${JSON.stringify(blueprintJson, null, 2)}\n`);
   console.log(
     `[gen-blueprint] Saved: ${path.relative(process.cwd(), blueprintPath)}`,
   );
@@ -342,8 +341,7 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
     JSON.stringify(blueprint, null, 2) +
     "\n```";
   if (sourceContents.length > 0) {
-    fullPrompt +=
-      "\n\n---\n\n## Source Materials\n\n" + sourceContents.join("\n\n---\n\n");
+    fullPrompt += `\n\n---\n\n## Source Materials\n\n${sourceContents.join("\n\n---\n\n")}`;
   }
 
   // 6. claude 実行
@@ -357,7 +355,7 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
   const materialDir = path.join(runDir, "material");
   await mkdir(materialDir, { recursive: true });
   const materialPath = path.join(materialDir, `${episodeId}_material.json`);
-  await writeFile(materialPath, JSON.stringify(materialJson, null, 2) + "\n");
+  await writeFile(materialPath, `${JSON.stringify(materialJson, null, 2)}\n`);
   console.log(
     `[gen-material] Saved: ${path.relative(process.cwd(), materialPath)}`,
   );
@@ -474,7 +472,7 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   const scriptDir = path.join(runDir, "script");
   await mkdir(scriptDir, { recursive: true });
   const scriptPath = path.join(scriptDir, `${episodeId}_script.md`);
-  await writeFile(scriptPath, output.trim() + "\n");
+  await writeFile(scriptPath, `${output.trim()}\n`);
   console.log(
     `[gen-script] Saved: ${path.relative(process.cwd(), scriptPath)}`,
   );
@@ -565,7 +563,7 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   const promptSection = extractPromptSection(templateRaw);
 
   let fullPrompt = promptSection;
-  fullPrompt += "\n\n---\n\n## Script (Markdown)\n\n" + scriptContent;
+  fullPrompt += `\n\n---\n\n## Script (Markdown)\n\n${scriptContent}`;
   fullPrompt +=
     "\n\n---\n\n## Material JSON\n\n```json\n" +
     JSON.stringify(material, null, 2) +
@@ -589,7 +587,7 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   const contextDir = path.join(runDir, "context");
   await mkdir(contextDir, { recursive: true });
   const digestPath = path.join(contextDir, `${episodeId}_episode_digest.json`);
-  await writeFile(digestPath, JSON.stringify(digestJson, null, 2) + "\n");
+  await writeFile(digestPath, `${JSON.stringify(digestJson, null, 2)}\n`);
   console.log(
     `[gen-digest] Saved: ${path.relative(process.cwd(), digestPath)}`,
   );
