@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
 export function AppShell() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_15%_20%,_#d1fae5_0,_transparent_45%),radial-gradient(circle_at_85%_10%,_#fef3c7_0,_transparent_40%),#f8fafc] text-slate-900">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="border-b border-slate-200/80 bg-white/70 px-5 py-6 backdrop-blur lg:border-b-0 lg:border-r">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Narrative Vox
@@ -51,7 +51,7 @@ export function AppShell() {
           </nav>
         </aside>
 
-        <main className="px-5 py-6 sm:px-8">
+        <main className="min-w-0 px-5 py-6 sm:px-8">
           <Outlet />
         </main>
       </div>

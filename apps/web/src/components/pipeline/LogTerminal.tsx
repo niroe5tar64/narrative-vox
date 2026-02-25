@@ -81,36 +81,36 @@ export function LogTerminal({ logs, status, command, previewCommand }: Props) {
   }, [logs.length]);
 
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-700 bg-zinc-950 overflow-hidden">
+    <div className="flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950">
       {/* Title bar */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-zinc-800 bg-zinc-900">
+      <div className="flex min-w-0 items-center gap-3 border-b border-zinc-800 bg-zinc-900 px-4 py-2">
         <div className="flex gap-1.5">
           <span className="size-3 rounded-full bg-zinc-600" />
           <span className="size-3 rounded-full bg-zinc-600" />
           <span className="size-3 rounded-full bg-zinc-600" />
         </div>
-        <span className="text-xs font-mono text-zinc-400 flex-1">
+        <span className="min-w-0 flex-1 truncate text-xs font-mono text-zinc-400">
           {command ? `narrative-vox — ${command}` : "narrative-vox — terminal"}
         </span>
         {statusBadge(status)}
       </div>
 
       {/* Command preview band — always rendered to keep height stable */}
-      <div className="px-4 py-1.5 border-b border-zinc-700 bg-zinc-800/60 flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2 border-b border-zinc-700 bg-zinc-800/60 px-4 py-1.5">
         <span
           className={`text-xs text-zinc-500 select-none ${previewCommand ? "" : "invisible"}`}
         >
           $
         </span>
         <span
-          className={`text-xs font-mono truncate ${previewCommand ? "text-zinc-300 select-all" : "invisible"}`}
+          className={`min-w-0 flex-1 truncate text-xs font-mono ${previewCommand ? "text-zinc-300 select-all" : "invisible"}`}
         >
           {previewCommand ?? "\u00A0"}
         </span>
       </div>
 
       {/* Log output */}
-      <div className="flex-1 overflow-y-auto p-4 font-mono text-sm min-h-[320px] max-h-[560px]">
+      <div className="min-w-0 flex-1 overflow-x-auto overflow-y-auto p-4 font-mono text-sm min-h-[320px] max-h-[560px]">
         {logs.length === 0 ? (
           <p className="text-zinc-600 text-xs">出力待機中...</p>
         ) : (

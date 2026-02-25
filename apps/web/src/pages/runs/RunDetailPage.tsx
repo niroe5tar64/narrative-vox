@@ -86,7 +86,7 @@ export function RunDetailPage() {
     pipelineStatus === "running";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -145,7 +145,7 @@ export function RunDetailPage() {
 
       {/* 2-pane: tree + viewer */}
       <div
-        className="grid grid-cols-[260px_1fr] gap-4"
+        className="grid min-w-0 grid-cols-[260px_minmax(0,1fr)] gap-4"
         style={{ minHeight: "520px" }}
       >
         {/* Left: File Tree */}
@@ -170,7 +170,7 @@ export function RunDetailPage() {
         </div>
 
         {/* Right: File Viewer */}
-        <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur overflow-hidden flex flex-col">
+        <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white/80 backdrop-blur">
           {selectedFile ? (
             <FileViewer
               projectId={projectId}
