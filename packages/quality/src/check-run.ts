@@ -2,6 +2,10 @@ import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseSectionHeader } from "@narrative-vox/domain/script-structure.ts";
 import {
+  getJapaneseMorphTokenizer,
+  type MorphTokenizer,
+} from "@narrative-vox/infrastructure/japanese-morph-tokenizer.ts";
+import {
   hasSpeakerTagPrefix,
   parseSpeakerTag,
 } from "@narrative-vox/domain/speaker-tag.ts";
@@ -28,6 +32,7 @@ export interface CheckRunOptions {
   voicevoxApiUrl?: string;
   speedPreset?: string;
   speedProfilesPath?: string;
+  morphTokenizerOverride?: MorphTokenizer | null;
 }
 
 export interface CheckRunResult {
@@ -170,6 +175,13 @@ interface ScriptTokenSpan {
   end: number;
 }
 
+interface MorphScriptTokenSpan {
+  raw: string;
+  normalized: string;
+  start: number;
+  end: number;
+}
+
 interface NormalizedTextIndexMap {
   normalizedText: string;
   rawStartByNormalizedIndex: number[];
@@ -218,6 +230,48 @@ function tokenizeTechnicalMatchScript(scriptText: string): ScriptTokenSpan[] {
     });
   }
   return tokens;
+}
+
+function tokenizeMorphScript(
+  scriptText: string,
+  morphTokenizer: MorphTokenizer,
+): MorphScriptTokenSpan[] {
+  const tokens: MorphScriptTokenSpan[] = [];
+  for (const token of morphTokenizer.tokenize(scriptText)) {
+    const raw = String(token?.surface_form ?? "");
+    const normalized = normalizeTechnicalTermText(raw);
+    const wordPosition = Number(token?.word_position ?? 0);
+    const start = wordPosition - 1;
+    const end = start + raw.length;
+    if (
+      !raw ||
+      !normalized ||
+      !Number.isFinite(start) ||
+      start < 0 ||
+      end <= start ||
+      end > scriptText.length
+    ) {
+      continue;
+    }
+    tokens.push({ raw, normalized, start, end });
+  }
+  return tokens;
+}
+
+function tokenizeMorphTerm(
+  term: string,
+  morphTokenizer: MorphTokenizer,
+): string[] {
+  const normalizedTokens: string[] = [];
+  for (const token of morphTokenizer.tokenize(term)) {
+    const raw = String(token?.surface_form ?? "");
+    const normalized = normalizeTechnicalTermText(raw);
+    if (!normalized) {
+      continue;
+    }
+    normalizedTokens.push(normalized);
+  }
+  return normalizedTokens;
 }
 
 function normalizeTechnicalTextChar(char: string): string {
@@ -338,6 +392,49 @@ function containsWordSequence(tokens: string[], words: string[]): boolean {
     }
   }
   return false;
+}
+
+function collectTokenSequenceSpans<T extends { normalized: string; start: number; end: number }>(
+  tokens: T[],
+  words: string[],
+): Array<{ start: number; end: number }> {
+  if (words.length === 0 || words.length > tokens.length) {
+    return [];
+  }
+
+  const spans: Array<{ start: number; end: number }> = [];
+  for (let i = 0; i <= tokens.length - words.length; i++) {
+    let matches = true;
+    for (let j = 0; j < words.length; j++) {
+      if (tokens[i + j]?.normalized !== words[j]) {
+        matches = false;
+        break;
+      }
+    }
+    if (!matches) {
+      continue;
+    }
+
+    const start = tokens[i]?.start;
+    const end = tokens[i + words.length - 1]?.end;
+    if (start === undefined || end === undefined || end <= start) {
+      continue;
+    }
+    spans.push({ start, end });
+  }
+  return spans;
+}
+
+function isNonAsciiTermCoveredByMorphTokenSequence(
+  scriptMorphTokenSpans: MorphScriptTokenSpan[],
+  term: string,
+  morphTokenizer: MorphTokenizer,
+): boolean {
+  const termTokens = tokenizeMorphTerm(term, morphTokenizer);
+  if (termTokens.length === 0) {
+    return false;
+  }
+  return collectTokenSequenceSpans(scriptMorphTokenSpans, termTokens).length > 0;
 }
 
 function isAsciiAlphaNumChar(value: string): boolean {
@@ -508,6 +605,28 @@ function findTextNotationVariants(params: {
   return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
 }
 
+function findNonAsciiNotationVariantsByMorph(params: {
+  scriptText: string;
+  scriptMorphTokenSpans: MorphScriptTokenSpan[];
+  term: string;
+  morphTokenizer: MorphTokenizer;
+}): string[] {
+  const termTokens = tokenizeMorphTerm(params.term, params.morphTokenizer);
+  if (termTokens.length === 0) {
+    return [];
+  }
+
+  const variants = new Set<string>();
+  const spans = collectTokenSequenceSpans(params.scriptMorphTokenSpans, termTokens);
+  for (const span of spans) {
+    const rawVariant = params.scriptText.slice(span.start, span.end).trim();
+    if (rawVariant) {
+      variants.add(rawVariant);
+    }
+  }
+  return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 function findNotationVariants(params: {
   scriptText: string;
   term: string;
@@ -582,11 +701,15 @@ function buildTechnicalTermsAuditReport(params: {
   scriptText: string;
   dictionarySurfaces: string[];
   dictionaryCoverageSkipped: boolean;
+  morphTokenizer?: MorphTokenizer | null;
 }): TechnicalTermsAuditReport {
   const scriptTokenSpans = tokenizeTechnicalMatchScript(params.scriptText);
   const scriptTokens = normalizedTokensFromSpans(scriptTokenSpans);
   const normalizedTextIndexMap = buildNormalizedTextIndexMap(params.scriptText);
   const normalizedScriptText = normalizedTextIndexMap.normalizedText;
+  const scriptMorphTokenSpans = params.morphTokenizer
+    ? tokenizeMorphScript(params.scriptText, params.morphTokenizer)
+    : [];
   const normalizedDictionary = new Set(
     params.dictionarySurfaces.map((surface) =>
       normalizeTechnicalTermToken(surface),
@@ -607,24 +730,36 @@ function buildTechnicalTermsAuditReport(params: {
       continue;
     }
 
-    const inScript = isTechnicalTermCoveredInScript(
-      scriptTokens,
-      normalizedScriptText,
-      term,
-    );
+    const isNonAsciiTerm = !hasAsciiAlphaNum(term);
+    const inScript =
+      isNonAsciiTerm && params.morphTokenizer
+        ? isNonAsciiTermCoveredByMorphTokenSequence(
+            scriptMorphTokenSpans,
+            term,
+            params.morphTokenizer,
+          )
+        : isTechnicalTermCoveredInScript(scriptTokens, normalizedScriptText, term);
     if (!inScript) {
       missingInScript.push(term);
     } else {
       coveredTerms += 1;
-      const variants = findNotationVariants({
-        scriptText: params.scriptText,
-        term,
-        scriptTokenSpans,
-        normalizedScriptText,
-        rawStartByNormalizedIndex:
-          normalizedTextIndexMap.rawStartByNormalizedIndex,
-        rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
-      });
+      const variants =
+        isNonAsciiTerm && params.morphTokenizer
+          ? findNonAsciiNotationVariantsByMorph({
+              scriptText: params.scriptText,
+              scriptMorphTokenSpans,
+              term,
+              morphTokenizer: params.morphTokenizer,
+            })
+          : findNotationVariants({
+              scriptText: params.scriptText,
+              term,
+              scriptTokenSpans,
+              normalizedScriptText,
+              rawStartByNormalizedIndex:
+                normalizedTextIndexMap.rawStartByNormalizedIndex,
+              rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
+            });
       if (variants.length === 0) {
         warnings.push(`covered technical term has no notation variants: ${term}`);
       }
@@ -908,6 +1043,7 @@ export async function checkRun({
   voicevoxApiUrl,
   speedPreset,
   speedProfilesPath,
+  morphTokenizerOverride,
 }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
   const runId = path.basename(resolvedRunDir);
@@ -1179,6 +1315,10 @@ export async function checkRun({
   // 8. technical_terms audit (warn-only)
   const contextDirForAudit = path.join(resolvedRunDir, "context");
   await mkdir(contextDirForAudit, { recursive: true });
+  const morphTokenizer =
+    morphTokenizerOverride === undefined
+      ? await getJapaneseMorphTokenizer()
+      : morphTokenizerOverride;
   for (const episodeId of materialEpisodeIds) {
     const technicalTerms = technicalTermsByEpisodeId.get(episodeId) ?? [];
     if (technicalTerms.length === 0) {
@@ -1197,6 +1337,14 @@ export async function checkRun({
     const voicevoxTextPath = hasValidVoicevoxText
       ? `voicevox_text/${episodeId}_voicevox_text.json`
       : undefined;
+    if (
+      !morphTokenizer &&
+      technicalTerms.some((term) => !hasAsciiAlphaNum(term))
+    ) {
+      warnings.push(
+        `${episodeId}: morphological tokenizer unavailable; falling back to substring matching for non-ASCII terms`,
+      );
+    }
     const report = buildTechnicalTermsAuditReport({
       episodeId,
       projectId,
@@ -1208,6 +1356,7 @@ export async function checkRun({
       scriptText,
       dictionarySurfaces,
       dictionaryCoverageSkipped: !hasValidVoicevoxText,
+      morphTokenizer,
     });
     const reportFileName = `${episodeId}_technical_terms_audit.json`;
     const reportPath = path.join(contextDirForAudit, reportFileName);

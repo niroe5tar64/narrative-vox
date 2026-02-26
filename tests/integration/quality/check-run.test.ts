@@ -13,6 +13,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
+import type { MorphTokenizer } from "@narrative-vox/infrastructure/japanese-morph-tokenizer.ts";
 import { checkRun } from "@narrative-vox/quality/check-run.ts";
 
 const sampleRunDir = path.resolve("tests/fixtures/sample-run");
@@ -68,6 +69,39 @@ function buildScriptWithManySections(): string {
     lines.push(`[speaker:${speakerKey}] セクション${i}の内容です。`);
   }
   return lines.join("\n");
+}
+
+interface MockMorphToken {
+  surface_form: string;
+  word_position: number;
+}
+
+function buildMockMorphTokens(text: string, surfaces: string[]): MockMorphToken[] {
+  const tokens: MockMorphToken[] = [];
+  let cursor = 0;
+  for (const surface of surfaces) {
+    const index = text.indexOf(surface, cursor);
+    if (index < 0) {
+      throw new Error(
+        `Failed to build mock morph token. surface="${surface}" not found in "${text}" from ${cursor}`,
+      );
+    }
+    tokens.push({
+      surface_form: surface,
+      word_position: index + 1,
+    });
+    cursor = index + surface.length;
+  }
+  return tokens;
+}
+
+function createMockMorphTokenizer(
+  tokensByText: Record<string, string[]>,
+): MorphTokenizer {
+  return {
+    tokenize: (text: string) =>
+      buildMockMorphTokens(text, tokensByText[text] ?? []),
+  } as unknown as MorphTokenizer;
 }
 
 const sampleMaterial = {
@@ -1726,6 +1760,149 @@ test("checkRun reports non-ascii notation inconsistencies with raw variants", as
       term: "サーバー",
       variants: ["ｻｰﾊﾞｰ", "サーバー"],
     },
+  ]);
+});
+
+test("checkRun avoids non-ascii substring false-positive when morph tokenizer is available", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] 相関数値を計算します。",
+    "## 2. 本編",
+    "[speaker:student] 例を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "関数", note: "substring false-positive regression" }],
+  }));
+
+  const result = await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: ["相関数値", "を", "計算", "します", "例", "を", "続け", "ます"],
+      関数: ["関数"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(report.details.missing_in_script, ["関数"]);
+  assert.ok(
+    !result.warnings.some((warning) =>
+      warning.includes("morphological tokenizer unavailable"),
+    ),
+  );
+});
+
+test("checkRun falls back to non-ascii substring matching when morph tokenizer is unavailable", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 相関数値を計算します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "関数", note: "substring fallback behavior" }],
+  }));
+
+  const result = await checkRun({ runDir, morphTokenizerOverride: null });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes(
+        "E01: morphological tokenizer unavailable; falling back to substring matching for non-ASCII terms",
+      ),
+    ),
+  );
+});
+
+test("checkRun accepts false-negative risk for non-ascii tokenization split mismatch in morph mode", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] 形態素解析を学びます。",
+    "## 2. 本編",
+    "[speaker:student] 例を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "形態素解析", note: "token split mismatch" }],
+  }));
+
+  await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: ["形態", "素", "解析", "を", "学び", "ます", "例", "を", "続け", "ます"],
+      形態素解析: ["形態素", "解析"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(report.details.missing_in_script, ["形態素解析"]);
+});
+
+test("checkRun extracts non-ascii notation variants from morph token-sequence matches", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] サーバーとｻｰﾊﾞｰの表記を比較します。",
+    "## 2. 本編",
+    "[speaker:student] 用語確認を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "サーバー", note: "morph variant extraction" }],
+  }));
+
+  await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: [
+        "サーバー",
+        "と",
+        "ｻｰﾊﾞｰ",
+        "の",
+        "表記",
+        "を",
+        "比較",
+        "します",
+        "用語",
+        "確認",
+        "を",
+        "続け",
+        "ます",
+      ],
+      サーバー: ["サーバー"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    { term: "サーバー", variants: ["ｻｰﾊﾞｰ", "サーバー"] },
   ]);
 });
 
