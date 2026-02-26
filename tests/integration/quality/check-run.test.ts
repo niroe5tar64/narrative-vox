@@ -1987,3 +1987,108 @@ test("checkRun rejects mixed technical term when adjacent to ASCII letters", asy
   ]);
   assert.deepEqual(report.details.notation_inconsistencies, []);
 });
+
+test("checkRun rejects mixed technical term when adjacent to fullwidth ASCII letters", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] ＸHTTPリクエスト と v8エンジンＡ を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "v8エンジン", note: "fullwidth ascii suffix should fail" },
+      { term: "HTTPリクエスト", note: "fullwidth ascii prefix should fail" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(
+    [...report.details.missing_in_script].sort((a, b) => a.localeCompare(b, "ja")),
+    ["HTTPリクエスト", "v8エンジン"],
+  );
+});
+
+test("checkRun treats mixed technical terms at line-end boundaries as covered", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエスト",
+      "## 2. 本編",
+      "[speaker:student] v8エンジン",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "newline boundary term end" },
+      { term: "v8エンジン", note: "newline boundary term end" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 2);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun keeps mixed term covered when valid and invalid boundaries coexist", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエスト と XHTTPリクエスト を比較します。",
+      "## 2. 本編",
+      "[speaker:student] 用語確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "mixed valid+invalid boundary coexist" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: {
+      missing_in_script: string[];
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.deepEqual(report.details.notation_inconsistencies, []);
+});
+
+test("checkRun does not allow substring false-positive for mixed technical term with fullwidth digit suffix", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] v8エンジン２の例を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "v8エンジン", note: "fullwidth digit suffix false-positive" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(report.details.missing_in_script, ["v8エンジン"]);
+});
