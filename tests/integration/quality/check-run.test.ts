@@ -1499,3 +1499,102 @@ test("checkRun matches non-ascii technical term by normalized substring", async 
   assert.equal(report.summary.covered_terms, 1);
   assert.deepEqual(report.details.missing_in_script, []);
 });
+
+test("checkRun treats contiguous mixed technical terms as covered", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストとv8エンジンを説明します。",
+      "## 2. 本編",
+      "[speaker:student] HTTPリクエストを再確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed term" },
+      { term: "v8エンジン", note: "mixed term" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 2);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun does not treat spaced or hyphenated mixed technical term as covered", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTP リクエストとHTTP-リクエストの違いを説明します。",
+      "## 2. 本編",
+      "[speaker:student] 用語確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "mixed term strict contiguous" }],
+  }));
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: { missing_in_script: string[] };
+  };
+  assert.deepEqual(report.details.missing_in_script, ["HTTPリクエスト"]);
+  assert.ok(
+    result.warnings.some((warning) => warning.includes("technical_terms missing in script")),
+  );
+});
+
+test("checkRun normalizes mixed technical term coverage by NFKC and case", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] ＨＴＴＰリクエストとV8エンジンを説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "NFKC normalization" },
+      { term: "v8エンジン", note: "case normalization" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 2);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun currently allows substring false-positive for mixed technical term", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] v8エンジン2の例を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "v8エンジン", note: "known limitation: substring false-positive" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+});

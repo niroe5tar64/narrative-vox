@@ -179,6 +179,14 @@ function hasAsciiAlphaNum(value: string): boolean {
   return /[A-Za-z0-9]/.test(value.normalize("NFKC"));
 }
 
+function hasNonAsciiChar(value: string): boolean {
+  return /[^\x00-\x7F]/.test(value.normalize("NFKC"));
+}
+
+function isMixedTechnicalTerm(term: string): boolean {
+  return hasAsciiAlphaNum(term) && hasNonAsciiChar(term);
+}
+
 function splitTechnicalTermWords(term: string): string[] {
   const normalized = normalizeTechnicalTermText(term);
   if (!normalized) {
@@ -211,7 +219,11 @@ function isTechnicalTermCoveredInScript(
   normalizedScriptText: string,
   term: string,
 ): boolean {
-  // Known limitation: mixed terms like "HTTPリクエスト" are handled by ASCII path.
+  if (isMixedTechnicalTerm(term)) {
+    const normalizedTermText = normalizeTechnicalTermText(term);
+    return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
+  }
+
   if (!hasAsciiAlphaNum(term)) {
     const normalizedTermText = normalizeTechnicalTermText(term);
     return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
