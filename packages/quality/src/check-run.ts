@@ -86,7 +86,7 @@ interface TechnicalTermsAuditDetail {
 }
 
 interface TechnicalTermsAuditReport {
-  schema_version: "1.0";
+  schema_version: "1.1";
   meta: {
     project_id: string;
     run_id: string;
@@ -98,8 +98,10 @@ interface TechnicalTermsAuditReport {
   };
   summary: {
     total_terms: number;
+    evaluated_terms: number;
     covered_terms: number;
     coverage_ratio: number;
+    skipped_non_ascii_terms_count: number;
     unresolved_high_risk_count: number;
     notation_inconsistency_count: number;
     warnings_count: number;
@@ -109,6 +111,7 @@ interface TechnicalTermsAuditReport {
     missing_in_script: string[];
     missing_in_dictionary_candidates: string[];
     unresolved_high_risk_terms: string[];
+    skipped_non_ascii_terms: string[];
     notation_inconsistencies: TechnicalTermsAuditDetail[];
   };
 }
@@ -490,12 +493,6 @@ function isTechnicalTermCoveredInScript(
     return hasMixedTermAsciiBoundaryMatch(normalizedScriptText, normalizedTermText);
   }
 
-  // Scope note: non-ASCII-only terms keep current substring matching in Task 1.
-  if (!hasAsciiAlphaNum(term)) {
-    const normalizedTermText = normalizeTechnicalTermText(term);
-    return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
-  }
-
   const normalizedTermToken = normalizeTechnicalTermToken(term);
   if (!normalizedTermToken) {
     return false;
@@ -704,9 +701,11 @@ function buildTechnicalTermsAuditReport(params: {
     ),
   );
   const dictionaryCoverageSkipped = params.dictionaryCoverageSkipped;
+  const morphTokenizer = params.morphTokenizer;
   const missingInScript: string[] = [];
   const missingInDictionaryCandidates: string[] = [];
   const unresolvedHighRiskTerms: string[] = [];
+  const skippedNonAsciiTerms: string[] = [];
   const notationInconsistencies: TechnicalTermsAuditDetail[] = [];
   const warnings: string[] = [];
   let coveredTerms = 0;
@@ -719,35 +718,50 @@ function buildTechnicalTermsAuditReport(params: {
     }
 
     const isNonAsciiTerm = !hasAsciiAlphaNum(term);
-    const inScript =
-      isNonAsciiTerm && params.morphTokenizer
-        ? isNonAsciiTermCoveredByMorphTokenSequence(
-            scriptMorphTokenSpans,
-            term,
-            params.morphTokenizer,
-          )
-        : isTechnicalTermCoveredInScript(scriptTokens, normalizedScriptText, term);
+
+    let inScript = false;
+    let variants: string[] = [];
+    if (isNonAsciiTerm) {
+      const tokenizer = morphTokenizer;
+      if (!tokenizer) {
+        skippedNonAsciiTerms.push(term);
+        continue;
+      }
+      inScript = isNonAsciiTermCoveredByMorphTokenSequence(
+        scriptMorphTokenSpans,
+        term,
+        tokenizer,
+      );
+      if (inScript) {
+        variants = findNonAsciiNotationVariantsByMorph({
+          scriptText: params.scriptText,
+          scriptMorphTokenSpans,
+          term,
+          morphTokenizer: tokenizer,
+        });
+      }
+    } else {
+      inScript = isTechnicalTermCoveredInScript(
+        scriptTokens,
+        normalizedScriptText,
+        term,
+      );
+      if (inScript) {
+        variants = findNotationVariants({
+          scriptText: params.scriptText,
+          term,
+          scriptTokenSpans,
+          normalizedScriptText,
+          rawStartByNormalizedIndex:
+            normalizedTextIndexMap.rawStartByNormalizedIndex,
+          rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
+        });
+      }
+    }
     if (!inScript) {
       missingInScript.push(term);
     } else {
       coveredTerms += 1;
-      const variants =
-        isNonAsciiTerm && params.morphTokenizer
-          ? findNonAsciiNotationVariantsByMorph({
-              scriptText: params.scriptText,
-              scriptMorphTokenSpans,
-              term,
-              morphTokenizer: params.morphTokenizer,
-            })
-          : findNotationVariants({
-              scriptText: params.scriptText,
-              term,
-              scriptTokenSpans,
-              normalizedScriptText,
-              rawStartByNormalizedIndex:
-                normalizedTextIndexMap.rawStartByNormalizedIndex,
-              rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
-            });
       if (variants.length === 0) {
         warnings.push(`covered technical term has no notation variants: ${term}`);
       }
@@ -795,6 +809,11 @@ function buildTechnicalTermsAuditReport(params: {
         .join("; ")}`,
     );
   }
+  if (skippedNonAsciiTerms.length > 0) {
+    warnings.push(
+      `morphological tokenizer unavailable; skipped ${skippedNonAsciiTerms.length} non-ASCII term(s) — see audit report for details`,
+    );
+  }
   if (dictionaryCoverageSkipped) {
     warnings.push(
       "dictionary_candidates audit skipped because voicevox_text is missing or invalid",
@@ -802,9 +821,10 @@ function buildTechnicalTermsAuditReport(params: {
   }
 
   const totalTerms = params.technicalTerms.length;
-  const coverageRatio = totalTerms > 0 ? coveredTerms / totalTerms : 1;
+  const evaluatedTerms = totalTerms - skippedNonAsciiTerms.length;
+  const coverageRatio = evaluatedTerms > 0 ? coveredTerms / evaluatedTerms : 1;
   return {
-    schema_version: "1.0",
+    schema_version: "1.1",
     meta: {
       project_id: params.projectId,
       run_id: params.runId,
@@ -818,8 +838,10 @@ function buildTechnicalTermsAuditReport(params: {
     },
     summary: {
       total_terms: totalTerms,
+      evaluated_terms: evaluatedTerms,
       covered_terms: coveredTerms,
       coverage_ratio: Number(coverageRatio.toFixed(4)),
+      skipped_non_ascii_terms_count: skippedNonAsciiTerms.length,
       unresolved_high_risk_count: unresolvedHighRiskTerms.length,
       notation_inconsistency_count: notationInconsistencies.length,
       warnings_count: warnings.length,
@@ -829,6 +851,7 @@ function buildTechnicalTermsAuditReport(params: {
       missing_in_script: missingInScript,
       missing_in_dictionary_candidates: missingInDictionaryCandidates,
       unresolved_high_risk_terms: unresolvedHighRiskTerms,
+      skipped_non_ascii_terms: skippedNonAsciiTerms,
       notation_inconsistencies: notationInconsistencies,
     },
   };
@@ -1325,14 +1348,6 @@ export async function checkRun({
     const voicevoxTextPath = hasValidVoicevoxText
       ? `voicevox_text/${episodeId}_voicevox_text.json`
       : undefined;
-    if (
-      !morphTokenizer &&
-      technicalTerms.some((term) => !hasAsciiAlphaNum(term))
-    ) {
-      warnings.push(
-        `${episodeId}: morphological tokenizer unavailable; falling back to substring matching for non-ASCII terms`,
-      );
-    }
     const report = buildTechnicalTermsAuditReport({
       episodeId,
       projectId,
@@ -1354,7 +1369,7 @@ export async function checkRun({
         warnings.push(`${episodeId}: ${warning}`);
       }
       warnings.push(
-        `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.total_terms})`,
+        `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.evaluated_terms})`,
       );
     }
   }

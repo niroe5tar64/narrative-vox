@@ -1798,7 +1798,7 @@ test("checkRun avoids non-ascii substring false-positive when morph tokenizer is
   );
 });
 
-test("checkRun falls back to non-ascii substring matching when morph tokenizer is unavailable", async () => {
+test("checkRun skips non-ascii technical term audit when morph tokenizer is unavailable", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [
       "## 1. オープニング",
@@ -1815,17 +1815,146 @@ test("checkRun falls back to non-ascii substring matching when morph tokenizer i
   const result = await checkRun({ runDir, morphTokenizerOverride: null });
   const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { covered_terms: number };
-    details: { missing_in_script: string[] };
+    schema_version: string;
+    summary: {
+      total_terms: number;
+      evaluated_terms: number;
+      covered_terms: number;
+      coverage_ratio: number;
+      skipped_non_ascii_terms_count: number;
+    };
+    details: {
+      missing_in_script: string[];
+      missing_in_dictionary_candidates: string[];
+      skipped_non_ascii_terms: string[];
+    };
   };
 
-  assert.equal(report.summary.covered_terms, 1);
+  assert.equal(report.schema_version, "1.1");
+  assert.equal(report.summary.total_terms, 1);
+  assert.equal(report.summary.evaluated_terms, 0);
+  assert.equal(report.summary.covered_terms, 0);
+  assert.equal(report.summary.coverage_ratio, 1);
+  assert.equal(report.summary.skipped_non_ascii_terms_count, 1);
+  assert.deepEqual(report.details.skipped_non_ascii_terms, ["関数"]);
   assert.deepEqual(report.details.missing_in_script, []);
+  assert.deepEqual(report.details.missing_in_dictionary_candidates, []);
   assert.ok(
     result.warnings.some((warning) =>
       warning.includes(
-        "E01: morphological tokenizer unavailable; falling back to substring matching for non-ASCII terms",
+        "E01: morphological tokenizer unavailable; skipped 1 non-ASCII term(s) — see audit report for details",
       ),
+    ),
+  );
+});
+
+test("checkRun keeps ascii technical term audit active when morph tokenizer is unavailable", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] API 設計を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "API", note: "ascii should still be audited" }],
+  }));
+
+  const result = await checkRun({ runDir, morphTokenizerOverride: null });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { total_terms: number; evaluated_terms: number; covered_terms: number };
+    details: { skipped_non_ascii_terms: string[]; missing_in_script: string[] };
+  };
+
+  assert.equal(report.summary.total_terms, 1);
+  assert.equal(report.summary.evaluated_terms, 1);
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.skipped_non_ascii_terms, []);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.ok(
+    !result.warnings.some((warning) => warning.includes("skipped 1 non-ASCII term")),
+  );
+});
+
+test("checkRun does not skip mixed technical term audit when morph tokenizer is unavailable", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストを説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "mixed should not be skipped" }],
+  }));
+
+  const result = await checkRun({ runDir, morphTokenizerOverride: null });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { total_terms: number; evaluated_terms: number; covered_terms: number };
+    details: { skipped_non_ascii_terms: string[]; missing_in_script: string[] };
+  };
+
+  assert.equal(report.summary.total_terms, 1);
+  assert.equal(report.summary.evaluated_terms, 1);
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.skipped_non_ascii_terms, []);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.ok(
+    !result.warnings.some((warning) => warning.includes("skipped 1 non-ASCII term")),
+  );
+});
+
+test("checkRun skips dictionary and high-risk checks for non-ascii term when morph tokenizer is unavailable", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 相関数値を計算します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "関数", note: "non-ascii skip all checks" }],
+  }));
+
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify(
+      {
+        ...validVoicevoxText,
+        dictionary_candidates: [],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf-8",
+  );
+
+  const result = await checkRun({ runDir, morphTokenizerOverride: null });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      skipped_non_ascii_terms: string[];
+      missing_in_dictionary_candidates: string[];
+      unresolved_high_risk_terms: string[];
+    };
+  };
+
+  assert.deepEqual(report.details.skipped_non_ascii_terms, ["関数"]);
+  assert.deepEqual(report.details.missing_in_dictionary_candidates, []);
+  assert.deepEqual(report.details.unresolved_high_risk_terms, []);
+  assert.ok(
+    !result.warnings.some((warning) =>
+      warning.includes("technical_terms missing in dictionary_candidates"),
     ),
   );
 });
