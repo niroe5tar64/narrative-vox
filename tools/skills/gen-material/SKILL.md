@@ -58,7 +58,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 6. セクションはトピック単位（3〜6個）で構成する。台本のセクション構成とは独立。
 7. 各要素に `importance` ("must" / "should" / "optional") を付与する。
 8. `depends_on` で要素間の理解順序制約を記述する。
-9. `technical_terms` でVOICEVOX読み辞書候補となる技術用語を抽出する。
+9. `technical_terms` で品質監査・用語追跡に使う技術用語を抽出する。
 
 ### Step 5: 出力保存
 
