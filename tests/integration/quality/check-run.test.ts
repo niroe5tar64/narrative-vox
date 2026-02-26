@@ -1702,7 +1702,7 @@ test("checkRun reports non-ascii notation inconsistencies with raw variants", as
   ]);
 });
 
-test("checkRun currently allows substring false-positive for mixed technical term", async () => {
+test("checkRun does not allow substring false-positive for mixed technical term", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [
       "## 1. オープニング",
@@ -1721,6 +1721,61 @@ test("checkRun currently allows substring false-positive for mixed technical ter
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
   };
-  assert.equal(report.summary.covered_terms, 1);
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(report.details.missing_in_script, ["v8エンジン"]);
+});
+
+test("checkRun treats mixed technical terms as covered at Japanese particle and punctuation boundaries", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストの例とv8エンジンを説明します。",
+      "## 2. 本編",
+      "[speaker:student] 「v8エンジン」、v8エンジン。も確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "particle boundary" },
+      { term: "v8エンジン", note: "punctuation boundary" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 2);
   assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun rejects mixed technical term when adjacent to ASCII letters", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] Xv8エンジン と v8エンジンA、HTTPリクエストX を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "v8エンジン", note: "ascii adjacency should fail" },
+      { term: "HTTPリクエスト", note: "ascii suffix should fail" },
+    ],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 0);
+  assert.deepEqual(report.details.missing_in_script, [
+    "HTTPリクエスト",
+    "v8エンジン",
+  ]);
 });

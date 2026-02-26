@@ -340,6 +340,40 @@ function containsWordSequence(tokens: string[], words: string[]): boolean {
   return false;
 }
 
+function isAsciiAlphaNumChar(value: string): boolean {
+  return /^[A-Za-z0-9]$/.test(value);
+}
+
+function hasMixedTermAsciiBoundaryMatch(
+  normalizedScriptText: string,
+  normalizedTermText: string,
+): boolean {
+  if (!normalizedTermText) {
+    return false;
+  }
+
+  let searchFrom = 0;
+  for (;;) {
+    const index = normalizedScriptText.indexOf(normalizedTermText, searchFrom);
+    if (index < 0) {
+      return false;
+    }
+
+    const prevChar = index > 0 ? normalizedScriptText[index - 1] : "";
+    const nextIndex = index + normalizedTermText.length;
+    const nextChar =
+      nextIndex < normalizedScriptText.length
+        ? normalizedScriptText[nextIndex]
+        : "";
+
+    if (!isAsciiAlphaNumChar(prevChar) && !isAsciiAlphaNumChar(nextChar)) {
+      return true;
+    }
+
+    searchFrom = index + 1;
+  }
+}
+
 function isTechnicalTermCoveredInScript(
   scriptTokens: string[],
   normalizedScriptText: string,
@@ -347,9 +381,10 @@ function isTechnicalTermCoveredInScript(
 ): boolean {
   if (isMixedTechnicalTerm(term)) {
     const normalizedTermText = normalizeTechnicalTermText(term);
-    return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
+    return hasMixedTermAsciiBoundaryMatch(normalizedScriptText, normalizedTermText);
   }
 
+  // Scope note: non-ASCII-only terms keep current substring matching in Task 1.
   if (!hasAsciiAlphaNum(term)) {
     const normalizedTermText = normalizeTechnicalTermText(term);
     return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
