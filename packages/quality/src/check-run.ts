@@ -138,11 +138,8 @@ async function dirExists(dirPath: string): Promise<boolean> {
   }
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeTechnicalTermForMatch(term: string): string {
+// For token-level matching and dictionary surface comparison.
+function normalizeTechnicalTermToken(term: string): string {
   return term
     .trim()
     .normalize("NFKC")
@@ -152,6 +149,87 @@ function normalizeTechnicalTermForMatch(term: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\s+/g, "");
+}
+
+// For loose text/ruby surface comparison where spaces must remain meaningful.
+function normalizeTechnicalTermText(term: string): string {
+  return term
+    .trim()
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[_./+\-]/g, " ")
+    .replace(/[()[\]{}"'`“”‘’<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeTechnicalMatchScript(scriptText: string): string[] {
+  const tokenPattern = /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
+  const tokens: string[] = [];
+  for (const match of scriptText.matchAll(tokenPattern)) {
+    const token = normalizeTechnicalTermToken(match[0] || "");
+    if (token) {
+      tokens.push(token);
+    }
+  }
+  return tokens;
+}
+
+function hasAsciiAlphaNum(value: string): boolean {
+  return /[A-Za-z0-9]/.test(value.normalize("NFKC"));
+}
+
+function splitTechnicalTermWords(term: string): string[] {
+  const normalized = normalizeTechnicalTermText(term);
+  if (!normalized) {
+    return [];
+  }
+  return normalized.split(" ").filter((part) => part.length > 0);
+}
+
+function containsWordSequence(tokens: string[], words: string[]): boolean {
+  if (words.length === 0 || words.length > tokens.length) {
+    return false;
+  }
+  for (let i = 0; i <= tokens.length - words.length; i++) {
+    let matches = true;
+    for (let j = 0; j < words.length; j++) {
+      if (tokens[i + j] !== words[j]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isTechnicalTermCoveredInScript(
+  scriptTokens: string[],
+  normalizedScriptText: string,
+  term: string,
+): boolean {
+  // Known limitation: mixed terms like "HTTPリクエスト" are handled by ASCII path.
+  if (!hasAsciiAlphaNum(term)) {
+    const normalizedTermText = normalizeTechnicalTermText(term);
+    return normalizedTermText.length > 0 && normalizedScriptText.includes(normalizedTermText);
+  }
+
+  const normalizedTermToken = normalizeTechnicalTermToken(term);
+  if (!normalizedTermToken) {
+    return false;
+  }
+
+  const termWords = splitTechnicalTermWords(term);
+  if (termWords.length >= 2) {
+    if (containsWordSequence(scriptTokens, termWords)) {
+      return true;
+    }
+  }
+  // Allow joined notation for multi-word terms while keeping single-word terms strict.
+  return scriptTokens.includes(normalizedTermToken);
 }
 
 function collectTechnicalTerms(
@@ -191,12 +269,17 @@ function isHighRiskTechnicalTerm(term: string): boolean {
 }
 
 function hasRubyReadingForTerm(scriptText: string, term: string): boolean {
-  const escaped = escapeRegExp(term.trim());
-  if (!escaped) {
+  const normalizedTerm = normalizeTechnicalTermText(term);
+  if (!normalizedTerm) {
     return false;
   }
-  const rubyPattern = new RegExp(`\\{\\s*${escaped}\\s*\\|[^{}]+\\}`, "u");
-  return rubyPattern.test(scriptText);
+  for (const match of scriptText.matchAll(/\{\s*([^|{}]+?)\s*\|[^{}]+\}/gu)) {
+    const surface = normalizeTechnicalTermText(match[1] || "");
+    if (surface && surface === normalizedTerm) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function findNotationVariants(scriptText: string, normalizedTarget: string): string[] {
@@ -211,7 +294,7 @@ function findNotationVariants(scriptText: string, normalizedTarget: string): str
     if (!token) {
       continue;
     }
-    if (normalizeTechnicalTermForMatch(token) === normalizedTarget) {
+    if (normalizeTechnicalTermToken(token) === normalizedTarget) {
       variants.add(token);
     }
   }
@@ -230,10 +313,11 @@ function buildTechnicalTermsAuditReport(params: {
   dictionarySurfaces: string[];
   dictionaryCoverageSkipped: boolean;
 }): TechnicalTermsAuditReport {
-  const normalizedScriptText = normalizeTechnicalTermForMatch(params.scriptText);
+  const scriptTokens = tokenizeTechnicalMatchScript(params.scriptText);
+  const normalizedScriptText = normalizeTechnicalTermText(params.scriptText);
   const normalizedDictionary = new Set(
     params.dictionarySurfaces.map((surface) =>
-      normalizeTechnicalTermForMatch(surface),
+      normalizeTechnicalTermToken(surface),
     ),
   );
   const dictionaryCoverageSkipped = params.dictionaryCoverageSkipped;
@@ -245,13 +329,17 @@ function buildTechnicalTermsAuditReport(params: {
   let coveredTerms = 0;
 
   for (const term of params.technicalTerms) {
-    const normalized = normalizeTechnicalTermForMatch(term);
+    const normalized = normalizeTechnicalTermToken(term);
     if (!normalized) {
       warnings.push(`Invalid technical term skipped: "${term}"`);
       continue;
     }
 
-    const inScript = normalizedScriptText.includes(normalized);
+    const inScript = isTechnicalTermCoveredInScript(
+      scriptTokens,
+      normalizedScriptText,
+      term,
+    );
     if (!inScript) {
       missingInScript.push(term);
     } else {
@@ -845,10 +933,10 @@ export async function checkRun({
       for (const warning of report.warnings) {
         warnings.push(`${episodeId}: ${warning}`);
       }
+      warnings.push(
+        `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.total_terms})`,
+      );
     }
-    warnings.push(
-      `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.total_terms})`,
-    );
   }
 
   return {

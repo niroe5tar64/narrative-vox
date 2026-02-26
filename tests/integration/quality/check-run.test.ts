@@ -1299,9 +1299,10 @@ test("checkRun writes technical_terms audit report under context/", async () => 
   assert.deepEqual(report.details.missing_in_script, []);
   assert.deepEqual(report.details.missing_in_dictionary_candidates, []);
   assert.ok(
-    result.warnings.some((warning) =>
+    !result.warnings.some((warning) =>
       warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
     ),
+    `Expected no report-written warning when audit has no warnings, got: ${JSON.stringify(result.warnings)}`,
   );
 });
 
@@ -1358,4 +1359,143 @@ test("checkRun warns on notation inconsistencies and unresolved high-risk terms"
     ),
     `Expected unresolved high-risk warning, got: ${JSON.stringify(result.warnings)}`,
   );
+});
+
+test("checkRun does not treat spaced words as merged term match", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] type script の違いを確認します。",
+      "## 2. 本編",
+      "[speaker:student] ここでは型システムの話をします。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "TypeScript", note: "語連結誤検出を防ぐ" }],
+  }));
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: { missing_in_script: string[] };
+  };
+  assert.deepEqual(report.details.missing_in_script, ["TypeScript"]);
+  assert.ok(
+    result.warnings.some((warning) => warning.includes("technical_terms missing in script")),
+  );
+});
+
+test("checkRun treats multi-word technical term as covered when words are contiguous", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] Double Array Trie を使います。",
+      "## 2. 本編",
+      "[speaker:student] 実装を確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "Double Array Trie", note: "複合語" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun treats joined notation as covered for multi-word technical term", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] Double-Array-Trie を使います。",
+      "## 2. 本編",
+      "[speaker:student] 実装を確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "Double Array Trie", note: "結合表記許可" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun resolves high-risk term by ruby notation case-insensitively", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] {typescript|タイプスクリプト} を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 説明は続きます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "TypeScript", note: "Ruby解決テスト" }],
+  }));
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: { unresolved_high_risk_terms: string[] };
+  };
+  assert.deepEqual(report.details.unresolved_high_risk_terms, []);
+  assert.ok(
+    !result.warnings.some((warning) => warning.includes("high-risk technical_terms unresolved")),
+  );
+});
+
+test("checkRun adds report-written warning when technical_terms warnings exist", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] API について話します。",
+      "## 2. 本編",
+      "[speaker:student] 解説を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "TypeScript", note: "missing warningを発生させる" }],
+  }));
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
+    ),
+    `Expected report written warning when audit has warnings, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun matches non-ascii technical term by normalized substring", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] 形態素解析の基本を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 形態素解析をもう一度確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "形態素解析", note: "非ASCII term" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
 });
