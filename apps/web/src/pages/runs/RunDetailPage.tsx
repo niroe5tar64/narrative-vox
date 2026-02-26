@@ -144,12 +144,9 @@ export function RunDetailPage() {
       )}
 
       {/* 2-pane: tree + viewer */}
-      <div
-        className="grid min-w-0 grid-cols-[260px_minmax(0,1fr)] gap-4"
-        style={{ minHeight: "520px" }}
-      >
+      <div className="grid min-w-0 h-[calc(100dvh-8rem)] grid-cols-[260px_minmax(0,1fr)] gap-4">
         {/* Left: File Tree */}
-        <div className="rounded-xl border border-slate-200 bg-white/80 backdrop-blur overflow-y-auto">
+        <div className="h-full min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white/80 backdrop-blur">
           {treeLoading ? (
             <div className="flex justify-center py-8">
               <Spinner />
@@ -170,7 +167,7 @@ export function RunDetailPage() {
         </div>
 
         {/* Right: File Viewer */}
-        <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white/80 backdrop-blur">
+        <div className="flex h-full min-w-0 min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white/80 backdrop-blur">
           {selectedFile ? (
             <FileViewer
               projectId={projectId}

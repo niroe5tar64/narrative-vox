@@ -51,7 +51,7 @@ export function AppShell() {
           </nav>
         </aside>
 
-        <main className="min-w-0 px-5 py-6 sm:px-8">
+        <main className="min-w-0 px-4 py-4 sm:px-8">
           <Outlet />
         </main>
       </div>
