@@ -655,22 +655,10 @@ function findNotationVariants(params: {
 
   const termWords = splitTechnicalTermWords(params.term);
   if (termWords.length >= 2) {
-    for (let i = 0; i <= params.scriptTokenSpans.length - termWords.length; i++) {
-      let matched = true;
-      for (let j = 0; j < termWords.length; j++) {
-        if (params.scriptTokenSpans[i + j]?.normalized !== termWords[j]) {
-          matched = false;
-          break;
-        }
-      }
-      if (!matched) {
-        continue;
-      }
-      const start = params.scriptTokenSpans[i]?.start;
-      const end = params.scriptTokenSpans[i + termWords.length - 1]?.end;
-      if (start === undefined || end === undefined || end <= start) {
-        continue;
-      }
+    const spans = collectTokenSequenceSpans(params.scriptTokenSpans, termWords);
+    for (const span of spans) {
+      const start = span.start;
+      const end = span.end;
       const rawVariant = params.scriptText.slice(start, end).trim();
       if (rawVariant) {
         variants.add(rawVariant);
