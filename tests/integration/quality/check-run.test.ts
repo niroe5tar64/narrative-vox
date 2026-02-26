@@ -1347,6 +1347,16 @@ test("checkRun warns on notation inconsistencies and unresolved high-risk terms"
   }));
 
   const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    { term: "TypeScript", variants: ["Type-Script", "TypeScript"] },
+  ]);
   assert.ok(
     result.warnings.some((warning) =>
       warning.includes("technical_terms notation inconsistencies"),
@@ -1429,6 +1439,36 @@ test("checkRun treats joined notation as covered for multi-word technical term",
   };
   assert.equal(report.summary.covered_terms, 1);
   assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun finds notation variants for multi-word term across spaced, joined, and hyphenated forms", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] Double Array Trie と DoubleArrayTrie の比較です。",
+      "## 2. 本編",
+      "[speaker:student] Double-Array-Trie も登場します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "Double Array Trie", note: "表記ゆれ確認" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    {
+      term: "Double Array Trie",
+      variants: ["Double Array Trie", "Double-Array-Trie", "DoubleArrayTrie"],
+    },
+  ]);
 });
 
 test("checkRun resolves high-risk term by ruby notation case-insensitively", async () => {
@@ -1574,6 +1614,92 @@ test("checkRun normalizes mixed technical term coverage by NFKC and case", async
   };
   assert.equal(report.summary.covered_terms, 2);
   assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun reports mixed term notation inconsistencies with raw variants", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストとＨＴＴＰリクエストを比較します。",
+      "## 2. 本編",
+      "[speaker:student] 用語確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "mixed notation variants" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    {
+      term: "HTTPリクエスト",
+      variants: ["HTTPリクエスト", "ＨＴＴＰリクエスト"],
+    },
+  ]);
+});
+
+test("checkRun keeps at least one variant for covered mixed term", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストの例です。",
+      "## 2. 本編",
+      "[speaker:student] 確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "variant invariant" }],
+  }));
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.notation_inconsistencies, []);
+  assert.ok(
+    !result.warnings.some((warning) =>
+      warning.includes("covered technical term has no notation variants"),
+    ),
+  );
+});
+
+test("checkRun reports non-ascii notation inconsistencies with raw variants", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] サーバーとｻｰﾊﾞｰの表記を比較します。",
+      "## 2. 本編",
+      "[speaker:student] 用語確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "サーバー", note: "non-ascii notation variants" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    {
+      term: "サーバー",
+      variants: ["ｻｰﾊﾞｰ", "サーバー"],
+    },
+  ]);
 });
 
 test("checkRun currently allows substring false-positive for mixed technical term", async () => {

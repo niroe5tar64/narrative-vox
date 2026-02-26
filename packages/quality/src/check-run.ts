@@ -163,16 +163,142 @@ function normalizeTechnicalTermText(term: string): string {
     .trim();
 }
 
-function tokenizeTechnicalMatchScript(scriptText: string): string[] {
-  const tokenPattern = /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
-  const tokens: string[] = [];
-  for (const match of scriptText.matchAll(tokenPattern)) {
-    const token = normalizeTechnicalTermToken(match[0] || "");
-    if (token) {
-      tokens.push(token);
+interface ScriptTokenSpan {
+  raw: string;
+  normalized: string;
+  start: number;
+  end: number;
+}
+
+interface NormalizedTextIndexMap {
+  normalizedText: string;
+  rawStartByNormalizedIndex: number[];
+  rawEndByNormalizedIndex: number[];
+}
+
+const TECHNICAL_TOKEN_PATTERN =
+  /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
+const TECHNICAL_TO_SPACE_CHARS = new Set([
+  "_",
+  ".",
+  "/",
+  "+",
+  "-",
+  "(",
+  ")",
+  "[",
+  "]",
+  "{",
+  "}",
+  '"',
+  "'",
+  "`",
+  "“",
+  "”",
+  "‘",
+  "’",
+  "<",
+  ">",
+]);
+
+function tokenizeTechnicalMatchScript(scriptText: string): ScriptTokenSpan[] {
+  const tokens: ScriptTokenSpan[] = [];
+  for (const match of scriptText.matchAll(TECHNICAL_TOKEN_PATTERN)) {
+    const rawToken = match[0] || "";
+    const normalized = normalizeTechnicalTermToken(rawToken);
+    const start = match.index ?? -1;
+    if (!normalized || start < 0) {
+      continue;
     }
+    tokens.push({
+      raw: rawToken,
+      normalized,
+      start,
+      end: start + rawToken.length,
+    });
   }
   return tokens;
+}
+
+function normalizeTechnicalTextChar(char: string): string {
+  if (TECHNICAL_TO_SPACE_CHARS.has(char) || /\s/.test(char)) {
+    return " ";
+  }
+  return char;
+}
+
+function buildNormalizedTextIndexMap(scriptText: string): NormalizedTextIndexMap {
+  const normalizedChars: string[] = [];
+  const rawStartByNormalizedIndex: number[] = [];
+  const rawEndByNormalizedIndex: number[] = [];
+  let previousWasSpace = false;
+
+  const clusters: Array<{ rawStart: number; rawEnd: number; text: string }> = [];
+  for (let rawIndex = 0; rawIndex < scriptText.length; ) {
+    const current = scriptText[rawIndex];
+    if (!current) {
+      break;
+    }
+    let rawEnd = rawIndex + current.length;
+    let clusterText = current;
+
+    while (rawEnd < scriptText.length) {
+      const next = scriptText[rawEnd];
+      if (!next) {
+        break;
+      }
+      if (!/[\p{M}\uFF9E\uFF9F]/u.test(next)) {
+        break;
+      }
+      clusterText += next;
+      rawEnd += next.length;
+    }
+
+    clusters.push({ rawStart: rawIndex, rawEnd, text: clusterText });
+    rawIndex = rawEnd;
+  }
+
+  for (const cluster of clusters) {
+    const normalizedChunk = cluster.text.normalize("NFKC").toLowerCase();
+    if (!normalizedChunk) {
+      continue;
+    }
+
+    for (const chunkChar of normalizedChunk) {
+      const normalizedChar = normalizeTechnicalTextChar(chunkChar);
+      if (normalizedChar === " ") {
+        if (normalizedChars.length === 0 || previousWasSpace) {
+          continue;
+        }
+        normalizedChars.push(" ");
+        rawStartByNormalizedIndex.push(cluster.rawStart);
+        rawEndByNormalizedIndex.push(cluster.rawEnd);
+        previousWasSpace = true;
+        continue;
+      }
+
+      normalizedChars.push(normalizedChar);
+      rawStartByNormalizedIndex.push(cluster.rawStart);
+      rawEndByNormalizedIndex.push(cluster.rawEnd);
+      previousWasSpace = false;
+    }
+  }
+
+  while (normalizedChars.length > 0 && normalizedChars[normalizedChars.length - 1] === " ") {
+    normalizedChars.pop();
+    rawStartByNormalizedIndex.pop();
+    rawEndByNormalizedIndex.pop();
+  }
+
+  return {
+    normalizedText: normalizedChars.join(""),
+    rawStartByNormalizedIndex,
+    rawEndByNormalizedIndex,
+  };
+}
+
+function normalizedTokensFromSpans(scriptTokenSpans: ScriptTokenSpan[]): string[] {
+  return scriptTokenSpans.map((token) => token.normalized);
 }
 
 function hasAsciiAlphaNum(value: string): boolean {
@@ -294,22 +420,96 @@ function hasRubyReadingForTerm(scriptText: string, term: string): boolean {
   return false;
 }
 
-function findNotationVariants(scriptText: string, normalizedTarget: string): string[] {
+function findTextNotationVariants(params: {
+  scriptText: string;
+  normalizedScriptText: string;
+  rawStartByNormalizedIndex: number[];
+  rawEndByNormalizedIndex: number[];
+  normalizedTermText: string;
+}): string[] {
+  if (!params.normalizedTermText) {
+    return [];
+  }
+
+  const variants = new Set<string>();
+  let searchFrom = 0;
+  for (;;) {
+    const index = params.normalizedScriptText.indexOf(params.normalizedTermText, searchFrom);
+    if (index < 0) {
+      break;
+    }
+    const endIndex = index + params.normalizedTermText.length - 1;
+    const rawStart = params.rawStartByNormalizedIndex[index];
+    const rawEnd = params.rawEndByNormalizedIndex[endIndex];
+    if (rawStart !== undefined && rawEnd !== undefined && rawEnd > rawStart) {
+      const rawVariant = params.scriptText.slice(rawStart, rawEnd).trim();
+      if (rawVariant) {
+        variants.add(rawVariant);
+      }
+    }
+    searchFrom = index + 1;
+  }
+  return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function findNotationVariants(params: {
+  scriptText: string;
+  term: string;
+  scriptTokenSpans: ScriptTokenSpan[];
+  normalizedScriptText: string;
+  rawStartByNormalizedIndex: number[];
+  rawEndByNormalizedIndex: number[];
+}): string[] {
+  const variants = new Set<string>();
+  const normalizedTarget = normalizeTechnicalTermToken(params.term);
   if (!normalizedTarget) {
     return [];
   }
 
-  const tokenPattern = /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
-  const variants = new Set<string>();
-  for (const match of scriptText.matchAll(tokenPattern)) {
-    const token = (match[0] || "").trim();
-    if (!token) {
-      continue;
-    }
-    if (normalizeTechnicalTermToken(token) === normalizedTarget) {
-      variants.add(token);
+  if (isMixedTechnicalTerm(params.term) || !hasAsciiAlphaNum(params.term)) {
+    return findTextNotationVariants({
+      scriptText: params.scriptText,
+      normalizedScriptText: params.normalizedScriptText,
+      rawStartByNormalizedIndex: params.rawStartByNormalizedIndex,
+      rawEndByNormalizedIndex: params.rawEndByNormalizedIndex,
+      normalizedTermText: normalizeTechnicalTermText(params.term),
+    });
+  }
+
+  const termWords = splitTechnicalTermWords(params.term);
+  if (termWords.length >= 2) {
+    for (let i = 0; i <= params.scriptTokenSpans.length - termWords.length; i++) {
+      let matched = true;
+      for (let j = 0; j < termWords.length; j++) {
+        if (params.scriptTokenSpans[i + j]?.normalized !== termWords[j]) {
+          matched = false;
+          break;
+        }
+      }
+      if (!matched) {
+        continue;
+      }
+      const start = params.scriptTokenSpans[i]?.start;
+      const end = params.scriptTokenSpans[i + termWords.length - 1]?.end;
+      if (start === undefined || end === undefined || end <= start) {
+        continue;
+      }
+      const rawVariant = params.scriptText.slice(start, end).trim();
+      if (rawVariant) {
+        variants.add(rawVariant);
+      }
     }
   }
+
+  for (const token of params.scriptTokenSpans) {
+    if (token.normalized === normalizedTarget) {
+      const rawVariant = token.raw.trim();
+      if (rawVariant) {
+        variants.add(rawVariant);
+      }
+    }
+  }
+
   return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
 }
 
@@ -325,8 +525,10 @@ function buildTechnicalTermsAuditReport(params: {
   dictionarySurfaces: string[];
   dictionaryCoverageSkipped: boolean;
 }): TechnicalTermsAuditReport {
-  const scriptTokens = tokenizeTechnicalMatchScript(params.scriptText);
-  const normalizedScriptText = normalizeTechnicalTermText(params.scriptText);
+  const scriptTokenSpans = tokenizeTechnicalMatchScript(params.scriptText);
+  const scriptTokens = normalizedTokensFromSpans(scriptTokenSpans);
+  const normalizedTextIndexMap = buildNormalizedTextIndexMap(params.scriptText);
+  const normalizedScriptText = normalizedTextIndexMap.normalizedText;
   const normalizedDictionary = new Set(
     params.dictionarySurfaces.map((surface) =>
       normalizeTechnicalTermToken(surface),
@@ -356,7 +558,18 @@ function buildTechnicalTermsAuditReport(params: {
       missingInScript.push(term);
     } else {
       coveredTerms += 1;
-      const variants = findNotationVariants(params.scriptText, normalized);
+      const variants = findNotationVariants({
+        scriptText: params.scriptText,
+        term,
+        scriptTokenSpans,
+        normalizedScriptText,
+        rawStartByNormalizedIndex:
+          normalizedTextIndexMap.rawStartByNormalizedIndex,
+        rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
+      });
+      if (variants.length === 0) {
+        warnings.push(`covered technical term has no notation variants: ${term}`);
+      }
       if (variants.length >= 2) {
         notationInconsistencies.push({ term, variants });
       }
