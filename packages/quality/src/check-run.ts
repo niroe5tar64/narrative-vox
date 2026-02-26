@@ -1,4 +1,4 @@
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseSectionHeader } from "@narrative-vox/domain/script-structure.ts";
 import {
@@ -51,6 +51,10 @@ interface EpisodeMaterialForCheckRun {
   meta: {
     project_id: string;
   };
+  technical_terms?: Array<{
+    term?: string;
+    note?: string;
+  }>;
 }
 
 interface ProjectConfigForCheckRun {
@@ -62,6 +66,45 @@ interface ContentStyleForCheckRun {
   format: {
     speaker_mode: SpeakerMode;
     speaker_count: number;
+  };
+}
+
+interface VoicevoxTextForCheckRun {
+  dictionary_candidates?: Array<{
+    surface?: string;
+  }>;
+}
+
+interface TechnicalTermsAuditDetail {
+  term: string;
+  variants: string[];
+}
+
+interface TechnicalTermsAuditReport {
+  schema_version: "1.0";
+  meta: {
+    project_id: string;
+    run_id: string;
+    episode_id: string;
+    generated_at: string;
+    source_material_path: string;
+    source_script_path: string;
+    source_voicevox_text_path?: string;
+  };
+  summary: {
+    total_terms: number;
+    covered_terms: number;
+    coverage_ratio: number;
+    unresolved_high_risk_count: number;
+    notation_inconsistency_count: number;
+    warnings_count: number;
+  };
+  warnings: string[];
+  details: {
+    missing_in_script: string[];
+    missing_in_dictionary_candidates: string[];
+    unresolved_high_risk_terms: string[];
+    notation_inconsistencies: TechnicalTermsAuditDetail[];
   };
 }
 
@@ -93,6 +136,208 @@ async function dirExists(dirPath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeTechnicalTermForMatch(term: string): string {
+  return term
+    .trim()
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[_./+\-]/g, " ")
+    .replace(/[()[\]{}"'`“”‘’<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, "");
+}
+
+function collectTechnicalTerms(
+  material: EpisodeMaterialForCheckRun,
+  episodeId: string,
+  materialRef: string,
+  warnings: string[],
+): string[] {
+  const terms = material.technical_terms;
+  if (!Array.isArray(terms)) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const entry of terms) {
+    const raw = entry?.term;
+    const term = typeof raw === "string" ? raw.trim() : "";
+    if (!term) {
+      warnings.push(
+        `${episodeId}: ${materialRef} has empty technical_terms entry; skipped`,
+      );
+      continue;
+    }
+    unique.add(term);
+  }
+  return [...unique].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function isHighRiskTechnicalTerm(term: string): boolean {
+  const normalized = term.normalize("NFKC");
+  return (
+    /^[A-Z]{2,}$/.test(normalized) ||
+    /[A-Z][a-z]+[A-Z]/.test(normalized) ||
+    /\d/.test(normalized) ||
+    /[-_./+]/.test(normalized)
+  );
+}
+
+function hasRubyReadingForTerm(scriptText: string, term: string): boolean {
+  const escaped = escapeRegExp(term.trim());
+  if (!escaped) {
+    return false;
+  }
+  const rubyPattern = new RegExp(`\\{\\s*${escaped}\\s*\\|[^{}]+\\}`, "u");
+  return rubyPattern.test(scriptText);
+}
+
+function findNotationVariants(scriptText: string, normalizedTarget: string): string[] {
+  if (!normalizedTarget) {
+    return [];
+  }
+
+  const tokenPattern = /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
+  const variants = new Set<string>();
+  for (const match of scriptText.matchAll(tokenPattern)) {
+    const token = (match[0] || "").trim();
+    if (!token) {
+      continue;
+    }
+    if (normalizeTechnicalTermForMatch(token) === normalizedTarget) {
+      variants.add(token);
+    }
+  }
+  return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function buildTechnicalTermsAuditReport(params: {
+  episodeId: string;
+  projectId: string;
+  runId: string;
+  materialPath: string;
+  scriptPath: string;
+  voicevoxTextPath?: string;
+  technicalTerms: string[];
+  scriptText: string;
+  dictionarySurfaces: string[];
+  dictionaryCoverageSkipped: boolean;
+}): TechnicalTermsAuditReport {
+  const normalizedScriptText = normalizeTechnicalTermForMatch(params.scriptText);
+  const normalizedDictionary = new Set(
+    params.dictionarySurfaces.map((surface) =>
+      normalizeTechnicalTermForMatch(surface),
+    ),
+  );
+  const dictionaryCoverageSkipped = params.dictionaryCoverageSkipped;
+  const missingInScript: string[] = [];
+  const missingInDictionaryCandidates: string[] = [];
+  const unresolvedHighRiskTerms: string[] = [];
+  const notationInconsistencies: TechnicalTermsAuditDetail[] = [];
+  const warnings: string[] = [];
+  let coveredTerms = 0;
+
+  for (const term of params.technicalTerms) {
+    const normalized = normalizeTechnicalTermForMatch(term);
+    if (!normalized) {
+      warnings.push(`Invalid technical term skipped: "${term}"`);
+      continue;
+    }
+
+    const inScript = normalizedScriptText.includes(normalized);
+    if (!inScript) {
+      missingInScript.push(term);
+    } else {
+      coveredTerms += 1;
+      const variants = findNotationVariants(params.scriptText, normalized);
+      if (variants.length >= 2) {
+        notationInconsistencies.push({ term, variants });
+      }
+    }
+
+    if (!dictionaryCoverageSkipped) {
+      const inDictionary = normalizedDictionary.has(normalized);
+      if (!inDictionary) {
+        missingInDictionaryCandidates.push(term);
+      }
+    }
+
+    if (isHighRiskTechnicalTerm(term)) {
+      const resolvedByRuby = hasRubyReadingForTerm(params.scriptText, term);
+      const resolvedByDictionary =
+        !dictionaryCoverageSkipped && normalizedDictionary.has(normalized);
+      if (!resolvedByRuby && !resolvedByDictionary) {
+        unresolvedHighRiskTerms.push(term);
+      }
+    }
+  }
+
+  if (missingInScript.length > 0) {
+    warnings.push(
+      `technical_terms missing in script: ${missingInScript.join(", ")}`,
+    );
+  }
+  if (!dictionaryCoverageSkipped && missingInDictionaryCandidates.length > 0) {
+    warnings.push(
+      `technical_terms missing in dictionary_candidates: ${missingInDictionaryCandidates.join(", ")}`,
+    );
+  }
+  if (unresolvedHighRiskTerms.length > 0) {
+    warnings.push(
+      `high-risk technical_terms unresolved (ruby/dictionary): ${unresolvedHighRiskTerms.join(", ")}`,
+    );
+  }
+  if (notationInconsistencies.length > 0) {
+    warnings.push(
+      `technical_terms notation inconsistencies: ${notationInconsistencies
+        .map((item) => `${item.term} => [${item.variants.join(", ")}]`)
+        .join("; ")}`,
+    );
+  }
+  if (dictionaryCoverageSkipped) {
+    warnings.push(
+      "dictionary_candidates audit skipped because voicevox_text is missing or invalid",
+    );
+  }
+
+  const totalTerms = params.technicalTerms.length;
+  const coverageRatio = totalTerms > 0 ? coveredTerms / totalTerms : 1;
+  return {
+    schema_version: "1.0",
+    meta: {
+      project_id: params.projectId,
+      run_id: params.runId,
+      episode_id: params.episodeId,
+      generated_at: new Date().toISOString(),
+      source_material_path: params.materialPath,
+      source_script_path: params.scriptPath,
+      ...(params.voicevoxTextPath
+        ? { source_voicevox_text_path: params.voicevoxTextPath }
+        : {}),
+    },
+    summary: {
+      total_terms: totalTerms,
+      covered_terms: coveredTerms,
+      coverage_ratio: Number(coverageRatio.toFixed(4)),
+      unresolved_high_risk_count: unresolvedHighRiskTerms.length,
+      notation_inconsistency_count: notationInconsistencies.length,
+      warnings_count: warnings.length,
+    },
+    warnings,
+    details: {
+      missing_in_script: missingInScript,
+      missing_in_dictionary_candidates: missingInDictionaryCandidates,
+      unresolved_high_risk_terms: unresolvedHighRiskTerms,
+      notation_inconsistencies: notationInconsistencies,
+    },
+  };
 }
 
 function ensureMinimalScriptStructure(
@@ -294,6 +539,7 @@ export async function checkRun({
   speedProfilesPath,
 }: CheckRunOptions): Promise<CheckRunResult> {
   const resolvedRunDir = path.resolve(runDir);
+  const runId = path.basename(resolvedRunDir);
   const warnings: string[] = [];
 
   // 0. RunContract validation (warn if missing, error if invalid)
@@ -330,11 +576,20 @@ export async function checkRun({
   }
   const materialEpisodeIds = collectEpisodeIds(materialFiles, MATERIAL_FILE_RE);
   const materialProjectIds = new Set<string>();
+  const materialPathByEpisodeId = new Map<string, string>();
+  const technicalTermsByEpisodeId = new Map<string, string[]>();
   for (const fileName of materialFiles) {
     const filePath = path.join(materialDir, fileName);
+    const episodeId = fileName.replace("_material.json", "");
     const material = await loadJson<EpisodeMaterialForCheckRun>(
       filePath,
       SchemaPaths.episodeMaterial,
+    );
+    const materialRef = `material/${fileName}`;
+    materialPathByEpisodeId.set(episodeId, materialRef);
+    technicalTermsByEpisodeId.set(
+      episodeId,
+      collectTechnicalTerms(material, episodeId, materialRef, warnings),
     );
     materialProjectIds.add(material.meta.project_id);
   }
@@ -406,6 +661,8 @@ export async function checkRun({
     throw new Error(`${toRelativePath(scriptDir)} has no E##_script.md files`);
   }
   const scriptPaths: string[] = [];
+  const scriptPathByEpisodeId = new Map<string, string>();
+  const scriptTextByEpisodeId = new Map<string, string>();
   const scriptEpisodeIds = collectEpisodeIds(scriptFiles, SCRIPT_FILE_RE);
   for (const fileName of scriptFiles) {
     const match = fileName.match(SCRIPT_FILE_RE);
@@ -416,6 +673,8 @@ export async function checkRun({
     const filePath = path.join(scriptDir, fileName);
     scriptPaths.push(filePath);
     const scriptText = await readFile(filePath, "utf-8");
+    scriptPathByEpisodeId.set(episodeId, `script/${fileName}`);
+    scriptTextByEpisodeId.set(episodeId, scriptText);
     ensureMinimalScriptStructure(scriptText, filePath, episodeId);
     validateScriptSpeakerStructure(
       scriptText,
@@ -499,14 +758,27 @@ export async function checkRun({
   // 7. Layer 2 validation (warn-only — files may not exist yet)
   const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
   const voicevoxTextDir = path.join(resolvedRunDir, "voicevox_text");
+  const dictionarySurfacesByEpisodeId = new Map<string, string[]>();
+  const validVoicevoxTextByEpisodeId = new Set<string>();
   if (await dirExists(voicevoxTextDir)) {
     const textFiles = (await readdir(voicevoxTextDir))
       .filter((name) => VOICEVOX_TEXT_FILE_RE.test(name))
       .sort();
     for (const fileName of textFiles) {
       const filePath = path.join(voicevoxTextDir, fileName);
+      const episodeId = fileName.replace("_voicevox_text.json", "");
       try {
-        await loadJson(filePath, SchemaPaths.voicevoxText);
+        const voicevoxText = await loadJson<VoicevoxTextForCheckRun>(
+          filePath,
+          SchemaPaths.voicevoxText,
+        );
+        const surfaces = Array.isArray(voicevoxText.dictionary_candidates)
+          ? voicevoxText.dictionary_candidates
+              .map((candidate) => candidate.surface)
+              .filter((surface): surface is string => typeof surface === "string")
+          : [];
+        dictionarySurfacesByEpisodeId.set(episodeId, surfaces);
+        validVoicevoxTextByEpisodeId.add(episodeId);
       } catch (e) {
         warnings.push(
           `voicevox_text/${fileName}: schema validation failed — ${(e as Error).message}`,
@@ -531,6 +803,52 @@ export async function checkRun({
         );
       }
     }
+  }
+
+  // 8. technical_terms audit (warn-only)
+  const contextDirForAudit = path.join(resolvedRunDir, "context");
+  await mkdir(contextDirForAudit, { recursive: true });
+  for (const episodeId of materialEpisodeIds) {
+    const technicalTerms = technicalTermsByEpisodeId.get(episodeId) ?? [];
+    if (technicalTerms.length === 0) {
+      continue;
+    }
+
+    const scriptText = scriptTextByEpisodeId.get(episodeId) ?? "";
+    const scriptPath = scriptPathByEpisodeId.get(episodeId);
+    const materialPath = materialPathByEpisodeId.get(episodeId);
+    if (!scriptPath || !materialPath) {
+      continue;
+    }
+
+    const dictionarySurfaces = dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
+    const hasValidVoicevoxText = validVoicevoxTextByEpisodeId.has(episodeId);
+    const voicevoxTextPath = hasValidVoicevoxText
+      ? `voicevox_text/${episodeId}_voicevox_text.json`
+      : undefined;
+    const report = buildTechnicalTermsAuditReport({
+      episodeId,
+      projectId,
+      runId,
+      materialPath,
+      scriptPath,
+      voicevoxTextPath,
+      technicalTerms,
+      scriptText,
+      dictionarySurfaces,
+      dictionaryCoverageSkipped: !hasValidVoicevoxText,
+    });
+    const reportFileName = `${episodeId}_technical_terms_audit.json`;
+    const reportPath = path.join(contextDirForAudit, reportFileName);
+    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
+    if (report.warnings.length > 0) {
+      for (const warning of report.warnings) {
+        warnings.push(`${episodeId}: ${warning}`);
+      }
+    }
+    warnings.push(
+      `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.total_terms})`,
+    );
   }
 
   return {

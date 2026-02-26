@@ -30,7 +30,7 @@
 3. **要素抽出**: 各セクションからソース Markdown を根拠として要素を抽出し、18 種の `type` を付与する（後述の要素タイプ一覧と紛らわしいペアの判別基準を参照）。
 4. **importance 判定**: 各要素に `must` / `should` / `optional` を付与する（後述の importance 判定基準参照）。
 5. **depends_on 記述**: 要素間の理解順序制約を `element_id` の配列で記述する（後述の depends_on ルール参照）。
-6. **technical_terms 抽出**: 各要素から VOICEVOX 読み辞書候補となる用語を抽出する（後述の抽出基準参照）。
+6. **technical_terms 抽出**: 各要素から品質監査に使う技術用語を抽出する（後述の抽出基準参照）。
 7. **quality_checks 自己検証**: 出力 JSON の `quality_checks` を自己判定する（後述の品質チェック判定ルール参照）。
 
 ### 要素タイプ一覧（18種）
@@ -117,12 +117,12 @@
 **要素レベル（element 内 `technical_terms: string[]`）**
 各 element の `technical_terms` に、その要素で登場する技術用語名だけを列挙する（追跡用）。
 
-**トップレベル（`technical_terms: [{term, reading, note}]`）**
-エピソード全体で登場する技術用語を集約し、VOICEVOX 読み辞書候補として `reading`（カタカナ）と `note` を付与する。
+**トップレベル（`technical_terms: [{term, note}]`）**
+エピソード全体で登場する技術用語を集約し、品質監査・用語追跡の基準集合として `note` とともに管理する。
 
 以下に該当する用語をトップレベルに含める:
 
-- **英語の技術用語**: VOICEVOX が日本語読みを誤る可能性がある（例: `ReScript`, `variant`, `pattern matching`）
+- **英語の技術用語**: 表記ゆれや誤用が起きやすい語（例: `ReScript`, `variant`, `pattern matching`）
 - **略語**: 読み方が自明でない（例: `AST`, `FFI`, `GADT`）
 - **専門用語**: 一般的でない技術概念（例: `代数的データ型`, `直和型`, `タグ付きユニオン`）
 
@@ -229,7 +229,6 @@
   "technical_terms": [
     {
       "term": "",
-      "reading": "",
       "note": ""
     }
   ],

@@ -1237,3 +1237,125 @@ test("checkRun warns (not throws) for schema-invalid voicevox_project_meta JSON"
     `Expected voicevox_project schema warning, got: ${JSON.stringify(result.warnings)}`,
   );
 });
+
+test("checkRun writes technical_terms audit report under context/", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] TypeScript と AST の違いを確認します。",
+      "## 2. 本編",
+      "[speaker:student] TypeScript と AST を比較します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "TypeScript", note: "表記ゆれ監査対象" },
+      { term: "AST", note: "高リスク略語" },
+    ],
+  }));
+
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify(
+      {
+        ...validVoicevoxText,
+        dictionary_candidates: [
+          {
+            surface: "TypeScript",
+            reading_or_empty: "タイプスクリプト",
+            priority: "HIGH",
+            occurrences: 2,
+            source: "token",
+          },
+          {
+            surface: "AST",
+            reading_or_empty: "エーエスティー",
+            priority: "HIGH",
+            occurrences: 1,
+            source: "token",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf-8",
+  );
+
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(
+    await readFile(reportPath, "utf-8"),
+  ) as {
+    summary: { total_terms: number; covered_terms: number };
+    details: { missing_in_script: string[]; missing_in_dictionary_candidates: string[] };
+  };
+
+  assert.equal(report.summary.total_terms, 2);
+  assert.equal(report.summary.covered_terms, 2);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.deepEqual(report.details.missing_in_dictionary_candidates, []);
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
+    ),
+  );
+});
+
+test("checkRun warns when technical_terms dictionary audit is skipped", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] API 設計を確認します。",
+      "## 2. 本編",
+      "[speaker:student] API の使い方を確認します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "API", note: "略語" }],
+  }));
+
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("dictionary_candidates audit skipped"),
+    ),
+    `Expected dictionary audit skipped warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun warns on notation inconsistencies and unresolved high-risk terms", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] TypeScript と Type-Script の表記が混在しています。",
+      "## 2. 本編",
+      "[speaker:student] API も登場します。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [
+      { term: "TypeScript", note: "表記ゆれ確認" },
+      { term: "API", note: "未解決略語" },
+    ],
+  }));
+
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("technical_terms notation inconsistencies"),
+    ),
+    `Expected notation inconsistency warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("high-risk technical_terms unresolved"),
+    ),
+    `Expected unresolved high-risk warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+});

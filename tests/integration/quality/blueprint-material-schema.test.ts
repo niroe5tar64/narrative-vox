@@ -38,3 +38,73 @@ test("material samples match schema", async () => {
     await validateAgainstSchema(data, schemaPath);
   }
 });
+
+test("material schema rejects technical_terms.reading field", async () => {
+  const schemaPath = path.resolve("schemas/episode-material.schema.json");
+  const invalid = {
+    schema_version: "1.0",
+    meta: {
+      project_id: "introducing-rescript",
+      episode_id: "E01",
+      episode_title: "test",
+      genre: "tech_explainer",
+      audience: {
+        background: "test",
+        level: "test",
+        interest: "test",
+      },
+    },
+    sections: [
+      {
+        section_id: "S01",
+        section: "sec1",
+        goal: "goal1",
+        elements: [
+          {
+            element_id: "EL001",
+            type: "theme_introduction",
+            content: "content1",
+            importance: "must",
+          },
+        ],
+      },
+      {
+        section_id: "S02",
+        section: "sec2",
+        goal: "goal2",
+        elements: [
+          {
+            element_id: "EL002",
+            type: "concept",
+            content: "content2",
+            importance: "must",
+          },
+        ],
+      },
+      {
+        section_id: "S03",
+        section: "sec3",
+        goal: "goal3",
+        elements: [
+          {
+            element_id: "EL003",
+            type: "takeaway",
+            content: "content3",
+            importance: "must",
+          },
+        ],
+      },
+    ],
+    technical_terms: [{ term: "TypeScript", reading: "タイプスクリプト" }],
+    quality_checks: {
+      source_coverage: "OK",
+      element_dependency_valid: "OK",
+      importance_distribution: { must: 3, should: 0, optional: 0 },
+    },
+  };
+
+  await assert.rejects(
+    () => validateAgainstSchema(invalid, schemaPath),
+    /must NOT have additional properties/,
+  );
+});

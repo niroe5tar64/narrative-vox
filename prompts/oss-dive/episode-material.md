@@ -31,7 +31,7 @@
 4. **要素抽出**: 各セクションの要素に以下の 18 タイプのうち最も適切なものを付与する。
 5. **importance 判定**: `must` / `should` / `optional` を判定する。
 6. **depends_on 記述**: 要素間の依存関係を DAG として記述する。
-7. **technical_terms 抽出**: 読み辞書候補となる技術用語を抽出する。
+7. **technical_terms 抽出**: 品質監査に使う技術用語を抽出する。
 8. **quality_checks 自己検証**: 品質チェック項目を記入する。
 
 ### 要素タイプ（18種）
@@ -97,8 +97,8 @@ OSSコード解析では `structural_model`、`code_example`、`capability` を�
 **要素レベル（element 内 `technical_terms: string[]`）**
 各 element の `technical_terms` に、その要素で登場する技術用語名だけを列挙する（追跡用）。
 
-**トップレベル（`technical_terms: [{term, reading, note}]`）**
-エピソード全体で登場する技術用語を集約し、VOICEVOX 読み辞書候補として `reading`（カタカナ）と `note` を付与する。
+**トップレベル（`technical_terms: [{term, note}]`）**
+エピソード全体で登場する技術用語を集約し、品質監査・用語追跡の基準集合として `note` とともに管理する。
 
 - **含める**: OSS 固有のクラス名・関数名・アルゴリズム名、技術用語（英語・カタカナ）、略語
   - 例: `ViterbiBuilder`、`DoubleArray`、`MeCab辞書フォーマット`、`トライ木`
@@ -151,7 +151,6 @@ OSSコード解析では `structural_model`、`code_example`、`capability` を�
   "technical_terms": [
     {
       "term": "",
-      "reading": "",
       "note": ""
     }
   ],

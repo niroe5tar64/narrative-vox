@@ -65,10 +65,9 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["term", "reading"],
+        "required": ["term"],
         "properties": {
           "term": { "type": "string", "minLength": 1 },
-          "reading": { "type": "string", "minLength": 1 },
           "note": { "type": "string" }
         }
       }
