@@ -1959,7 +1959,7 @@ test("checkRun skips dictionary and high-risk checks for non-ascii term when mor
   );
 });
 
-test("checkRun accepts false-negative risk for non-ascii tokenization split mismatch in morph mode", async () => {
+test("checkRun covers non-ascii term by morph concatenated spans when tokenization is split", async () => {
   const scriptText = [
     "## 1. オープニング",
     "[speaker:teacher] 形態素解析を学びます。",
@@ -1985,8 +1985,123 @@ test("checkRun accepts false-negative risk for non-ascii tokenization split mism
     details: { missing_in_script: string[] };
   };
 
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+});
+
+test("checkRun keeps non-ascii term uncovered when concatenation needs more than max window tokens", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] 形態素解析を学びます。",
+    "## 2. 本編",
+    "[speaker:student] 例を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "形態素解析", note: "window guard" }],
+  }));
+
+  await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: ["形", "態", "素", "解", "析", "を", "学び", "ます", "例", "を", "続け", "ます"],
+      形態素解析: ["形態素", "解析"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: { missing_in_script: string[] };
+  };
+
   assert.equal(report.summary.covered_terms, 0);
   assert.deepEqual(report.details.missing_in_script, ["形態素解析"]);
+});
+
+test("checkRun extracts non-ascii notation variants from morph concatenated spans", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] 形態素解析を学びます。形態 素解析も確認します。",
+    "## 2. 本編",
+    "[speaker:student] 例を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "形態素解析", note: "morph concatenated variant extraction" }],
+  }));
+
+  await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: [
+        "形態",
+        "素",
+        "解析",
+        "を",
+        "学び",
+        "ます",
+        "形態",
+        "素解析",
+        "も",
+        "確認",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます",
+      ],
+      形態素解析: ["形態素", "解析"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    details: {
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+
+  assert.deepEqual(report.details.notation_inconsistencies, [
+    {
+      term: "形態素解析",
+      variants: ["形態 素解析", "形態素解析"],
+    },
+  ]);
+});
+
+test("checkRun matches non-ascii morph spans across gap characters by raw slice normalization", async () => {
+  const scriptText = [
+    "## 1. オープニング",
+    "[speaker:teacher] 形態素 解析を学びます。",
+    "## 2. 本編",
+    "[speaker:student] 例を続けます。",
+  ].join("\n");
+  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "形態素解析", note: "gap character normalization" }],
+  }));
+
+  await checkRun({
+    runDir,
+    morphTokenizerOverride: createMockMorphTokenizer({
+      [scriptText]: ["形態素", " ", "解析", "を", "学び", "ます", "例", "を", "続け", "ます"],
+      形態素解析: ["形態素", "解析"],
+    }),
+  });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: {
+      missing_in_script: string[];
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.deepEqual(report.details.notation_inconsistencies, []);
 });
 
 test("checkRun extracts non-ascii notation variants from morph token-sequence matches", async () => {
