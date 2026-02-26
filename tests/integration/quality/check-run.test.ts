@@ -1644,6 +1644,33 @@ test("checkRun reports mixed term notation inconsistencies with raw variants", a
   ]);
 });
 
+test("checkRun ignores mixed-term variants detected only at invalid ASCII boundaries", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] HTTPリクエストとXＨＴＴＰリクエストを比較します。",
+      "## 2. 本編",
+      "[speaker:student] 用語確認を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "HTTPリクエスト", note: "mixed boundary variant filter" }],
+  }));
+  await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { covered_terms: number };
+    details: {
+      missing_in_script: string[];
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
+  };
+  assert.equal(report.summary.covered_terms, 1);
+  assert.deepEqual(report.details.missing_in_script, []);
+  assert.deepEqual(report.details.notation_inconsistencies, []);
+});
+
 test("checkRun keeps at least one variant for covered mixed term", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [
@@ -1771,11 +1798,15 @@ test("checkRun rejects mixed technical term when adjacent to ASCII letters", asy
   const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
-    details: { missing_in_script: string[] };
+    details: {
+      missing_in_script: string[];
+      notation_inconsistencies: Array<{ term: string; variants: string[] }>;
+    };
   };
   assert.equal(report.summary.covered_terms, 0);
   assert.deepEqual(report.details.missing_in_script, [
     "HTTPリクエスト",
     "v8エンジン",
   ]);
+  assert.deepEqual(report.details.notation_inconsistencies, []);
 });

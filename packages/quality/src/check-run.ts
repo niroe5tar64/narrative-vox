@@ -344,6 +344,17 @@ function isAsciiAlphaNumChar(value: string): boolean {
   return /^[A-Za-z0-9]$/.test(value);
 }
 
+function isValidMixedTermBoundary(
+  text: string,
+  matchStart: number,
+  matchLength: number,
+): boolean {
+  const prevChar = matchStart > 0 ? text[matchStart - 1] : "";
+  const nextIndex = matchStart + matchLength;
+  const nextChar = nextIndex < text.length ? text[nextIndex] : "";
+  return !isAsciiAlphaNumChar(prevChar) && !isAsciiAlphaNumChar(nextChar);
+}
+
 function hasMixedTermAsciiBoundaryMatch(
   normalizedScriptText: string,
   normalizedTermText: string,
@@ -358,15 +369,13 @@ function hasMixedTermAsciiBoundaryMatch(
     if (index < 0) {
       return false;
     }
-
-    const prevChar = index > 0 ? normalizedScriptText[index - 1] : "";
-    const nextIndex = index + normalizedTermText.length;
-    const nextChar =
-      nextIndex < normalizedScriptText.length
-        ? normalizedScriptText[nextIndex]
-        : "";
-
-    if (!isAsciiAlphaNumChar(prevChar) && !isAsciiAlphaNumChar(nextChar)) {
+    if (
+      isValidMixedTermBoundary(
+        normalizedScriptText,
+        index,
+        normalizedTermText.length,
+      )
+    ) {
       return true;
     }
 
@@ -461,6 +470,7 @@ function findTextNotationVariants(params: {
   rawStartByNormalizedIndex: number[];
   rawEndByNormalizedIndex: number[];
   normalizedTermText: string;
+  isMixed: boolean;
 }): string[] {
   if (!params.normalizedTermText) {
     return [];
@@ -472,6 +482,17 @@ function findTextNotationVariants(params: {
     const index = params.normalizedScriptText.indexOf(params.normalizedTermText, searchFrom);
     if (index < 0) {
       break;
+    }
+    if (
+      params.isMixed &&
+      !isValidMixedTermBoundary(
+        params.normalizedScriptText,
+        index,
+        params.normalizedTermText.length,
+      )
+    ) {
+      searchFrom = index + 1;
+      continue;
     }
     const endIndex = index + params.normalizedTermText.length - 1;
     const rawStart = params.rawStartByNormalizedIndex[index];
@@ -501,13 +522,15 @@ function findNotationVariants(params: {
     return [];
   }
 
-  if (isMixedTechnicalTerm(params.term) || !hasAsciiAlphaNum(params.term)) {
+  const isMixed = isMixedTechnicalTerm(params.term);
+  if (isMixed || !hasAsciiAlphaNum(params.term)) {
     return findTextNotationVariants({
       scriptText: params.scriptText,
       normalizedScriptText: params.normalizedScriptText,
       rawStartByNormalizedIndex: params.rawStartByNormalizedIndex,
       rawEndByNormalizedIndex: params.rawEndByNormalizedIndex,
       normalizedTermText: normalizeTechnicalTermText(params.term),
+      isMixed,
     });
   }
 
