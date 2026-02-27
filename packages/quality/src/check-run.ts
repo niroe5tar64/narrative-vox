@@ -484,7 +484,7 @@ function collectNonAsciiMorphMatchSpans(params: {
 
       if (normalizedConcat === target) {
         concatenatedSpans.push({ start, end });
-        continue;
+        break;
       }
 
       if (normalizedConcat.length > target.length) {
