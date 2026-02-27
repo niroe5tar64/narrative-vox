@@ -1107,16 +1107,16 @@ test("checkRun writes technical_terms audit report under context/", async () => 
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [
       "## 1. オープニング",
-      "[speaker:teacher] TypeScript と AST の違いを確認します。",
+      "[speaker:teacher] TypeScript と ReScript の違いを確認します。",
       "## 2. 本編",
-      "[speaker:student] TypeScript と AST を比較します。",
+      "[speaker:student] TypeScript と ReScript を比較します。",
     ].join("\n"),
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
     technical_terms: [
       { term: "TypeScript", note: "表記ゆれ監査対象" },
-      { term: "AST", note: "高リスク略語" },
+      { term: "ReScript", note: "表記ゆれ監査対象" },
     ],
   }));
 
@@ -1136,8 +1136,8 @@ test("checkRun writes technical_terms audit report under context/", async () => 
             source: "token",
           },
           {
-            surface: "AST",
-            reading_or_empty: "エーエスティー",
+            surface: "ReScript",
+            reading_or_empty: "リスクリプト",
             priority: "HIGH",
             occurrences: 1,
             source: "token",
@@ -1168,6 +1168,70 @@ test("checkRun writes technical_terms audit report under context/", async () => 
       warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
     ),
     `Expected no report-written warning when audit has no warnings, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun warns when HIGH dictionary_candidates are not in user-dict", async () => {
+  const missingSurface = `Missing${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] TypeScript の設計方針を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "TypeScript", note: "監査対象" }],
+  }));
+
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify(
+      {
+        ...validVoicevoxText,
+        dictionary_candidates: [
+          {
+            surface: "TypeScript",
+            reading_or_empty: "タイプスクリプト",
+            priority: "HIGH",
+            occurrences: 2,
+            source: "token",
+          },
+          {
+            surface: missingSurface,
+            reading_or_empty: "ミッシング",
+            priority: "HIGH",
+            occurrences: 1,
+            source: "token",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf-8",
+  );
+
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { high_priority_not_in_user_dict_count: number };
+    details: { high_priority_not_in_user_dict: string[] };
+  };
+
+  assert.equal(report.summary.high_priority_not_in_user_dict_count, 1);
+  assert.deepEqual(report.details.high_priority_not_in_user_dict, [missingSurface]);
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes(
+        `high-priority dictionary_candidates not in user-dict: ${missingSurface}`,
+      ),
+    ),
+    `Expected user-dict coverage warning, got: ${JSON.stringify(result.warnings)}`,
   );
 });
 

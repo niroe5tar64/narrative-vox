@@ -77,6 +77,13 @@ interface ContentStyleForCheckRun {
 interface VoicevoxTextForCheckRun {
   dictionary_candidates?: Array<{
     surface?: string;
+    priority?: string;
+  }>;
+}
+
+interface UserDictForCheckRun {
+  words?: Array<{
+    surface?: string;
   }>;
 }
 
@@ -104,6 +111,7 @@ interface TechnicalTermsAuditReport {
     skipped_non_ascii_terms_count: number;
     unresolved_high_risk_count: number;
     notation_inconsistency_count: number;
+    high_priority_not_in_user_dict_count: number;
     warnings_count: number;
   };
   warnings: string[];
@@ -113,6 +121,7 @@ interface TechnicalTermsAuditReport {
     unresolved_high_risk_terms: string[];
     skipped_non_ascii_terms: string[];
     notation_inconsistencies: TechnicalTermsAuditDetail[];
+    high_priority_not_in_user_dict: string[];
   };
 }
 
@@ -796,7 +805,10 @@ function buildTechnicalTermsAuditReport(params: {
   technicalTerms: string[];
   scriptText: string;
   dictionarySurfaces: string[];
+  highPriorityDictionarySurfaces: string[];
   dictionaryCoverageSkipped: boolean;
+  userDictSurfaces: string[];
+  userDictCoverageSkipped: boolean;
   morphTokenizer?: MorphTokenizer | null;
 }): TechnicalTermsAuditReport {
   const scriptTokenSpans = tokenizeTechnicalMatchScript(params.scriptText);
@@ -821,12 +833,16 @@ function buildTechnicalTermsAuditReport(params: {
       normalizeTechnicalTermToken(surface),
     ),
   );
+  const normalizedUserDict = new Set(
+    params.userDictSurfaces.map((surface) => normalizeTechnicalTermToken(surface)),
+  );
   const dictionaryCoverageSkipped = params.dictionaryCoverageSkipped;
   const missingInScript: string[] = [];
   const missingInDictionaryCandidates: string[] = [];
   const unresolvedHighRiskTerms: string[] = [];
   const skippedNonAsciiTerms: string[] = [];
   const notationInconsistencies: TechnicalTermsAuditDetail[] = [];
+  const highPriorityNotInUserDict: string[] = [];
   const warnings: string[] = [];
   let coveredTerms = 0;
 
@@ -909,6 +925,24 @@ function buildTechnicalTermsAuditReport(params: {
       "dictionary_candidates audit skipped because voicevox_text is missing or invalid",
     );
   }
+  if (!dictionaryCoverageSkipped && !params.userDictCoverageSkipped) {
+    const seenSurfaces = new Set<string>();
+    for (const surface of params.highPriorityDictionarySurfaces) {
+      const normalized = normalizeTechnicalTermToken(surface);
+      if (!normalized || seenSurfaces.has(normalized)) {
+        continue;
+      }
+      seenSurfaces.add(normalized);
+      if (!normalizedUserDict.has(normalized)) {
+        highPriorityNotInUserDict.push(surface);
+      }
+    }
+  }
+  if (highPriorityNotInUserDict.length > 0) {
+    warnings.push(
+      `high-priority dictionary_candidates not in user-dict: ${highPriorityNotInUserDict.join(", ")}`,
+    );
+  }
 
   const totalTerms = params.technicalTerms.length;
   const evaluatedTerms = totalTerms - skippedNonAsciiTerms.length;
@@ -934,6 +968,7 @@ function buildTechnicalTermsAuditReport(params: {
       skipped_non_ascii_terms_count: skippedNonAsciiTerms.length,
       unresolved_high_risk_count: unresolvedHighRiskTerms.length,
       notation_inconsistency_count: notationInconsistencies.length,
+      high_priority_not_in_user_dict_count: highPriorityNotInUserDict.length,
       warnings_count: warnings.length,
     },
     warnings,
@@ -943,6 +978,7 @@ function buildTechnicalTermsAuditReport(params: {
       unresolved_high_risk_terms: unresolvedHighRiskTerms,
       skipped_non_ascii_terms: skippedNonAsciiTerms,
       notation_inconsistencies: notationInconsistencies,
+      high_priority_not_in_user_dict: highPriorityNotInUserDict,
     },
   };
 }
@@ -1367,6 +1403,7 @@ export async function checkRun({
   const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
   const voicevoxTextDir = path.join(resolvedRunDir, "voicevox_text");
   const dictionarySurfacesByEpisodeId = new Map<string, string[]>();
+  const highPriorityDictionarySurfacesByEpisodeId = new Map<string, string[]>();
   const validVoicevoxTextByEpisodeId = new Set<string>();
   if (await dirExists(voicevoxTextDir)) {
     const textFiles = (await readdir(voicevoxTextDir))
@@ -1385,7 +1422,17 @@ export async function checkRun({
               .map((candidate) => candidate.surface)
               .filter((surface): surface is string => typeof surface === "string")
           : [];
+        const highPrioritySurfaces = Array.isArray(voicevoxText.dictionary_candidates)
+          ? voicevoxText.dictionary_candidates
+              .filter((candidate) => candidate.priority === "HIGH")
+              .map((candidate) => candidate.surface)
+              .filter((surface): surface is string => typeof surface === "string")
+          : [];
         dictionarySurfacesByEpisodeId.set(episodeId, surfaces);
+        highPriorityDictionarySurfacesByEpisodeId.set(
+          episodeId,
+          highPrioritySurfaces,
+        );
         validVoicevoxTextByEpisodeId.add(episodeId);
       } catch (e) {
         warnings.push(
@@ -1416,6 +1463,32 @@ export async function checkRun({
   // 8. technical_terms audit (warn-only)
   const contextDirForAudit = path.join(resolvedRunDir, "context");
   await mkdir(contextDirForAudit, { recursive: true });
+  const userDictPath = path.resolve(
+    process.cwd(),
+    "configs/voice/voicevox/user-dict.json",
+  );
+  const userDictSchemaPath = path.resolve(
+    process.cwd(),
+    "schemas/user-dict.schema.json",
+  );
+  let userDictSurfaces: string[] = [];
+  let userDictCoverageSkipped = false;
+  try {
+    const userDict = await loadJson<UserDictForCheckRun>(
+      userDictPath,
+      userDictSchemaPath,
+    );
+    userDictSurfaces = Array.isArray(userDict.words)
+      ? userDict.words
+          .map((word) => word.surface)
+          .filter((surface): surface is string => typeof surface === "string")
+      : [];
+  } catch (e) {
+    userDictCoverageSkipped = true;
+    warnings.push(
+      `user-dict coverage audit skipped: failed to load ${toRelativePath(userDictPath)} — ${(e as Error).message}`,
+    );
+  }
   const morphTokenizer =
     morphTokenizerOverride === undefined
       ? await getJapaneseMorphTokenizer()
@@ -1434,6 +1507,8 @@ export async function checkRun({
     }
 
     const dictionarySurfaces = dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
+    const highPriorityDictionarySurfaces =
+      highPriorityDictionarySurfacesByEpisodeId.get(episodeId) ?? [];
     const hasValidVoicevoxText = validVoicevoxTextByEpisodeId.has(episodeId);
     const voicevoxTextPath = hasValidVoicevoxText
       ? `voicevox_text/${episodeId}_voicevox_text.json`
@@ -1448,7 +1523,10 @@ export async function checkRun({
       technicalTerms,
       scriptText,
       dictionarySurfaces,
+      highPriorityDictionarySurfaces,
       dictionaryCoverageSkipped: !hasValidVoicevoxText,
+      userDictSurfaces,
+      userDictCoverageSkipped,
       morphTokenizer,
     });
     const reportFileName = `${episodeId}_technical_terms_audit.json`;
