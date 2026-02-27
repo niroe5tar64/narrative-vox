@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { queryKeys } from "@/lib/query-keys";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -28,7 +29,7 @@ export function RunEpisodePicker({
   disabled,
 }: Props) {
   const { data } = useQuery({
-    queryKey: ["runs"],
+    queryKey: queryKeys.runs.all,
     queryFn: () => api.runs.list({ pageSize: 20 }),
     staleTime: 30_000,
   });

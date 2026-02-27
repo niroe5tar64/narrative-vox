@@ -7,7 +7,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  ApiError,
   api,
   type CharacterConfig,
   type SpeakerInfo,
@@ -22,6 +21,9 @@ import {
   formToChar,
 } from "@/components/configs/characters/characterForm";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
+import { useFlashMessage } from "@/hooks/useFlashMessage";
+import { formatApiError } from "@/lib/format-api-error";
+import { queryKeys } from "@/lib/query-keys";
 
 export function CharactersPanel({
   onDirtyChange,
@@ -34,7 +36,7 @@ export function CharactersPanel({
   const [form, setForm] = useState<CharForm>(EMPTY_FORM);
   const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const successFlash = useFlashMessage();
 
   const isDirty = isNew
     ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
@@ -47,19 +49,19 @@ export function CharactersPanel({
   }, [isDirty, onDirtyChange]);
 
   const { data: chars, isLoading } = useQuery({
-    queryKey: ["characters"],
+    queryKey: queryKeys.characters.list(),
     queryFn: () => api.characters.list(),
   });
 
   const voicevoxStatusQuery = useQuery({
-    queryKey: ["voicevox-status"],
+    queryKey: queryKeys.voicevox.status(),
     queryFn: () => api.voicevox.status(),
     retry: false,
   });
   const isVvRunning = voicevoxStatusQuery.data?.status === "running";
 
   const { data: speakers } = useQuery({
-    queryKey: ["voicevox-speakers"],
+    queryKey: queryKeys.voicevox.speakers(),
     queryFn: () => api.voicevox.speakers(),
     enabled: isVvRunning,
     retry: false,
@@ -67,7 +69,7 @@ export function CharactersPanel({
 
   const speakerInfoQueries = useQueries({
     queries: (speakers ?? []).map((s) => ({
-      queryKey: ["voicevox-speaker-info", s.speaker_uuid],
+      queryKey: queryKeys.voicevox.speakerInfo(s.speaker_uuid),
       queryFn: () => api.voicevox.speakerInfo(s.speaker_uuid),
       enabled: isVvRunning && !!speakers,
       retry: false,
@@ -92,36 +94,31 @@ export function CharactersPanel({
         : api.characters.update(f.key, data);
     },
     onSuccess: (_, f) => {
-      qc.invalidateQueries({ queryKey: ["characters"] });
+      qc.invalidateQueries({ queryKey: queryKeys.characters.all });
       setError(null);
-      setSuccess(true);
+      successFlash.flash();
       setSavedFormStr(JSON.stringify(f));
       if (isNew) {
         setIsNew(false);
         setSelected(f.key);
       }
-      setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
-      setError(
-        e instanceof ApiError
-          ? `${e.title}${e.detail ? `: ${e.detail}` : ""}`
-          : String(e),
-      );
+      setError(formatApiError(e));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (key: string) => api.characters.delete(key),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["characters"] });
+      qc.invalidateQueries({ queryKey: queryKeys.characters.all });
       setSelected(null);
       setIsNew(false);
       setForm(EMPTY_FORM);
       setSavedFormStr(null);
     },
     onError: (e) => {
-      setError(e instanceof ApiError ? e.title : String(e));
+      setError(formatApiError(e));
     },
   });
 
@@ -137,7 +134,6 @@ export function CharactersPanel({
     setForm(f);
     setSavedFormStr(JSON.stringify(f));
     setError(null);
-    setSuccess(false);
   }
 
   function startNew() {
@@ -151,7 +147,6 @@ export function CharactersPanel({
     setForm(EMPTY_FORM);
     setSavedFormStr(null);
     setError(null);
-    setSuccess(false);
   }
 
   function patch(patchForm: Partial<CharForm>) {
@@ -190,7 +185,7 @@ export function CharactersPanel({
           speakerInfoMap={speakerInfoMap}
           isVvRunning={isVvRunning}
           error={error}
-          success={success}
+          success={successFlash.visible}
           isSaving={saveMutation.isPending}
           isDeleting={deleteMutation.isPending}
           onPatch={patch}

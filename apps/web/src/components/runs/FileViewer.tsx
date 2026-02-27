@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import type { ManifestData, VoicevoxText } from "@/api/client";
-import { ApiError, api } from "@/api/client";
+import { api } from "@/api/client";
 import { UtteranceTable } from "@/components/runs/UtteranceTable";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { formatApiError } from "@/lib/format-api-error";
+import { queryKeys } from "@/lib/query-keys";
 
 // ---------------------------------------------------------------------------
 // File type detection
@@ -47,7 +49,7 @@ export function FileViewer({
   const [openError, setOpenError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["run-file", projectId, runId, filePath],
+    queryKey: queryKeys.runs.file(projectId, runId, filePath),
     queryFn: () => api.runs.getFile(projectId, runId, filePath),
   });
 
@@ -57,11 +59,7 @@ export function FileViewer({
     try {
       await api.editor.open(fullPath);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setOpenError(`${e.title}${e.detail ? `: ${e.detail}` : ""}`);
-      } else {
-        setOpenError(String(e));
-      }
+      setOpenError(formatApiError(e));
     }
   };
 
@@ -101,11 +99,7 @@ export function FileViewer({
             <Spinner />
           </div>
         ) : error ? (
-          <div className="p-4 text-sm text-red-600">
-            {error instanceof ApiError
-              ? error.title
-              : "ファイルの読み込みに失敗しました"}
-          </div>
+          <div className="p-4 text-sm text-red-600">{formatApiError(error)}</div>
         ) : data ? (
           <FileContent
             fileType={fileType}

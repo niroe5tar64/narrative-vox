@@ -1,11 +1,11 @@
-import { Save, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import type { GenreConfig, StyleConfig } from "@/api/client";
+import { SaveStatus } from "@/components/feedback/SaveStatus";
 import { Button } from "@/components/ui/button";
 import { Fieldset } from "@/components/ui/fieldset";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 import type { CastRow, ProjForm } from "./projectForm";
@@ -311,20 +311,13 @@ export function ProjectEditorPane({
           />
         </FormField>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {success && (
-          <p className="text-sm text-emerald-600">Saved successfully.</p>
-        )}
-
         <div className="flex gap-3 pt-2">
-          <Button onClick={onSave} disabled={isSaving}>
-            {isSaving ? (
-              <Spinner className="mr-1" />
-            ) : (
-              <Save className="mr-1 h-4 w-4" />
-            )}
-            Save
-          </Button>
+          <SaveStatus
+            onSave={onSave}
+            isSaving={isSaving}
+            error={error}
+            success={success}
+          />
           {!isNew && selected && (
             <Button
               variant="secondary"

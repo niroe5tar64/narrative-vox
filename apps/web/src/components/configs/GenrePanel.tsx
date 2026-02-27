@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { GenreConfig } from "@/api/client";
 import { api } from "@/api/client";
 import { Spinner } from "@/components/ui/spinner";
+import { queryKeys } from "@/lib/query-keys";
 
 export function GenrePanel() {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["genres"],
+    queryKey: queryKeys.genres.list(),
     queryFn: () => api.genres.list(),
   });
 

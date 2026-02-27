@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import {
-  ApiError,
   api,
   type CharacterConfig,
   type GenreConfig,
@@ -18,6 +17,9 @@ import {
   projToForm,
 } from "@/components/configs/projects/projectForm";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
+import { useFlashMessage } from "@/hooks/useFlashMessage";
+import { formatApiError } from "@/lib/format-api-error";
+import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectsPage() {
   const qc = useQueryClient();
@@ -26,7 +28,7 @@ export function ProjectsPage() {
   const [form, setForm] = useState<ProjForm>(EMPTY_FORM);
   const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const successFlash = useFlashMessage();
 
   const isDirty = isNew
     ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
@@ -35,22 +37,22 @@ export function ProjectsPage() {
   useDirtyGuard(isDirty);
 
   const { data: projects, isLoading } = useQuery({
-    queryKey: ["projects"],
+    queryKey: queryKeys.projects.list(),
     queryFn: () => api.projects.list(),
   });
 
   const { data: chars } = useQuery({
-    queryKey: ["characters"],
+    queryKey: queryKeys.characters.list(),
     queryFn: () => api.characters.list(),
   });
 
   const { data: genresData } = useQuery({
-    queryKey: ["genres"],
+    queryKey: queryKeys.genres.list(),
     queryFn: () => api.genres.list(),
   });
 
   const { data: stylesData } = useQuery({
-    queryKey: ["styles"],
+    queryKey: queryKeys.styles.list(),
     queryFn: () => api.styles.list(),
   });
 
@@ -74,36 +76,31 @@ export function ProjectsPage() {
         : api.projects.update(f.PROJECT_ID, data);
     },
     onSuccess: (_, f) => {
-      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: queryKeys.projects.all });
       setError(null);
-      setSuccess(true);
+      successFlash.flash();
       setSavedFormStr(JSON.stringify(f));
       if (isNew) {
         setIsNew(false);
         setSelected(f.PROJECT_ID);
       }
-      setTimeout(() => setSuccess(false), 2500);
     },
     onError: (e) => {
-      setError(
-        e instanceof ApiError
-          ? `${e.title}${e.detail ? `: ${e.detail}` : ""}`
-          : String(e),
-      );
+      setError(formatApiError(e));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.projects.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: queryKeys.projects.all });
       setSelected(null);
       setIsNew(false);
       setForm(EMPTY_FORM);
       setSavedFormStr(null);
     },
     onError: (e) => {
-      setError(e instanceof ApiError ? e.title : String(e));
+      setError(formatApiError(e));
     },
   });
 
@@ -119,7 +116,6 @@ export function ProjectsPage() {
     setForm(f);
     setSavedFormStr(JSON.stringify(f));
     setError(null);
-    setSuccess(false);
   }
 
   function startNew() {
@@ -133,7 +129,6 @@ export function ProjectsPage() {
     setForm(EMPTY_FORM);
     setSavedFormStr(null);
     setError(null);
-    setSuccess(false);
   }
 
   function patch(patchForm: Partial<ProjForm>) {
@@ -187,7 +182,7 @@ export function ProjectsPage() {
           charKeys={charKeys}
           showOssDiveFields={showOssDiveFields}
           error={error}
-          success={success}
+          success={successFlash.visible}
           isSaving={saveMutation.isPending}
           isDeleting={deleteMutation.isPending}
           onPatch={patch}

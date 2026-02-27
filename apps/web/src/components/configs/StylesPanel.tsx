@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { StyleConfig } from "@/api/client";
 import { api } from "@/api/client";
 import { Spinner } from "@/components/ui/spinner";
+import { queryKeys } from "@/lib/query-keys";
 
 export function StylesPanel() {
   const { data, isLoading, isError } = useQuery<{ items: StyleConfig[] }>({
-    queryKey: ["styles"],
+    queryKey: queryKeys.styles.list(),
     queryFn: () => api.styles.list(),
   });
 

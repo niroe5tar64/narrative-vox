@@ -3,7 +3,8 @@ import { CheckCircle, ChevronLeft, GitBranch } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { ApiError, api } from "@/api/client";
+import { api } from "@/api/client";
+import { ApiErrorBanner } from "@/components/feedback/ApiErrorBanner";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { FileViewer } from "@/components/runs/FileViewer";
 import { RunFileTree } from "@/components/runs/RunFileTree";
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { usePipelineLog } from "@/hooks/usePipelineLog";
+import { formatApiError } from "@/lib/format-api-error";
+import { queryKeys } from "@/lib/query-keys";
 
 export function RunDetailPage() {
   const { projectId, runId } = useParams<{
@@ -33,7 +36,7 @@ export function RunDetailPage() {
     isLoading: treeLoading,
     error: treeError,
   } = useQuery({
-    queryKey: ["run-tree", projectId, runId],
+    queryKey: queryKeys.runs.tree(projectId ?? "", runId ?? ""),
     queryFn: () => {
       const pid = projectId;
       const rid = runId;
@@ -66,11 +69,7 @@ export function RunDetailPage() {
       setJobId(result.jobId);
       setJobCommand(result.command);
     } catch (e) {
-      if (e instanceof ApiError) {
-        setPipelineError(`${e.title}${e.detail ? `: ${e.detail}` : ""}`);
-      } else {
-        setPipelineError(e instanceof Error ? e.message : String(e));
-      }
+      setPipelineError(formatApiError(e));
     }
   };
 
@@ -128,11 +127,7 @@ export function RunDetailPage() {
       </div>
 
       {/* Pipeline error */}
-      {pipelineError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-          {pipelineError}
-        </div>
-      )}
+      <ApiErrorBanner error={pipelineError} />
 
       {/* Pipeline log */}
       {showPipelineLog && (

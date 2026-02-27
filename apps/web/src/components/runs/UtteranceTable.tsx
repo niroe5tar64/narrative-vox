@@ -2,8 +2,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import type { Utterance, UtteranceUpdate, VoicevoxText } from "@/api/client";
-import { ApiError, api } from "@/api/client";
+import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
+import { useFlashMessage } from "@/hooks/useFlashMessage";
+import { formatApiError, isConflictError } from "@/lib/format-api-error";
 
 type EditRow = Utterance & { _modified: boolean };
 
@@ -29,7 +31,7 @@ export function UtteranceTable({
   );
   const [currentEtag, setCurrentEtag] = useState(etag);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const saveSuccessFlash = useFlashMessage(2000);
 
   const hasChanges = rows.some((r) => r._modified);
 
@@ -59,18 +61,15 @@ export function UtteranceTable({
       if (result.etag) setCurrentEtag(result.etag);
       setRows((prev) => prev.map((r) => ({ ...r, _modified: false })));
       setSaveError(null);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
+      saveSuccessFlash.flash();
     },
     onError: (e) => {
-      if (e instanceof ApiError && e.status === 409) {
+      if (isConflictError(e)) {
         setSaveError(
           "競合エラー: ファイルが外部で変更されました。ページを再読み込みしてください。",
         );
-      } else if (e instanceof ApiError) {
-        setSaveError(`${e.title}${e.detail ? `: ${e.detail}` : ""}`);
       } else {
-        setSaveError(e instanceof Error ? e.message : String(e));
+        setSaveError(formatApiError(e));
       }
     },
   });
@@ -112,7 +111,7 @@ export function UtteranceTable({
       <div className="flex items-center justify-between px-4 py-2 bg-slate-50/60 border-b border-slate-200">
         <span className="text-xs text-slate-500">{rows.length} utterances</span>
         <div className="flex items-center gap-3">
-          {saveSuccess && (
+          {saveSuccessFlash.visible && (
             <span className="text-xs text-emerald-600">保存しました</span>
           )}
           {saveError && (

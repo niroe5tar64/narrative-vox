@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { queryKeys } from "@/lib/query-keys";
 
 const PAGE_SIZE = 20;
 
@@ -14,7 +15,7 @@ export function RunsPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["runs", projectIdFilter, page],
+    queryKey: queryKeys.runs.list(projectIdFilter, page),
     queryFn: () =>
       api.runs.list({
         projectId: projectIdFilter || undefined,
