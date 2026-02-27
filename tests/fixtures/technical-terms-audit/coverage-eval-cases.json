@@ -7,17 +7,24 @@
     "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "ascii_double_array_trie_positive",
     "category": "ascii",
-    "script_text": "## 1. オープニング\n[speaker:teacher] Double Array Trie の基礎を扱います。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "script_text": "## 1. オープニング\n[speaker:teacher] Double Array Trie と DoubleArrayTrie の基礎を扱います。\n## 2. 本編\n[speaker:student] 例を続けます。",
     "term": "Double Array Trie",
     "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": [
+      {
+        "term": "Double Array Trie",
+        "variants": ["Double Array Trie", "DoubleArrayTrie"]
+      }
+    ]
   },
   {
     "id": "ascii_typescript_negative",
@@ -27,17 +34,24 @@
     "expected_in_script": false,
     "gold_in_script": false,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "mixed_http_particle_positive",
     "category": "mixed",
-    "script_text": "## 1. オープニング\n[speaker:teacher] HTTPリクエストの流れを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "script_text": "## 1. オープニング\n[speaker:teacher] HTTPリクエストの流れを説明します。httpリクエストも扱います。\n## 2. 本編\n[speaker:student] 例を続けます。",
     "term": "HTTPリクエスト",
     "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": [
+      {
+        "term": "HTTPリクエスト",
+        "variants": ["httpリクエスト", "HTTPリクエスト"]
+      }
+    ]
   },
   {
     "id": "mixed_v8_punctuation_positive",
@@ -47,7 +61,8 @@
     "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "mixed_v8_suffix_negative",
@@ -57,7 +72,8 @@
     "expected_in_script": false,
     "gold_in_script": false,
     "expected_skip": false,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "non_ascii_server_sequence_positive",
@@ -80,32 +96,44 @@
         "ます"
       ],
       "サーバー": ["サーバー"]
-    }
+    },
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "non_ascii_split_rescue_positive",
     "category": "non_ascii",
-    "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。形態 素解析も確認します。\n## 2. 本編\n[speaker:student] 例を続けます。",
     "term": "形態素解析",
     "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
     "morph_mode": "available",
     "morph_tokens": {
-      "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+      "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。形態 素解析も確認します。\n## 2. 本編\n[speaker:student] 例を続けます。": [
         "形態",
         "素",
         "解析",
         "を",
         "学び",
         "ます",
+        "形態",
+        "素解析",
+        "も",
+        "確認",
+        "します",
         "例",
         "を",
         "続け",
         "ます"
       ],
       "形態素解析": ["形態素", "解析"]
-    }
+    },
+    "expected_notation_inconsistencies": [
+      {
+        "term": "形態素解析",
+        "variants": ["形態 素解析", "形態素解析"]
+      }
+    ]
   },
   {
     "id": "non_ascii_kansuu_guard_negative",
@@ -128,7 +156,8 @@
         "ます"
       ],
       "関数": ["関数"]
-    }
+    },
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "non_ascii_window_limit_known_fn",
@@ -155,7 +184,8 @@
         "ます"
       ],
       "形態素解析": ["形態素", "解析"]
-    }
+    },
+    "expected_notation_inconsistencies": []
   },
   {
     "id": "non_ascii_unavailable_skip",
@@ -165,6 +195,7 @@
     "expected_in_script": false,
     "gold_in_script": true,
     "expected_skip": true,
-    "morph_mode": "unavailable"
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": []
   }
 ]

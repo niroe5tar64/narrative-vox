@@ -22,12 +22,20 @@ interface CoverageEvalCase {
   expected_skip: boolean;
   morph_mode: MorphMode;
   morph_tokens?: Record<string, string[]>;
+  expected_notation_inconsistencies: Array<{
+    term: string;
+    variants: string[];
+  }>;
 }
 
 interface TechnicalTermsAuditReportForEval {
   details: {
     missing_in_script: string[];
     skipped_non_ascii_terms: string[];
+    notation_inconsistencies: Array<{
+      term: string;
+      variants: string[];
+    }>;
   };
 }
 
@@ -41,6 +49,12 @@ interface EvalMetrics {
   tn: number;
   precision: number;
   recall: number;
+}
+
+interface NotationMetrics {
+  notation_targets: number;
+  notation_exact_matches: number;
+  notation_exact_match_ratio: number;
 }
 
 async function loadEvalCases(): Promise<CoverageEvalCase[]> {
@@ -95,6 +109,8 @@ function collectMetrics(
 test("checkRun coverage eval fixtures lock expected outcomes and precision/recall metrics", async () => {
   const evalCases = await loadEvalCases();
   const metricInputs: Array<{ actual: boolean; gold: boolean; skipped: boolean }> = [];
+  let notationTargets = 0;
+  let notationExactMatches = 0;
 
   for (const evalCase of evalCases) {
     const runDir = await prepareMinimalRun(["E01"], { E01: evalCase.script_text });
@@ -127,6 +143,7 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     const skipped = report.details.skipped_non_ascii_terms.includes(evalCase.term);
     const inScript =
       !skipped && !report.details.missing_in_script.includes(evalCase.term);
+    const actualNotation = report.details.notation_inconsistencies;
     assert.equal(
       skipped,
       evalCase.expected_skip,
@@ -138,6 +155,20 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
         evalCase.expected_in_script,
         `Case ${evalCase.id}: expected_in_script mismatch`,
       );
+    }
+    assert.deepEqual(
+      actualNotation,
+      evalCase.expected_notation_inconsistencies,
+      `Case ${evalCase.id}: expected_notation_inconsistencies mismatch`,
+    );
+    if (!skipped) {
+      notationTargets += 1;
+      if (
+        JSON.stringify(actualNotation) ===
+        JSON.stringify(evalCase.expected_notation_inconsistencies)
+      ) {
+        notationExactMatches += 1;
+      }
     }
 
     metricInputs.push({
@@ -158,5 +189,21 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     tn: 3,
     precision: 1,
     recall: 0.8571,
+  });
+  const notationMetrics: NotationMetrics = {
+    notation_targets: notationTargets,
+    notation_exact_matches: notationExactMatches,
+    notation_exact_match_ratio: Number(
+      (
+        notationTargets > 0
+          ? notationExactMatches / notationTargets
+          : 1
+      ).toFixed(4),
+    ),
+  };
+  assert.deepEqual(notationMetrics, {
+    notation_targets: 10,
+    notation_exact_matches: 10,
+    notation_exact_match_ratio: 1,
   });
 });
