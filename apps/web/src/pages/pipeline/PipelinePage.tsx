@@ -1,35 +1,35 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import type { RunStatus } from "@/api/client";
 import { ApiErrorBanner } from "@/components/feedback/ApiErrorBanner";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { PipelineContextSelector } from "@/components/pipeline/PipelineContextSelector";
 import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
-import { PipelineShortcutPanel } from "@/components/pipeline/PipelineShortcutPanel";
-import { PipelineStepList } from "@/components/pipeline/PipelineStepList";
+import { PipelineLayer1Panel } from "@/components/pipeline/PipelineLayer1Panel";
+import { PipelineLayer2Panel } from "@/components/pipeline/PipelineLayer2Panel";
 import { PipelineUtilityPanel } from "@/components/pipeline/PipelineUtilityPanel";
 import { TabBar } from "@/components/ui/tab-bar";
 import { useFlashMessage } from "@/hooks/useFlashMessage";
+import { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import { usePipelineContext } from "@/hooks/usePipelineContext";
 import { usePipelineJob } from "@/hooks/usePipelineJob";
 import {
   getLayer1StepArgs,
-  getLayer2StepArgs,
-  LAYER1_STEPS,
-  LAYER2_STEPS,
+  PIPELINE_TABS,
   type Layer1StepKey,
   type Layer2StepKey,
-  PIPELINE_TABS,
   type PipelineTab,
-  type StepKey,
-  type StepStatus,
 } from "@/lib/pipeline-steps";
 import { queryKeys } from "@/lib/query-keys";
 
 export function PipelinePage() {
   const queryClient = useQueryClient();
   const [isJobActiveForQuery, setIsJobActiveForQuery] = useState(false);
+  const [pipelineTab, setPipelineTab] = useState<PipelineTab>("layer1");
+  const [copiedStep, setCopiedStep] = useState<string | null>(null);
+  const [hoveredCommand, setHoveredCommand] = useState<string | null>(null);
+  const copiedFlash = useFlashMessage(2000);
+
   const context = usePipelineContext(isJobActiveForQuery);
   const {
     projectId,
@@ -59,10 +59,14 @@ export function PipelinePage() {
     setIsJobActiveForQuery(job.isJobActive);
   }, [job.isJobActive]);
 
-  const [pipelineTab, setPipelineTab] = useState<PipelineTab>("layer1");
-  const [copiedStep, setCopiedStep] = useState<string | null>(null);
-  const [hoveredCommand, setHoveredCommand] = useState<string | null>(null);
-  const copiedFlash = useFlashMessage(2000);
+  const availability = usePipelineAvailability({
+    runStatus: runStatusQuery.data,
+    episodeId,
+    paths,
+    isAnyStepRunning: job.isJobActive,
+    voicevoxOffline: voicevoxQuery.isError,
+    getSessionStatus: job.getStepStatus,
+  });
 
   const handleRunLayer1Step = (stepKey: Layer1StepKey) => {
     if (!projectId) return;
@@ -73,8 +77,15 @@ export function PipelinePage() {
 
   const handleRunLayer2Step = (stepKey: Layer2StepKey) => {
     if (!paths) return;
-    const args = getLayer2StepArgs(stepKey, paths);
-    job.startStepJob(stepKey, stepKey, args);
+    job.startStepJob(stepKey, stepKey, [
+      ...(stepKey === "build-text"
+        ? ["--script", paths.script]
+        : stepKey === "patch-voicevox-text"
+          ? ["--voicevox-text-json", paths.voicevoxTextRaw]
+          : stepKey === "build-project"
+            ? ["--voicevox-text-json", paths.voicevoxTextPatched]
+            : ["--vvproj", paths.vvproj]),
+    ]);
   };
 
   const handleRunBuildAll = () => {
@@ -82,17 +93,10 @@ export function PipelinePage() {
     job.startJob("build-all", ["--script", paths.script]);
   };
 
-  const handleRunUtil = (command: string, args: string[]) => {
-    job.startJob(command, args);
-  };
-
-  const handleCancel = () => {
-    job.cancel();
-  };
-
   const handleProjectIdChange = (id: string) => {
     setProjectId(id);
     setRunKey("");
+    setEpisodeId("");
     job.resetStatuses();
   };
 
@@ -104,107 +108,6 @@ export function PipelinePage() {
   const handleEpisodeIdChange = (id: string) => {
     setEpisodeId(id);
     job.resetStatuses();
-  };
-
-  const runStatus: RunStatus | undefined = runStatusQuery.data;
-
-  const episodeInStage = (
-    stage: RunStatus["stages"][keyof RunStatus["stages"]],
-    id: string,
-  ): boolean => {
-    if (stage.status === "completed") return true;
-    if (stage.status === "idle") return false;
-    return "episodeIds" in stage && stage.episodeIds.includes(id);
-  };
-
-  const getStepStatus = (stepKey: StepKey): StepStatus =>
-    job.getStepStatus(stepKey);
-
-  const getLayer1StepDisplayStatus = (stepKey: Layer1StepKey): StepStatus => {
-    const session = getStepStatus(stepKey);
-    if (session === "running" || session === "error") return session;
-    if (session === "done") return "done";
-    if (!runStatus || !episodeId) return "idle";
-    switch (stepKey) {
-      case "gen-blueprint":
-        return runStatus.stages.blueprint.status === "completed"
-          ? "done"
-          : "idle";
-      case "gen-material":
-        return episodeInStage(runStatus.stages.material, episodeId)
-          ? "done"
-          : "idle";
-      case "gen-script":
-        return episodeInStage(runStatus.stages.script, episodeId)
-          ? "done"
-          : "idle";
-      case "gen-digest":
-        return episodeInStage(runStatus.stages.context, episodeId)
-          ? "done"
-          : "idle";
-    }
-  };
-
-  const getLayer2StepDisplayStatus = (stepKey: Layer2StepKey): StepStatus => {
-    const session = getStepStatus(stepKey);
-    if (session === "running" || session === "error") return session;
-    if (session === "done") return "done";
-    if (!runStatus || !episodeId) return "idle";
-    switch (stepKey) {
-      case "build-text":
-        return episodeInStage(runStatus.stages.voicevox_text, episodeId)
-          ? "done"
-          : "idle";
-      case "patch-voicevox-text":
-        return "idle";
-      case "build-project":
-        return episodeInStage(runStatus.stages.voicevox_project, episodeId)
-          ? "done"
-          : "idle";
-      case "build-audio":
-        return episodeInStage(runStatus.stages.audio, episodeId)
-          ? "done"
-          : "idle";
-    }
-  };
-
-  const isAnyStepRunning = job.isJobActive;
-
-  const canRunLayer1Step = (stepKey: Layer1StepKey): boolean => {
-    if (!projectId || isAnyStepRunning) return false;
-    switch (stepKey) {
-      case "gen-blueprint":
-        return true;
-      case "gen-material":
-        return !!runStatus && runStatus.stages.blueprint.status === "completed";
-      case "gen-script":
-        return (
-          !!runStatus &&
-          !!episodeId &&
-          episodeInStage(runStatus.stages.material, episodeId)
-        );
-      case "gen-digest":
-        return (
-          !!runStatus &&
-          !!episodeId &&
-          episodeInStage(runStatus.stages.script, episodeId)
-        );
-    }
-  };
-
-  const canRunLayer2Step = (stepKey: Layer2StepKey): boolean => {
-    if (!paths || isAnyStepRunning) return false;
-    if (!runStatus) return true;
-    switch (stepKey) {
-      case "build-text":
-        return episodeInStage(runStatus.stages.script, episodeId);
-      case "patch-voicevox-text":
-        return episodeInStage(runStatus.stages.voicevox_text, episodeId);
-      case "build-project":
-        return episodeInStage(runStatus.stages.voicevox_text, episodeId);
-      case "build-audio":
-        return episodeInStage(runStatus.stages.voicevox_project, episodeId);
-    }
   };
 
   const copyCommand = (stepKey: string, command: string) => {
@@ -230,9 +133,7 @@ export function PipelinePage() {
               <span className="text-slate-500">VOICEVOX offline</span>
             </>
           ) : (
-            <span className="animate-pulse text-slate-400">
-              VOICEVOX 確認中...
-            </span>
+            <span className="animate-pulse text-slate-400">VOICEVOX 確認中...</span>
           )
         }
       />
@@ -247,8 +148,8 @@ export function PipelinePage() {
         projectId={projectId}
         runKey={runKey}
         episodeId={episodeId}
-        plannedEpisodeIds={runStatus?.plannedEpisodeIds}
-        isDisabled={isAnyStepRunning}
+        plannedEpisodeIds={runStatusQuery.data?.plannedEpisodeIds}
+        isDisabled={job.isJobActive}
         projects={projectsQuery.data?.items}
         runs={runsQuery.data?.items}
         onProjectIdChange={handleProjectIdChange}
@@ -257,98 +158,41 @@ export function PipelinePage() {
       />
 
       {pipelineTab === "layer1" && (
-        <PipelineStepList
-          title="Layer 1 — LLM 生成（claude --print 経由）"
-          steps={LAYER1_STEPS}
-          getStepStatus={(stepKey) =>
-            getLayer1StepDisplayStatus(stepKey as Layer1StepKey)
-          }
-          canRunStep={(stepKey) => canRunLayer1Step(stepKey as Layer1StepKey)}
-          isNextStep={(index, stepKey) => {
-            const key = stepKey as Layer1StepKey;
-            const isThisCompleted = getLayer1StepDisplayStatus(key) === "done";
-            const isPrevCompleted =
-              index === 0 ||
-              getLayer1StepDisplayStatus(LAYER1_STEPS[index - 1].key) ===
-                "done";
-            return !isThisCompleted && isPrevCompleted && canRunLayer1Step(key);
-          }}
-          onRunStep={(stepKey) => handleRunLayer1Step(stepKey as Layer1StepKey)}
-          onCancel={handleCancel}
-          commandForStep={(stepKey) => {
-            if (!projectId) return null;
-            const args = getLayer1StepArgs(
-              stepKey as Layer1StepKey,
-              projectId,
-              episodeId,
-              paths?.runDir ?? "",
-            );
-            return `bun run ${stepKey} -- ${args.join(" ")}`;
-          }}
-          copiedStep={copiedFlash.visible ? copiedStep : null}
+        <PipelineLayer1Panel
+          projectId={projectId}
+          episodeId={episodeId}
+          runDir={paths?.runDir ?? ""}
+          availability={availability}
+          copiedStep={copiedStep}
+          copiedVisible={copiedFlash.visible}
+          onRunStep={handleRunLayer1Step}
+          onCancel={job.cancel}
           onCopyStep={copyCommand}
           onPreviewCommand={setHoveredCommand}
         />
       )}
 
       {pipelineTab === "layer2" && (
-        <div className="space-y-0">
-          <PipelineStepList
-            title="Layer 2 — 音声合成パイプライン"
-            steps={LAYER2_STEPS}
-            numberingOffset={LAYER1_STEPS.length}
-            getStepStatus={(stepKey) =>
-              getLayer2StepDisplayStatus(stepKey as Layer2StepKey)
-            }
-            canRunStep={(stepKey) => canRunLayer2Step(stepKey as Layer2StepKey)}
-            isNextStep={(index, stepKey) => {
-              const key = stepKey as Layer2StepKey;
-              const isThisCompleted =
-                getLayer2StepDisplayStatus(key) === "done";
-              const isPrevCompleted =
-                index === 0 ||
-                getLayer2StepDisplayStatus(LAYER2_STEPS[index - 1].key) ===
-                  "done";
-              return (
-                !isThisCompleted &&
-                !!paths &&
-                isPrevCompleted &&
-                canRunLayer2Step(key)
-              );
-            }}
-            onRunStep={(stepKey) =>
-              handleRunLayer2Step(stepKey as Layer2StepKey)
-            }
-            onCancel={handleCancel}
-            commandForStep={(stepKey) => {
-              if (!paths) return null;
-              const args = getLayer2StepArgs(stepKey as Layer2StepKey, paths);
-              return `bun run ${stepKey} -- ${args.join(" ")}`;
-            }}
-            copiedStep={copiedFlash.visible ? copiedStep : null}
-            onCopyStep={copyCommand}
-            onPreviewCommand={setHoveredCommand}
-          />
-          <div className="rounded-b-xl border-x border-b border-slate-200 bg-white/80 px-4 pb-4 backdrop-blur">
-            <PipelineShortcutPanel
-              isRunningBuildAll={
-                isAnyStepRunning && job.runningCommand === "build-all"
-              }
-              canRunBuildAll={
-                canRunLayer2Step("build-text") && !isAnyStepRunning
-              }
-              onRunBuildAll={handleRunBuildAll}
-              onCancel={handleCancel}
-            />
-          </div>
-        </div>
+        <PipelineLayer2Panel
+          paths={paths}
+          availability={availability}
+          isAnyStepRunning={job.isJobActive}
+          runningCommand={job.runningCommand}
+          copiedStep={copiedStep}
+          copiedVisible={copiedFlash.visible}
+          onRunStep={handleRunLayer2Step}
+          onRunBuildAll={handleRunBuildAll}
+          onCancel={job.cancel}
+          onCopyStep={copyCommand}
+          onPreviewCommand={setHoveredCommand}
+        />
       )}
 
       {pipelineTab === "utility" && (
         <PipelineUtilityPanel
           paths={paths}
-          isAnyStepRunning={isAnyStepRunning}
-          onRunUtil={handleRunUtil}
+          isAnyStepRunning={job.isJobActive}
+          onRunUtil={(command, args) => job.startJob(command, args)}
         />
       )}
 
