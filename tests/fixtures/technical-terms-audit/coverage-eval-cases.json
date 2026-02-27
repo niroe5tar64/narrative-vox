@@ -1,0 +1,170 @@
+[
+  {
+    "id": "ascii_api_positive",
+    "category": "ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] API の概要を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "API",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "ascii_double_array_trie_positive",
+    "category": "ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] Double Array Trie の基礎を扱います。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "Double Array Trie",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "ascii_typescript_negative",
+    "category": "ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] Type Script の表記は別語です。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "TypeScript",
+    "expected_in_script": false,
+    "gold_in_script": false,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "mixed_http_particle_positive",
+    "category": "mixed",
+    "script_text": "## 1. オープニング\n[speaker:teacher] HTTPリクエストの流れを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "HTTPリクエスト",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "mixed_v8_punctuation_positive",
+    "category": "mixed",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 「v8エンジン」を確認します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "v8エンジン",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "mixed_v8_suffix_negative",
+    "category": "mixed",
+    "script_text": "## 1. オープニング\n[speaker:teacher] v8エンジン2 の例を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "v8エンジン",
+    "expected_in_script": false,
+    "gold_in_script": false,
+    "expected_skip": false,
+    "morph_mode": "unavailable"
+  },
+  {
+    "id": "non_ascii_server_sequence_positive",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] サーバーを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "サーバー",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] サーバーを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "サーバー",
+        "を",
+        "説明",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "サーバー": ["サーバー"]
+    }
+  },
+  {
+    "id": "non_ascii_split_rescue_positive",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "形態素解析",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "形態",
+        "素",
+        "解析",
+        "を",
+        "学び",
+        "ます",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "形態素解析": ["形態素", "解析"]
+    }
+  },
+  {
+    "id": "non_ascii_kansuu_guard_negative",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 相関数値を計算します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "関数",
+    "expected_in_script": false,
+    "gold_in_script": false,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] 相関数値を計算します。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "相関数値",
+        "を",
+        "計算",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "関数": ["関数"]
+    }
+  },
+  {
+    "id": "non_ascii_window_limit_known_fn",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "形態素解析",
+    "expected_in_script": false,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "形",
+        "態",
+        "素",
+        "解",
+        "析",
+        "を",
+        "学び",
+        "ます",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "形態素解析": ["形態素", "解析"]
+    }
+  },
+  {
+    "id": "non_ascii_unavailable_skip",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 関数の基本を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "関数",
+    "expected_in_script": false,
+    "gold_in_script": true,
+    "expected_skip": true,
+    "morph_mode": "unavailable"
+  }
+]
