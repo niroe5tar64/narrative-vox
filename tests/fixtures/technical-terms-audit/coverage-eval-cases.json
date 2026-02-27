@@ -188,6 +188,32 @@
     "expected_notation_inconsistencies": []
   },
   {
+    "id": "non_ascii_removable_punctuation_extension_positive",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析(を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "形態素解析",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] 形態素解析(を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "形態素",
+        "解析",
+        "(",
+        "を",
+        "説明",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "形態素解析": ["形態素", "解析"]
+    },
+    "expected_notation_inconsistencies": []
+  },
+  {
     "id": "non_ascii_unavailable_skip",
     "category": "non_ascii",
     "script_text": "## 1. オープニング\n[speaker:teacher] 関数の基本を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
