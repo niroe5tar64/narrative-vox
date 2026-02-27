@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   loadCharactersForStep,
   loadDigestStepResources,
+  loadMaterialStepResources,
   loadScriptStepResources,
   loadStyleForScript,
 } from "@narrative-vox/cli/gen-layer1/loaders.ts";
@@ -127,6 +128,27 @@ describe("loadScriptStepResources", () => {
     assert.ok(logs.some((line) => line.includes("Loading style: ")));
     assert.ok(logs.some((line) => line.includes("Loading character [lead]: ")));
     assert.ok(logs.every((line) => !line.includes("prior digest")));
+  });
+});
+
+describe("loadMaterialStepResources", () => {
+  test("loads blueprint json and logs the resolved path", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "nv-material-loader-"));
+    await mkdir(path.join(tempRoot, "blueprint"), { recursive: true });
+    await cp(
+      "tests/fixtures/sample-run/blueprint/project_blueprint.json",
+      path.join(tempRoot, "blueprint", "project_blueprint.json"),
+    );
+
+    const { result, logs } = await withCapturedLogs(() =>
+      loadMaterialStepResources({
+        stepLabel: "gen-material",
+        runDir: tempRoot,
+      }),
+    );
+
+    assert.equal(typeof result.blueprint, "object");
+    assert.ok(logs.some((line) => line.includes("Loading blueprint: ")));
   });
 });
 

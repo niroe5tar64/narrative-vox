@@ -3,7 +3,13 @@ import { createRunContract } from "@narrative-vox/domain/run-contract.ts";
 import { makeRunIdNow } from "@narrative-vox/domain/run-id.ts";
 import { saveRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import {
+  logJsonSchemaValidation,
+  saveJsonArtifact,
+  saveTextArtifact,
+} from "./gen-layer1/artifacts.ts";
+import {
   loadDigestStepResources,
+  loadMaterialStepResources,
   loadScriptStepResources,
 } from "./gen-layer1/loaders.ts";
 import { extractJson, runClaudeWithPrompt } from "./gen-layer1/runtime.ts";
@@ -14,12 +20,8 @@ import {
   loadPromptSection,
   loadSourceFiles,
   logStep,
-  readJsonFile,
   SCHEMA_PATHS,
   type ProjectConfig,
-  validateJsonSchema,
-  writePrettyJson,
-  writeTextFile,
 } from "./gen-layer1/shared.ts";
 
 export { extractJson, runClaudeWithPrompt };
@@ -44,19 +46,6 @@ export interface GenDigestOptions {
   projectId: string;
   episodeId: string;
   runDir: string;
-}
-
-async function logSchemaValidation(
-  stepLabel: string,
-  data: unknown,
-  schemaPath: string,
-): Promise<void> {
-  const validation = await validateJsonSchema(data, schemaPath);
-  if (validation.ok) {
-    logStep(stepLabel, "Schema validation: OK");
-    return;
-  }
-  logStep(stepLabel, `Schema validation: WARN - ${validation.message}`);
 }
 
 async function loadProjectAndPrompt(
@@ -99,13 +88,16 @@ export async function genBlueprint(
   const runId = makeRunIdNow();
   const runDir = path.resolve("data", "projects", projectId, runId);
   const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
-  await writePrettyJson(blueprintPath, blueprintJson);
-  logStep(stepLabel, `Saved: ${path.relative(process.cwd(), blueprintPath)}`);
+  await saveJsonArtifact({ stepLabel, filePath: blueprintPath, data: blueprintJson });
 
   const contract = createRunContract({ projectId, runId, runDir });
   await saveRunContract(contract);
   logStep(stepLabel, `Run contract saved: ${runDir}`);
-  await logSchemaValidation(stepLabel, blueprintJson, SCHEMA_PATHS.blueprint);
+  await logJsonSchemaValidation({
+    stepLabel,
+    data: blueprintJson,
+    schemaPath: SCHEMA_PATHS.blueprint,
+  });
 }
 
 export async function genMaterial(options: GenMaterialOptions): Promise<void> {
@@ -117,10 +109,7 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
     "material",
     episodeId,
   );
-
-  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
-  logStep(stepLabel, `Loading blueprint: ${blueprintPath}`);
-  const blueprint = await readJsonFile<unknown>(blueprintPath);
+  const { blueprint } = await loadMaterialStepResources({ stepLabel, runDir });
 
   const sourceGlob = projectConfig.SOURCE_MARKDOWN_PATHS ?? "";
   logStep(stepLabel, `Loading source files: ${sourceGlob || "(none)"}`);
@@ -134,9 +123,12 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
   const materialJson = extractJson(await runClaudeWithPrompt(fullPrompt));
 
   const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
-  await writePrettyJson(materialPath, materialJson);
-  logStep(stepLabel, `Saved: ${path.relative(process.cwd(), materialPath)}`);
-  await logSchemaValidation(stepLabel, materialJson, SCHEMA_PATHS.episodeMaterial);
+  await saveJsonArtifact({ stepLabel, filePath: materialPath, data: materialJson });
+  await logJsonSchemaValidation({
+    stepLabel,
+    data: materialJson,
+    schemaPath: SCHEMA_PATHS.episodeMaterial,
+  });
 }
 
 export async function genScript(options: GenScriptOptions): Promise<void> {
@@ -176,8 +168,11 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
   const scriptContent = output.trim();
 
   const scriptPath = path.join(runDir, "script", `${episodeId}_script.md`);
-  await writeTextFile(scriptPath, `${scriptContent}\n`);
-  logStep(stepLabel, `Saved: ${path.relative(process.cwd(), scriptPath)}`);
+  await saveTextArtifact({
+    stepLabel,
+    filePath: scriptPath,
+    content: `${scriptContent}\n`,
+  });
 
   const analysis = analyzeScriptStructure(scriptContent);
   if (analysis.isEmpty) {
@@ -222,7 +217,10 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   const digestJson = extractJson(await runClaudeWithPrompt(fullPrompt));
 
   const digestPath = path.join(runDir, "context", `${episodeId}_episode_digest.json`);
-  await writePrettyJson(digestPath, digestJson);
-  logStep(stepLabel, `Saved: ${path.relative(process.cwd(), digestPath)}`);
-  await logSchemaValidation(stepLabel, digestJson, SCHEMA_PATHS.episodeDigest);
+  await saveJsonArtifact({ stepLabel, filePath: digestPath, data: digestJson });
+  await logJsonSchemaValidation({
+    stepLabel,
+    data: digestJson,
+    schemaPath: SCHEMA_PATHS.episodeDigest,
+  });
 }

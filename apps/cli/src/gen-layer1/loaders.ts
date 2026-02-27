@@ -14,6 +14,10 @@ export type ScriptStepResources = {
   priorDigests: unknown[];
 };
 
+export type MaterialStepResources = {
+  blueprint: unknown;
+};
+
 export type DigestStepResources = {
   scriptContent: string;
   material: unknown;
@@ -109,6 +113,19 @@ export async function loadScriptStepResources(options: {
   });
   const priorDigests = await loadPriorDigests(runDir, episodeId);
   return { material, style, characters, priorDigests };
+}
+
+export async function loadMaterialStepResources(options: {
+  stepLabel: string;
+  runDir: string;
+}): Promise<MaterialStepResources> {
+  const { stepLabel, runDir } = options;
+  const blueprint = await loadJsonArtifact<unknown>({
+    stepLabel,
+    label: "blueprint",
+    filePath: path.join(runDir, "blueprint", "project_blueprint.json"),
+  });
+  return { blueprint };
 }
 
 export async function loadDigestStepResources(options: {
