@@ -3,7 +3,9 @@ import {
   Navigate,
   RouterProvider,
 } from "react-router-dom";
+import type { ReactNode } from "react";
 
+import { PageErrorBoundary } from "@/components/feedback/PageErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
 import { ContentPage } from "@/pages/configs/ContentPage";
 import { DictionariesPage } from "@/pages/configs/DictionariesPage";
@@ -13,6 +15,10 @@ import { PipelinePage } from "@/pages/pipeline/PipelinePage";
 import { RunDetailPage } from "@/pages/runs/RunDetailPage";
 import { RunsPage } from "@/pages/runs/RunsPage";
 
+function withErrorBoundary(element: ReactNode) {
+  return <PageErrorBoundary>{element}</PageErrorBoundary>;
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -21,31 +27,31 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate replace to="/configs/content" /> },
       {
         path: "configs/content",
-        element: <ContentPage />,
+        element: withErrorBoundary(<ContentPage />),
       },
       {
         path: "configs/pipeline/projects",
-        element: <ProjectsPage />,
+        element: withErrorBoundary(<ProjectsPage />),
       },
       {
         path: "configs/voice/voicevox",
-        element: <VoicevoxPage />,
+        element: withErrorBoundary(<VoicevoxPage />),
       },
       {
         path: "configs/dictionaries",
-        element: <DictionariesPage />,
+        element: withErrorBoundary(<DictionariesPage />),
       },
       {
         path: "pipeline",
-        element: <PipelinePage />,
+        element: withErrorBoundary(<PipelinePage />),
       },
       {
         path: "runs",
-        element: <RunsPage />,
+        element: withErrorBoundary(<RunsPage />),
       },
       {
         path: "runs/:projectId/:runId",
-        element: <RunDetailPage />,
+        element: withErrorBoundary(<RunDetailPage />),
       },
       {
         path: "*",
