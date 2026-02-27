@@ -50,7 +50,16 @@ type TreeNode =
   | { name: string; type: "file"; path: string }
   | { name: string; type: "dir"; children: TreeNode[] };
 
-async function buildTree(absDir: string, relBase: string): Promise<TreeNode[]> {
+const MAX_TREE_DEPTH = 10;
+
+async function buildTree(
+  absDir: string,
+  relBase: string,
+  depth: number,
+): Promise<TreeNode[]> {
+  if (depth >= MAX_TREE_DEPTH) {
+    return [];
+  }
   const entries = await readdir(absDir, { withFileTypes: true });
   entries.sort((a, b) => {
     if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1;
@@ -61,7 +70,7 @@ async function buildTree(absDir: string, relBase: string): Promise<TreeNode[]> {
     if (entry.name.startsWith(".")) continue;
     const relPath = relBase ? `${relBase}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
-      const children = await buildTree(join(absDir, entry.name), relPath);
+      const children = await buildTree(join(absDir, entry.name), relPath, depth + 1);
       nodes.push({ name: entry.name, type: "dir", children });
     } else {
       nodes.push({ name: entry.name, type: "file", path: relPath });
@@ -113,7 +122,10 @@ type RunStatus = {
 };
 
 function toStageInfo(episodeIds: string[], planned: string[]): StageInfo {
-  if (planned.length > 0 && episodeIds.length >= planned.length) {
+  if (
+    planned.length > 0 &&
+    planned.every((plannedId) => episodeIds.includes(plannedId))
+  ) {
     return { status: "completed" };
   }
   if (episodeIds.length > 0) {
@@ -298,7 +310,7 @@ runsRouter.get("/:projectId/:runId/tree", async (c) => {
       return problem(c, { title: "Run not found", status: STATUS_404 });
     }
 
-    const children = await buildTree(runAbsPath, "");
+    const children = await buildTree(runAbsPath, "", 0);
     return c.json({ tree: { name: runId, type: "dir", children } });
   } catch (e) {
     if (e instanceof SafePathError)
