@@ -6,18 +6,14 @@ import { makeRunIdNow } from "@narrative-vox/domain/run-id.ts";
 import { saveRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
 import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-validator.ts";
 
-import { resolvePromptTemplate } from "./render-prompt.ts";
+import {
+  resolvePromptTemplate,
+  resolvePromptTemplatePath,
+} from "./render-prompt.ts";
 
 // ---------------------------------------------------------------------------
 // 定数
 // ---------------------------------------------------------------------------
-
-const PROMPT_STEP_FILES: Record<string, string> = {
-  blueprint: "blueprint.md",
-  material: "episode-material.md",
-  script: "script-common-frame.md",
-  digest: "episode-digest.md",
-};
 
 const SCHEMA_PATHS = {
   blueprint: "schemas/blueprint.schema.json",
@@ -43,14 +39,21 @@ interface ProjectConfig {
 // ---------------------------------------------------------------------------
 
 function resolvePromptFilePath(genre: string, step: string): string {
-  const filename = PROMPT_STEP_FILES[step];
-  if (!filename) {
+  if (step === "script") {
+    const normalizedGenre = genre.replace(/_/g, "-");
+    return path.resolve("prompts", normalizedGenre, "script-common-frame.md");
+  }
+  if (step === "digest") {
+    const normalizedGenre = genre.replace(/_/g, "-");
+    return path.resolve("prompts", normalizedGenre, "episode-digest.md");
+  }
+  if (step !== "blueprint" && step !== "material") {
     throw new Error(
-      `Unknown step: ${step}. Valid: ${Object.keys(PROMPT_STEP_FILES).join(", ")}`,
+      "Unknown step: " +
+        `${step}. Valid: blueprint, material, script, digest`,
     );
   }
-  const normalizedGenre = genre.replace(/_/g, "-");
-  return path.resolve("prompts", normalizedGenre, filename);
+  return resolvePromptTemplatePath(genre, step);
 }
 
 // ---------------------------------------------------------------------------

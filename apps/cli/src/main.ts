@@ -428,6 +428,15 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  const options = parseCliArgs(process.argv.slice(3));
+  const isVerbose = Boolean(options.verbose);
+  if (error instanceof Error) {
+    console.error(error.message);
+    if (isVerbose && error.stack) {
+      console.error(error.stack);
+    }
+  } else {
+    console.error(error);
+  }
   process.exitCode = 1;
 });

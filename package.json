@@ -29,7 +29,8 @@
     "validate": "bun run format --write && bun run lint:fix && bun run typecheck",
     "lint:layers": "bun run scripts/check-layer-deps.ts",
     "test": "bun test",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "typecheck:web": "cd apps/web && bunx tsc -b"
   },
   "dependencies": {
     "ajv": "^8.17.1",

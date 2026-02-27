@@ -6,7 +6,7 @@
 
 - ローカル実行は `bun run test`（=`bun test`）を使う。
 - テストコードの import は `bun:test` で統一する。
-- CI も `.github/workflows/ci.yml` で `bun test` を実行し、ローカルと同一ランナーに揃える。
+- CI では `.github/workflows/ci.yml` で `bun run typecheck` / `bun run typecheck:web` / `bun test` を順に実行する。
 
 現状の主なテスト:
 
