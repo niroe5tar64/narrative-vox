@@ -93,6 +93,16 @@ test("normalizeScriptLine keeps regular lines unchanged", () => {
   assert.equal(actual, "型の整合性を確認します。");
 });
 
+test("normalizeScriptLine strips ASCII backtick inline code", () => {
+  const actual = normalizeScriptLine("`useState` を使います。");
+  assert.equal(actual, "useState を使います。");
+});
+
+test("normalizeScriptLine strips fullwidth backtick inline code", () => {
+  const actual = normalizeScriptLine("｀useState｀ を使います。");
+  assert.equal(actual, "useState を使います。");
+});
+
 test("replaceRubyWithReading replaces ruby notation with reading", () => {
   const actual = replaceRubyWithReading(
     "今日は{漢字|かんじ}と{ReScript|リスクリプト}を学ぶ。",

@@ -269,7 +269,7 @@ export function evaluateSpeakability(
 }
 
 const SILENCE_TAG_RE = /\[[0-9]+秒沈黙\]/g;
-const INLINE_CODE_RE = /`([^`]+)`/g;
+const INLINE_CODE_RE = /[`\uFF40]([^`\uFF40]+)[`\uFF40]/g;
 
 export function normalizeScriptLine(rawLine: string): string {
   const withoutSilence = rawLine.replace(SILENCE_TAG_RE, "");
