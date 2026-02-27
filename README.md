@@ -92,6 +92,13 @@ TypeScript 移行後の運用ガイドは `docs/architecture/typescript-migratio
 - テスト実行コマンドは `bun run test`（=`bun test`）を標準とする。
 - テストファイルは `bun:test` を import して Bun ランナーに統一する。
 
+## Security Notes
+
+- API は現状、`localhost` 前提の未認証開発用サーバーです。信頼できないネットワークへそのまま公開しません。
+- CORS は `ALLOWED_ORIGIN` で単一 origin を許可します。未設定時は `http://localhost:5173` を許可します。
+- `/api/editor/open` はローカル開発補助用です。外部公開環境では無効化または認証前提にしてください。
+- 認証は「localhost を超えて公開する場合」に別途必須です。このリポジトリではまだ実装していません。
+
 ## 実行コマンド（最小）
 
 ```bash

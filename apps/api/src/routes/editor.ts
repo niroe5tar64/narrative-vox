@@ -16,6 +16,8 @@ const RUN_FILE_PATTERN =
   /^data\/projects\/[a-z0-9][a-z0-9_-]*\/run-\d{8}-\d{4}\//;
 
 // ===== POST /api/editor/open =====
+// 開発者のローカル利用を前提とした補助エンドポイント。
+// 未認証のまま外部公開する前提ではない。
 
 editorRouter.post("/open", async (c) => {
   let body: unknown;

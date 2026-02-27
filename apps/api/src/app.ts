@@ -51,17 +51,16 @@ app.use("/api/*", (c, next) => {
   return jsonBodyLimit(c, next);
 });
 
-if (config.allowedOrigin) {
-  app.use(
-    "*",
-    cors({
-      origin: config.allowedOrigin,
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "X-Request-Id", "If-Match"],
-      exposeHeaders: ["X-Request-Id", "ETag"],
-    }),
-  );
-}
+app.use(
+  "*",
+  cors({
+    origin: (origin) =>
+      !origin || origin === config.allowedOrigin ? origin ?? config.allowedOrigin : "",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "X-Request-Id", "If-Match"],
+    exposeHeaders: ["X-Request-Id", "ETag", "Retry-After"],
+  }),
+);
 
 app.route("/api/configs", configsRouter);
 app.route("/api/voicevox", voicevoxProxyRouter);
