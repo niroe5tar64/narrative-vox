@@ -131,23 +131,6 @@ export async function readJsonFile<T>(filePath: string): Promise<T> {
   return JSON.parse(raw) as T;
 }
 
-export async function loadCharacters(
-  cast: Record<string, string>,
-): Promise<Record<string, unknown>> {
-  const characters: Record<string, unknown> = {};
-  for (const [role, characterKey] of Object.entries(cast)) {
-    const charPath = path.resolve(
-      "configs",
-      "content",
-      "characters",
-      `${characterKey}.json`,
-    );
-    const charRaw = await readFile(charPath, "utf-8");
-    characters[role] = { key: characterKey, ...JSON.parse(charRaw) };
-  }
-  return characters;
-}
-
 export async function loadPriorDigests(
   runDir: string,
   episodeId: string,

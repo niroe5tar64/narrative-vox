@@ -2,12 +2,14 @@ import path from "node:path";
 import { createRunContract } from "@narrative-vox/domain/run-contract.ts";
 import { makeRunIdNow } from "@narrative-vox/domain/run-id.ts";
 import { saveRunContract } from "@narrative-vox/infrastructure/run-contract-io.ts";
+import {
+  loadDigestStepResources,
+  loadScriptStepResources,
+} from "./gen-layer1/loaders.ts";
 import { extractJson, runClaudeWithPrompt } from "./gen-layer1/runtime.ts";
 import {
   analyzeScriptStructure,
   composePrompt,
-  loadCharacters,
-  loadPriorDigests,
   loadProjectConfig,
   loadPromptSection,
   loadSourceFiles,
@@ -147,31 +149,13 @@ export async function genScript(options: GenScriptOptions): Promise<void> {
     episodeId,
   );
 
-  const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
-  logStep(stepLabel, `Loading material: ${materialPath}`);
-  const material = await readJsonFile<unknown>(materialPath);
-
-  const stylePath = path.resolve(
-    "configs",
-    "content",
-    "styles",
-    `${projectConfig.STYLE_ID}.json`,
-  );
-  logStep(stepLabel, `Loading style: ${stylePath}`);
-  const style = await readJsonFile<unknown>(stylePath);
-
-  for (const [role, characterKey] of Object.entries(projectConfig.CAST)) {
-    const charPath = path.resolve(
-      "configs",
-      "content",
-      "characters",
-      `${characterKey}.json`,
-    );
-    logStep(stepLabel, `Loading character [${role}]: ${charPath}`);
-  }
-  const characters = await loadCharacters(projectConfig.CAST);
-
-  const priorDigests = await loadPriorDigests(runDir, episodeId);
+  const { material, style, characters, priorDigests } =
+    await loadScriptStepResources({
+      stepLabel,
+      projectConfig,
+      runDir,
+      episodeId,
+    });
   const attachments = [
     { title: "Material JSON", kind: "json", value: material },
     { title: "Style JSON", kind: "json", value: style },
@@ -220,19 +204,13 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
     episodeId,
   );
 
-  const scriptPath = path.join(runDir, "script", `${episodeId}_script.md`);
-  logStep(stepLabel, `Loading script: ${scriptPath}`);
-  const scriptContent = await Bun.file(scriptPath).text();
-
-  const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
-  logStep(stepLabel, `Loading material: ${materialPath}`);
-  const material = await readJsonFile<unknown>(materialPath);
-
-  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
-  logStep(stepLabel, `Loading blueprint: ${blueprintPath}`);
-  const blueprint = await readJsonFile<unknown>(blueprintPath);
-
-  const characters = await loadCharacters(projectConfig.CAST);
+  const { scriptContent, material, blueprint, characters } =
+    await loadDigestStepResources({
+      stepLabel,
+      projectConfig,
+      runDir,
+      episodeId,
+    });
   const fullPrompt = composePrompt(promptSection, [
     { title: "Script (Markdown)", kind: "markdown", value: scriptContent },
     { title: "Material JSON", kind: "json", value: material },
