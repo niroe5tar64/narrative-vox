@@ -1102,6 +1102,7 @@ test("checkRun warns (not throws) for schema-invalid voicevox_project_meta JSON"
   );
 });
 
+// Coverage matrix is locked in fixture-based eval tests; keep integration/warning/boundary contracts here.
 test("checkRun writes technical_terms audit report under context/", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [
@@ -1232,30 +1233,6 @@ test("checkRun warns on notation inconsistencies and unresolved high-risk terms"
       warning.includes("high-risk technical_terms unresolved"),
     ),
     `Expected unresolved high-risk warning, got: ${JSON.stringify(result.warnings)}`,
-  );
-});
-
-test("checkRun does not treat spaced words as merged term match", async () => {
-  const runDir = await prepareMinimalRun(["E01"], {
-    E01: [
-      "## 1. オープニング",
-      "[speaker:teacher] type script の違いを確認します。",
-      "## 2. 本編",
-      "[speaker:student] ここでは型システムの話をします。",
-    ].join("\n"),
-  });
-  await updateMaterialFiles(runDir, (data) => ({
-    ...data,
-    technical_terms: [{ term: "TypeScript", note: "語連結誤検出を防ぐ" }],
-  }));
-  const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
-  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    details: { missing_in_script: string[] };
-  };
-  assert.deepEqual(report.details.missing_in_script, ["TypeScript"]);
-  assert.ok(
-    result.warnings.some((warning) => warning.includes("technical_terms missing in script")),
   );
 });
 
@@ -1789,66 +1766,6 @@ test("checkRun skips dictionary and high-risk checks for non-ascii term when mor
   );
 });
 
-test("checkRun covers non-ascii term by morph concatenated spans when tokenization is split", async () => {
-  const scriptText = [
-    "## 1. オープニング",
-    "[speaker:teacher] 形態素解析を学びます。",
-    "## 2. 本編",
-    "[speaker:student] 例を続けます。",
-  ].join("\n");
-  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
-  await updateMaterialFiles(runDir, (data) => ({
-    ...data,
-    technical_terms: [{ term: "形態素解析", note: "token split mismatch" }],
-  }));
-
-  await checkRun({
-    runDir,
-    morphTokenizerOverride: createMockMorphTokenizer({
-      [scriptText]: ["形態", "素", "解析", "を", "学び", "ます", "例", "を", "続け", "ます"],
-      形態素解析: ["形態素", "解析"],
-    }),
-  });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
-  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { covered_terms: number };
-    details: { missing_in_script: string[] };
-  };
-
-  assert.equal(report.summary.covered_terms, 1);
-  assert.deepEqual(report.details.missing_in_script, []);
-});
-
-test("checkRun keeps non-ascii term uncovered when concatenation needs more than max window tokens", async () => {
-  const scriptText = [
-    "## 1. オープニング",
-    "[speaker:teacher] 形態素解析を学びます。",
-    "## 2. 本編",
-    "[speaker:student] 例を続けます。",
-  ].join("\n");
-  const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
-  await updateMaterialFiles(runDir, (data) => ({
-    ...data,
-    technical_terms: [{ term: "形態素解析", note: "window guard" }],
-  }));
-
-  await checkRun({
-    runDir,
-    morphTokenizerOverride: createMockMorphTokenizer({
-      [scriptText]: ["形", "態", "素", "解", "析", "を", "学び", "ます", "例", "を", "続け", "ます"],
-      形態素解析: ["形態素", "解析"],
-    }),
-  });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
-  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { covered_terms: number };
-    details: { missing_in_script: string[] };
-  };
-
-  assert.equal(report.summary.covered_terms, 0);
-  assert.deepEqual(report.details.missing_in_script, ["形態素解析"]);
-});
-
 test("checkRun extracts non-ascii notation variants from morph concatenated spans", async () => {
   const scriptText = [
     "## 1. オープニング",
@@ -1978,29 +1895,6 @@ test("checkRun extracts non-ascii notation variants from morph token-sequence ma
   assert.deepEqual(report.details.notation_inconsistencies, [
     { term: "サーバー", variants: ["ｻｰﾊﾞｰ", "サーバー"] },
   ]);
-});
-
-test("checkRun does not allow substring false-positive for mixed technical term", async () => {
-  const runDir = await prepareMinimalRun(["E01"], {
-    E01: [
-      "## 1. オープニング",
-      "[speaker:teacher] v8エンジン2の例を説明します。",
-      "## 2. 本編",
-      "[speaker:student] 例を続けます。",
-    ].join("\n"),
-  });
-  await updateMaterialFiles(runDir, (data) => ({
-    ...data,
-    technical_terms: [{ term: "v8エンジン", note: "known limitation: substring false-positive" }],
-  }));
-  await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
-  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { covered_terms: number };
-    details: { missing_in_script: string[] };
-  };
-  assert.equal(report.summary.covered_terms, 0);
-  assert.deepEqual(report.details.missing_in_script, ["v8エンジン"]);
 });
 
 test("checkRun treats mixed technical terms as covered at Japanese particle and punctuation boundaries", async () => {
