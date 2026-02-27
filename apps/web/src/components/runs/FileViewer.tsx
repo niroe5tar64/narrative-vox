@@ -48,7 +48,7 @@ export function FileViewer({
   const fileType = detectFileType(filePath);
   const [openError, setOpenError] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.runs.file(projectId, runId, filePath),
     queryFn: () => api.runs.getFile(projectId, runId, filePath),
   });
@@ -109,6 +109,9 @@ export function FileViewer({
             runId={runId}
             filePath={filePath}
             onDirtyChange={onDirtyChange}
+            onReloadFromSource={async () => {
+              await refetch();
+            }}
           />
         ) : null}
       </div>
@@ -128,6 +131,7 @@ type FileContentProps = {
   runId: string;
   filePath: string;
   onDirtyChange?: (dirty: boolean) => void;
+  onReloadFromSource?: () => Promise<void>;
 };
 
 function FileContent({
@@ -138,6 +142,7 @@ function FileContent({
   runId,
   filePath,
   onDirtyChange,
+  onReloadFromSource,
 }: FileContentProps) {
   if (fileType === "voicevox_text") {
     try {
@@ -150,6 +155,7 @@ function FileContent({
           runId={runId}
           filePath={filePath}
           onDirtyChange={onDirtyChange}
+          onReloadFromSource={onReloadFromSource}
         />
       );
     } catch {

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { CharactersPanel } from "@/components/configs/CharactersPanel";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { GenrePanel } from "@/components/configs/GenrePanel";
 import { StylesPanel } from "@/components/configs/StylesPanel";
 import { TabBar } from "@/components/ui/tab-bar";
@@ -15,6 +16,7 @@ const TABS: { id: Tab; label: string }[] = [
 export function ContentPage() {
   const [tab, setTab] = useState<Tab>("characters");
   const [dirtyTabs, setDirtyTabs] = useState<Partial<Record<Tab, boolean>>>({});
+  const [pendingTab, setPendingTab] = useState<Tab | null>(null);
 
   const handleDirtyChange = useCallback((t: Tab, dirty: boolean) => {
     setDirtyTabs((prev) => ({ ...prev, [t]: dirty }));
@@ -26,11 +28,10 @@ export function ContentPage() {
   );
 
   function switchTab(next: Tab) {
-    if (
-      dirtyTabs[tab] &&
-      !window.confirm("未保存の変更があります。タブを切り替えますか？")
-    )
+    if (dirtyTabs[tab]) {
+      setPendingTab(next);
       return;
+    }
     setDirtyTabs((prev) => ({ ...prev, [tab]: false }));
     setTab(next);
   }
@@ -55,6 +56,20 @@ export function ContentPage() {
         {tab === "styles" && <StylesPanel />}
         {tab === "genre" && <GenrePanel />}
       </div>
+
+      <ConfirmDialog
+        open={pendingTab !== null}
+        title="未保存の変更があります"
+        body="変更を破棄してタブを切り替えますか？"
+        confirmLabel="破棄して切り替え"
+        onCancel={() => setPendingTab(null)}
+        onConfirm={() => {
+          if (!pendingTab) return;
+          setDirtyTabs((prev) => ({ ...prev, [tab]: false }));
+          setTab(pendingTab);
+          setPendingTab(null);
+        }}
+      />
     </div>
   );
 }

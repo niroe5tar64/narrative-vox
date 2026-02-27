@@ -26,6 +26,7 @@ type Props = {
   numberingOffset?: number;
   getStepStatus: (stepKey: string) => StepStatus;
   canRunStep: (stepKey: string) => boolean;
+  getDisabledReason?: (stepKey: string) => string | null;
   isNextStep: (index: number, stepKey: string) => boolean;
   onRunStep: (stepKey: string) => void;
   onCancel: () => void;
@@ -41,6 +42,7 @@ export function PipelineStepList({
   numberingOffset = 0,
   getStepStatus,
   canRunStep,
+  getDisabledReason,
   isNextStep,
   onRunStep,
   onCancel,
@@ -58,6 +60,7 @@ export function PipelineStepList({
           const stepStatus = getStepStatus(step.key);
           const isRunningThis = stepStatus === "running";
           const canRun = canRunStep(step.key);
+          const disabledReason = getDisabledReason?.(step.key) ?? null;
           const showNext = isNextStep(index, step.key);
           const commandString = commandForStep(step.key);
 
@@ -131,26 +134,30 @@ export function PipelineStepList({
                     停止
                   </Button>
                 ) : stepStatus === "done" ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onRunStep(step.key)}
-                    disabled={!canRun}
-                    className="w-full cursor-pointer gap-1 text-xs text-slate-500"
-                  >
-                    <RotateCcw className="size-3" />
-                    再実行
-                  </Button>
+                  <span title={!canRun ? disabledReason ?? undefined : undefined}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onRunStep(step.key)}
+                      disabled={!canRun}
+                      className="w-full cursor-pointer gap-1 text-xs text-slate-500"
+                    >
+                      <RotateCcw className="size-3" />
+                      再実行
+                    </Button>
+                  </span>
                 ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => onRunStep(step.key)}
-                    disabled={!canRun}
-                    className="w-full cursor-pointer gap-1 text-xs"
-                  >
-                    <Play className="size-3" />
-                    実行
-                  </Button>
+                  <span title={!canRun ? disabledReason ?? undefined : undefined}>
+                    <Button
+                      size="sm"
+                      onClick={() => onRunStep(step.key)}
+                      disabled={!canRun}
+                      className="w-full cursor-pointer gap-1 text-xs"
+                    >
+                      <Play className="size-3" />
+                      実行
+                    </Button>
+                  </span>
                 )}
               </div>
             </li>

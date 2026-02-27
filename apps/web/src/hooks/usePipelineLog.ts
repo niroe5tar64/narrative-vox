@@ -9,6 +9,8 @@ export type PipelineLogStatus =
   | "cancelled"
   | "error";
 
+const MAX_LOG_ENTRIES = 1000;
+
 export function usePipelineLog(jobId: string | null) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState<PipelineLogStatus>("idle");
@@ -32,7 +34,7 @@ export function usePipelineLog(jobId: string | null) {
     ws.onmessage = (event) => {
       try {
         const entry: LogEntry = JSON.parse(event.data as string);
-        setLogs((prev) => [...prev, entry]);
+        setLogs((prev) => [...prev, entry].slice(-MAX_LOG_ENTRIES));
         if (entry.type === "system" && entry.code !== undefined) {
           if (entry.cancelled) {
             setStatus("cancelled");

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 type Props = {
   isRunningBuildAll: boolean;
   canRunBuildAll: boolean;
+  disabledReason?: string | null;
   onRunBuildAll: () => void;
   onCancel: () => void;
 };
@@ -12,6 +13,7 @@ type Props = {
 export function PipelineShortcutPanel({
   isRunningBuildAll,
   canRunBuildAll,
+  disabledReason,
   onRunBuildAll,
   onCancel,
 }: Props) {
@@ -30,15 +32,17 @@ export function PipelineShortcutPanel({
             停止
           </Button>
         ) : (
-          <Button
-            size="sm"
-            onClick={onRunBuildAll}
-            disabled={!canRunBuildAll}
-            className="cursor-pointer gap-1.5"
-          >
-            <Play className="size-3.5" />
-            ステップ ⑤⑥⑦ をまとめて実行
-          </Button>
+          <span title={!canRunBuildAll ? disabledReason ?? undefined : undefined}>
+            <Button
+              size="sm"
+              onClick={onRunBuildAll}
+              disabled={!canRunBuildAll}
+              className="cursor-pointer gap-1.5"
+            >
+              <Play className="size-3.5" />
+              ステップ ⑤⑥⑦ をまとめて実行
+            </Button>
+          </span>
         )}
         <span className="text-xs text-slate-400">
           ※ ステップ⑧（音声合成）は別途実行が必要

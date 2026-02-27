@@ -8,6 +8,7 @@ import {
   type ProjectConfig,
   type StyleConfig,
 } from "@/api/client";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { ProjectEditorPane } from "@/components/configs/projects/ProjectEditorPane";
 import { ProjectsListPane } from "@/components/configs/projects/ProjectsListPane";
 import {
@@ -28,6 +29,13 @@ export function ProjectsPage() {
   const [form, setForm] = useState<ProjForm>(EMPTY_FORM);
   const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    body: string;
+    confirmLabel: string;
+    isDestructive?: boolean;
+    action: () => void;
+  } | null>(null);
   const successFlash = useFlashMessage();
 
   const isDirty = isNew
@@ -105,11 +113,22 @@ export function ProjectsPage() {
   });
 
   function selectProject(p: ProjectConfig) {
-    if (
-      isDirty &&
-      !window.confirm("未保存の変更があります。変更を破棄しますか？")
-    )
+    if (isDirty) {
+      setConfirmState({
+        title: "未保存の変更があります",
+        body: "変更を破棄して別のプロジェクトを開きますか？",
+        confirmLabel: "破棄して開く",
+        action: () => {
+          const f = projToForm(p);
+          setSelected(p.PROJECT_ID);
+          setIsNew(false);
+          setForm(f);
+          setSavedFormStr(JSON.stringify(f));
+          setError(null);
+        },
+      });
       return;
+    }
     const f = projToForm(p);
     setSelected(p.PROJECT_ID);
     setIsNew(false);
@@ -119,11 +138,21 @@ export function ProjectsPage() {
   }
 
   function startNew() {
-    if (
-      isDirty &&
-      !window.confirm("未保存の変更があります。変更を破棄しますか？")
-    )
+    if (isDirty) {
+      setConfirmState({
+        title: "未保存の変更があります",
+        body: "変更を破棄して新規作成を始めますか？",
+        confirmLabel: "破棄して新規作成",
+        action: () => {
+          setSelected(null);
+          setIsNew(true);
+          setForm(EMPTY_FORM);
+          setSavedFormStr(null);
+          setError(null);
+        },
+      });
       return;
+    }
     setSelected(null);
     setIsNew(true);
     setForm(EMPTY_FORM);
@@ -191,9 +220,14 @@ export function ProjectsPage() {
           onUpdateCastRow={updateCastRow}
           onSave={() => saveMutation.mutate(form)}
           onDelete={() => {
-            if (selected && window.confirm(`"${selected}" を削除しますか？`)) {
-              deleteMutation.mutate(selected);
-            }
+            if (!selected) return;
+            setConfirmState({
+              title: "プロジェクトを削除しますか？",
+              body: `\"${selected}\" を削除します。元に戻せません。`,
+              confirmLabel: "削除",
+              isDestructive: true,
+              action: () => deleteMutation.mutate(selected),
+            });
           }}
         />
       ) : (
@@ -201,6 +235,19 @@ export function ProjectsPage() {
           プロジェクトを選択するか、New で作成してください
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ""}
+        body={confirmState?.body ?? ""}
+        confirmLabel={confirmState?.confirmLabel ?? "続行"}
+        isDestructive={confirmState?.isDestructive}
+        onCancel={() => setConfirmState(null)}
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

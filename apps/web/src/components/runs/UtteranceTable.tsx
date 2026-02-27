@@ -16,6 +16,7 @@ type Props = {
   runId: string;
   filePath: string;
   onDirtyChange?: (dirty: boolean) => void;
+  onReloadFromSource?: () => Promise<void>;
 };
 
 export function UtteranceTable({
@@ -25,6 +26,7 @@ export function UtteranceTable({
   runId,
   filePath,
   onDirtyChange,
+  onReloadFromSource,
 }: Props) {
   const [rows, setRows] = useState<EditRow[]>(
     data.utterances.map((u) => ({ ...u, _modified: false })),
@@ -95,15 +97,26 @@ export function UtteranceTable({
     }
   };
 
+  useEffect(() => {
+    setRows(data.utterances.map((u) => ({ ...u, _modified: false })));
+    setCurrentEtag(etag);
+    setSaveError(null);
+  }, [data, etag]);
+
   // Precompute which rows start a new section (pure derivation, no side effects)
   const sectionBreaks = new Set<number>();
   let lastSectionId: number | undefined;
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     if (row.section_id !== undefined && row.section_id !== lastSectionId) {
-      sectionBreaks.add(rows.indexOf(row));
+      sectionBreaks.add(index);
       lastSectionId = row.section_id;
     }
   }
+
+  const handleReload = async () => {
+    if (!onReloadFromSource) return;
+    await onReloadFromSource();
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -115,12 +128,24 @@ export function UtteranceTable({
             <span className="text-xs text-emerald-600">保存しました</span>
           )}
           {saveError && (
-            <span
-              className="text-xs text-red-600 max-w-xs truncate"
-              title={saveError}
-            >
-              {saveError}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xs text-red-600 max-w-xs truncate"
+                title={saveError}
+              >
+                {saveError}
+              </span>
+              {saveError.includes("競合エラー") && onReloadFromSource && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleReload}
+                  className="h-7 px-2 text-xs"
+                >
+                  Reload
+                </Button>
+              )}
+            </div>
           )}
           <Button
             size="sm"

@@ -52,6 +52,49 @@ export function ProjectEditorPane({
   onSave,
   onDelete,
 }: Props) {
+  const selectedStyle = styles.find((style) => style.style_id === form.STYLE_ID);
+  const requiredRoles = new Set(
+    selectedStyle?.format.speaker_roles.map((role) => role.role) ?? [],
+  );
+  const roleCounts = new Map<string, number>();
+  for (const row of form.castRows) {
+    const role = row.role.trim();
+    if (!role) continue;
+    roleCounts.set(role, (roleCounts.get(role) ?? 0) + 1);
+  }
+  const castErrors: string[] = [];
+  const castWarnings: string[] = [];
+
+  for (const row of form.castRows) {
+    const role = row.role.trim();
+    const charKey = row.charKey.trim();
+    if (!role) {
+      castErrors.push("CAST に空の role があります。");
+      continue;
+    }
+    if ((roleCounts.get(role) ?? 0) > 1) {
+      castErrors.push(`CAST role "${role}" が重複しています。`);
+    }
+    if (!charKey) {
+      castErrors.push(`CAST role "${role}" の charKey が空です。`);
+    } else if (!charKeys.includes(charKey)) {
+      castErrors.push(`CAST role "${role}" の charKey "${charKey}" は未定義です。`);
+    }
+    if (requiredRoles.size > 0 && !requiredRoles.has(role)) {
+      castWarnings.push(`CAST role "${role}" は STYLE 定義にありません。`);
+    }
+  }
+
+  for (const requiredRole of requiredRoles) {
+    if (!form.castRows.some((row) => row.role.trim() === requiredRole)) {
+      castWarnings.push(`STYLE が要求する role "${requiredRole}" が未設定です。`);
+    }
+  }
+
+  const uniqueCastErrors = [...new Set(castErrors)];
+  const uniqueCastWarnings = [...new Set(castWarnings)];
+  const hasBlockingCastError = uniqueCastErrors.length > 0;
+
   return (
     <div className="flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur">
       <h3 className="mb-5 text-base font-semibold">
@@ -201,6 +244,20 @@ export function ProjectEditorPane({
         {form.STYLE_ID && (
           <Fieldset legend="CAST">
             <div className="space-y-2">
+              {uniqueCastErrors.length > 0 && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {uniqueCastErrors.map((message) => (
+                    <div key={message}>{message}</div>
+                  ))}
+                </div>
+              )}
+              {uniqueCastWarnings.length > 0 && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  {uniqueCastWarnings.map((message) => (
+                    <div key={message}>{message}</div>
+                  ))}
+                </div>
+              )}
               {form.castRows.map((row, i) => (
                 <FormField
                   // biome-ignore lint/suspicious/noArrayIndexKey: static order
@@ -315,6 +372,7 @@ export function ProjectEditorPane({
           <SaveStatus
             onSave={onSave}
             isSaving={isSaving}
+            disabled={hasBlockingCastError}
             error={error}
             success={success}
           />

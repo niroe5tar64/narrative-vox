@@ -3,6 +3,7 @@ import { Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/api/client";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { SpeedProfilesEditor } from "@/components/configs/voicevox/SpeedProfilesEditor";
 import { SynthesisDefaultsEditor } from "@/components/configs/voicevox/SynthesisDefaultsEditor";
 import { Button } from "@/components/ui/button";
@@ -127,6 +128,7 @@ export function VoicevoxPage() {
   const [dirtyEditors, setDirtyEditors] = useState<
     Partial<Record<Tab, boolean>>
   >({});
+  const [pendingTab, setPendingTab] = useState<Tab | null>(null);
 
   const isDirty = Object.values(dirtyEditors).some(Boolean);
   useDirtyGuard(isDirty);
@@ -149,10 +151,8 @@ export function VoicevoxPage() {
   );
 
   function switchTab(t: Tab) {
-    if (
-      dirtyEditors[tab] &&
-      !window.confirm("未保存の変更があります。タブを切り替えますか？")
-    ) {
+    if (dirtyEditors[tab]) {
+      setPendingTab(t);
       return;
     }
     setTab(t);
@@ -189,6 +189,20 @@ export function VoicevoxPage() {
           />
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingTab !== null}
+        title="未保存の変更があります"
+        body="変更を破棄してタブを切り替えますか？"
+        confirmLabel="破棄して切り替え"
+        onCancel={() => setPendingTab(null)}
+        onConfirm={() => {
+          if (!pendingTab) return;
+          setDirtyEditors((prev) => ({ ...prev, [tab]: false }));
+          setTab(pendingTab);
+          setPendingTab(null);
+        }}
+      />
     </div>
   );
 }

@@ -198,8 +198,22 @@ export class ApiError extends Error {
 // ===== Fetch helper =====
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const method = init?.method?.toUpperCase() ?? "GET";
+  const hasBody = init?.body !== undefined && init?.body !== null;
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
+  if (
+    hasBody &&
+    method !== "GET" &&
+    method !== "HEAD" &&
+    !isFormData &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
   const res = await fetch(`/api${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers,
     ...init,
   });
   if (res.status === 204) return undefined as T;

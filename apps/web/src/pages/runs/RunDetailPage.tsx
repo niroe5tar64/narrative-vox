@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, ChevronLeft, GitBranch } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api } from "@/api/client";
@@ -16,6 +16,7 @@ import { formatApiError } from "@/lib/format-api-error";
 import { queryKeys } from "@/lib/query-keys";
 
 export function RunDetailPage() {
+  const queryClient = useQueryClient();
   const { projectId, runId } = useParams<{
     projectId: string;
     runId: string;
@@ -30,6 +31,7 @@ export function RunDetailPage() {
   useDirtyGuard(fileViewerDirty);
 
   const { logs, status: pipelineStatus, reset } = usePipelineLog(jobId);
+  const prevPipelineStatus = useRef(pipelineStatus);
 
   const {
     data: treeData,
@@ -83,6 +85,43 @@ export function RunDetailPage() {
     logs.length > 0 ||
     pipelineStatus === "connecting" ||
     pipelineStatus === "running";
+
+  useEffect(() => {
+    const prev = prevPipelineStatus.current;
+    prevPipelineStatus.current = pipelineStatus;
+    if (!jobId || !projectId || !runId) return;
+    if (pipelineStatus === prev) return;
+    const isTerminal =
+      pipelineStatus === "done" ||
+      pipelineStatus === "cancelled" ||
+      pipelineStatus === "error";
+    if (!isTerminal) return;
+
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.runs.tree(projectId, runId),
+    });
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.runs.status(projectId, runId),
+    });
+    if (selectedFile) {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.runs.file(projectId, runId, selectedFile),
+      });
+    }
+    if (jobCommand === "prepare-run") {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.runs.byProject(projectId),
+      });
+    }
+  }, [
+    jobCommand,
+    jobId,
+    pipelineStatus,
+    projectId,
+    queryClient,
+    runId,
+    selectedFile,
+  ]);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">

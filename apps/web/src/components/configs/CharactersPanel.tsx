@@ -11,6 +11,7 @@ import {
   type CharacterConfig,
   type SpeakerInfo,
 } from "@/api/client";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { CharacterEditorPane } from "@/components/configs/characters/CharacterEditorPane";
 import { CharactersListPane } from "@/components/configs/characters/CharactersListPane";
 import {
@@ -36,6 +37,13 @@ export function CharactersPanel({
   const [form, setForm] = useState<CharForm>(EMPTY_FORM);
   const [savedFormStr, setSavedFormStr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    body: string;
+    confirmLabel: string;
+    isDestructive?: boolean;
+    action: () => void;
+  } | null>(null);
   const successFlash = useFlashMessage();
 
   const isDirty = isNew
@@ -123,11 +131,22 @@ export function CharactersPanel({
   });
 
   function selectChar(c: CharacterConfig) {
-    if (
-      isDirty &&
-      !window.confirm("未保存の変更があります。変更を破棄しますか？")
-    )
+    if (isDirty) {
+      setConfirmState({
+        title: "未保存の変更があります",
+        body: "変更を破棄して別のキャラクターを開きますか？",
+        confirmLabel: "破棄して開く",
+        action: () => {
+          const f = charToForm(c);
+          setSelected(c.key);
+          setIsNew(false);
+          setForm(f);
+          setSavedFormStr(JSON.stringify(f));
+          setError(null);
+        },
+      });
       return;
+    }
     const f = charToForm(c);
     setSelected(c.key);
     setIsNew(false);
@@ -137,11 +156,21 @@ export function CharactersPanel({
   }
 
   function startNew() {
-    if (
-      isDirty &&
-      !window.confirm("未保存の変更があります。変更を破棄しますか？")
-    )
+    if (isDirty) {
+      setConfirmState({
+        title: "未保存の変更があります",
+        body: "変更を破棄して新規キャラクター作成を始めますか？",
+        confirmLabel: "破棄して新規作成",
+        action: () => {
+          setSelected(null);
+          setIsNew(true);
+          setForm(EMPTY_FORM);
+          setSavedFormStr(null);
+          setError(null);
+        },
+      });
       return;
+    }
     setSelected(null);
     setIsNew(true);
     setForm(EMPTY_FORM);
@@ -201,9 +230,14 @@ export function CharactersPanel({
             saveMutation.mutate(form);
           }}
           onDelete={() => {
-            if (selected && window.confirm(`"${selected}" を削除しますか？`)) {
-              deleteMutation.mutate(selected);
-            }
+            if (!selected) return;
+            setConfirmState({
+              title: "キャラクターを削除しますか？",
+              body: `\"${selected}\" を削除します。元に戻せません。`,
+              confirmLabel: "削除",
+              isDestructive: true,
+              action: () => deleteMutation.mutate(selected),
+            });
           }}
         />
       ) : (
@@ -211,6 +245,19 @@ export function CharactersPanel({
           キャラクターを選択するか、New で作成してください
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ""}
+        body={confirmState?.body ?? ""}
+        confirmLabel={confirmState?.confirmLabel ?? "続行"}
+        isDestructive={confirmState?.isDestructive}
+        onCancel={() => setConfirmState(null)}
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

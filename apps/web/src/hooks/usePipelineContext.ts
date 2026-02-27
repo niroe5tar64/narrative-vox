@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { api } from "@/api/client";
+import { api, type ProjectConfig } from "@/api/client";
 import { derivePaths } from "@/lib/pipeline-steps";
 import { queryKeys } from "@/lib/query-keys";
 
 export function usePipelineContext(isJobActiveForQuery: boolean) {
   const [projectId, setProjectId] = useState("");
   const [runKey, setRunKey] = useState("");
-  const [episodeId, setEpisodeId] = useState("E01");
+  const [episodeId, setEpisodeId] = useState("");
   const [pendingAutoSelectRun, setPendingAutoSelectRun] = useState(false);
 
   const runIdFromKey = runKey ? runKey.slice(runKey.indexOf("/") + 1) : "";
@@ -54,6 +54,36 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
     }
     setPendingAutoSelectRun(false);
   }, [pendingAutoSelectRun, runsQuery.data, projectId, runKey]);
+
+  const selectedProject = (projectsQuery.data?.items as ProjectConfig[] | undefined)
+    ?.find((project) => project.PROJECT_ID === projectId);
+
+  useEffect(() => {
+    if (!selectedProject?.EPISODE_ID) return;
+    setEpisodeId((prev) => prev || selectedProject.EPISODE_ID);
+  }, [selectedProject]);
+
+  useEffect(() => {
+    if (!runStatusQuery.data || episodeId) return;
+    const stageOrder = [
+      runStatusQuery.data.stages.material,
+      runStatusQuery.data.stages.script,
+      runStatusQuery.data.stages.context,
+      runStatusQuery.data.stages.voicevox_text,
+      runStatusQuery.data.stages.voicevox_project,
+      runStatusQuery.data.stages.audio,
+    ] as const;
+    for (const stage of stageOrder) {
+      if ("episodeIds" in stage && stage.episodeIds.length > 0) {
+        setEpisodeId(stage.episodeIds[0]);
+        return;
+      }
+    }
+  }, [episodeId, runStatusQuery.data]);
+
+  useEffect(() => {
+    setEpisodeId((prev) => prev || "E01");
+  }, [episodeId]);
 
   return {
     projectId,

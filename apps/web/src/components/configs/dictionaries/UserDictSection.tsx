@@ -49,6 +49,7 @@ export function UserDictSection({
 
   const [previewCharKey, setPreviewCharKey] = useState<string>("");
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const previewChar =
     characters.find((c) => c.key === previewCharKey) ?? characters[0] ?? null;
   const { rowState, play } = useAudioPreview();
@@ -119,6 +120,18 @@ export function UserDictSection({
   const local = editor.data;
   if (!local) return <p className="text-sm text-slate-500">データ取得失敗</p>;
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredWords = local.words.filter((word) => {
+    if (!normalizedSearch) return true;
+    return [
+      word.surface,
+      word.pronunciation,
+      String(word.accent_type),
+      String(word.priority),
+      word.word_type,
+    ].some((value) => value.toLowerCase().includes(normalizedSearch));
+  });
+
   return (
     <section className="space-y-3">
       <h3 className="text-sm font-semibold text-slate-700">User Dictionary</h3>
@@ -141,6 +154,15 @@ export function UserDictSection({
             ))}
           </select>
         )}
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Surface / Pronunciation / 品詞で検索"
+          className="h-7 text-xs"
+        />
+        <span className="ml-auto text-xs text-slate-400">
+          {filteredWords.length}/{local.words.length}
+        </span>
       </div>
       <div className="overflow-x-auto rounded-md border border-slate-200">
         <table className="w-full text-sm">
@@ -156,7 +178,9 @@ export function UserDictSection({
             </tr>
           </thead>
           <tbody>
-            {local.words.map((word, i) => (
+            {filteredWords.map((word) => {
+              const i = local.words.indexOf(word);
+              return (
               <tr key={i} className="border-t border-slate-100">
                 <td className="px-2 py-1">
                   <Input value={word.surface} onChange={(e) => updateWord(i, { surface: e.target.value })} placeholder="表記" className="w-28 border-0 shadow-none focus-visible:ring-0" />
@@ -225,11 +249,11 @@ export function UserDictSection({
                   </button>
                 </td>
               </tr>
-            ))}
-            {local.words.length === 0 && (
+            )})}
+            {filteredWords.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-3 py-4 text-center text-slate-400">
-                  単語なし
+                  {local.words.length === 0 ? "単語なし" : "検索結果なし"}
                 </td>
               </tr>
             )}
