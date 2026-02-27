@@ -1,3 +1,19 @@
+import type {
+  FileResult,
+  JobCancelResult,
+  JobStartResult,
+  PipelineRunRequest,
+  ProblemResponse,
+  RunListResult,
+  RunStatus,
+  RunTreeResult,
+  TreeNode,
+  Utterance,
+  UtteranceUpdate,
+  VoicevoxText,
+  LogEntry,
+} from "@narrative-vox/api-types";
+
 // ===== Domain Types =====
 
 export type CharacterConfig = {
@@ -74,72 +90,6 @@ export type UserDictWord = {
 };
 export type UserDict = { version: number; words: UserDictWord[] };
 
-// ===== Runs =====
-
-export type RunItem = {
-  projectId: string;
-  runId: string;
-  createdAt: string;
-};
-
-export type StageStatus = "completed" | "partial" | "idle";
-
-export type StageInfo =
-  | { status: "completed" }
-  | { status: "partial" | "idle"; episodeIds: string[] };
-
-export type RunStatus = {
-  projectId: string;
-  runId: string;
-  stages: {
-    blueprint: { status: StageStatus };
-    material: StageInfo;
-    script: StageInfo;
-    context: StageInfo;
-    voicevox_text: StageInfo;
-    voicevox_project: StageInfo;
-    audio: StageInfo;
-  };
-  plannedEpisodeIds: string[];
-};
-
-export type RunListResult = {
-  items: RunItem[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
-export type TreeNode =
-  | { name: string; type: "file"; path: string }
-  | { name: string; type: "dir"; children: TreeNode[] };
-
-export type Utterance = {
-  utterance_id: string;
-  section_id?: number;
-  section_title?: string;
-  speaker_key?: string;
-  text: string;
-  pause_length_ms: number;
-  [key: string]: unknown;
-};
-
-export type VoicevoxText = {
-  utterances: Utterance[];
-  [key: string]: unknown;
-};
-
-export type UtteranceUpdate = {
-  utterance_id: string;
-  text?: string;
-  pause_length_ms?: number;
-};
-
-export type FileResult = {
-  content: string;
-  etag: string | null;
-};
-
 export type ManifestUtterance = {
   audio_key: string;
   text: string;
@@ -154,26 +104,17 @@ export type ManifestData = {
   [key: string]: unknown;
 };
 
-export type LogEntry = {
-  type: "stdout" | "stderr" | "system";
-  data: string;
-  ts: string;
-  seq: number;
-  code?: number;
-  cancelled?: boolean;
-};
-
-export type JobStartResult = {
-  jobId: string;
-  command: string;
-  args: string[];
-  startedAt: string;
-};
-
-export type JobCancelResult = {
-  jobId: string;
-  status: string;
-  cancelled: boolean;
+export type {
+  FileResult,
+  JobCancelResult,
+  JobStartResult,
+  LogEntry,
+  RunListResult,
+  RunStatus,
+  TreeNode,
+  Utterance,
+  UtteranceUpdate,
+  VoicevoxText,
 };
 
 // ===== Error =====
@@ -217,9 +158,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (res.status === 204) return undefined as T;
-  const json = await res.json();
+  const json = (await res.json()) as T | ProblemResponse;
   if (!res.ok) {
-    throw new ApiError(res.status, json.title ?? "Unknown error", json.detail);
+    const problem = json as ProblemResponse;
+    throw new ApiError(
+      res.status,
+      problem.title ?? "Unknown error",
+      problem.detail,
+    );
   }
   return json as T;
 }
@@ -317,11 +263,13 @@ export const api = {
   },
 
   pipeline: {
-    run: (command: string, args: string[]) =>
-      apiFetch<JobStartResult>("/pipeline/run", {
+    run: (command: string, args: string[]) => {
+      const payload: PipelineRunRequest = { command, args };
+      return apiFetch<JobStartResult>("/pipeline/run", {
         method: "POST",
-        body: JSON.stringify({ command, args }),
-      }),
+        body: JSON.stringify(payload),
+      });
+    },
     cancel: (jobId: string) =>
       apiFetch<JobCancelResult>(`/pipeline/${jobId}/cancel`, {
         method: "POST",
@@ -344,7 +292,7 @@ export const api = {
     },
 
     tree: (projectId: string, runId: string) =>
-      apiFetch<{ tree: TreeNode }>(`/runs/${projectId}/${runId}/tree`),
+      apiFetch<RunTreeResult>(`/runs/${projectId}/${runId}/tree`),
 
     status: (projectId: string, runId: string) =>
       apiFetch<RunStatus>(`/runs/${projectId}/${runId}/status`),
@@ -358,14 +306,11 @@ export const api = {
         `/api/runs/${projectId}/${runId}/file?path=${encodeURIComponent(filePath)}`,
       );
       if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as Record<
-          string,
-          unknown
-        >;
+        const json = (await res.json().catch(() => ({}))) as Partial<ProblemResponse>;
         throw new ApiError(
           res.status,
-          (json.title as string | undefined) ?? "Unknown error",
-          json.detail as string | undefined,
+          json.title ?? "Unknown error",
+          json.detail,
         );
       }
       const content = await res.text();
@@ -389,14 +334,11 @@ export const api = {
         },
       );
       if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as Record<
-          string,
-          unknown
-        >;
+        const json = (await res.json().catch(() => ({}))) as Partial<ProblemResponse>;
         throw new ApiError(
           res.status,
-          (json.title as string | undefined) ?? "Unknown error",
-          json.detail as string | undefined,
+          json.title ?? "Unknown error",
+          json.detail,
         );
       }
       const content = await res.text();

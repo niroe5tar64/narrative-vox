@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
 import { useState } from "react";
 
-import type { TreeNode } from "@/api/client";
+import type { TreeNode } from "@narrative-vox/api-types";
 import { cn } from "@/lib/utils";
 
 type Props = {

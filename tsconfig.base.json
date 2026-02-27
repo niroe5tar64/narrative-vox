@@ -12,6 +12,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@narrative-vox/api-types": ["packages/api-types/src/index.ts"],
+      "@narrative-vox/api-types/*": ["packages/api-types/src/*"],
       "@narrative-vox/cli": ["apps/cli/src/index.ts"],
       "@narrative-vox/cli/*": ["apps/cli/src/*"],
       "@narrative-vox/domain": ["packages/domain/src/index.ts"],

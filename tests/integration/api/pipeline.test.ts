@@ -10,8 +10,8 @@
 
 import { afterAll, beforeAll, test } from "bun:test";
 import assert from "node:assert/strict";
+import type { LogEntry } from "@narrative-vox/api-types";
 import { app, pipelineWebsocket } from "../../../apps/api/src/app.ts";
-import type { LogEntry } from "../../../apps/api/src/routes/pipeline.ts";
 
 // ---------------------------------------------------------------------------
 // サーバー起動 / 停止

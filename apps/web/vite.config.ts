@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@narrative-vox/api-types": fileURLToPath(
+        new URL("../../packages/api-types/src/index.ts", import.meta.url),
+      ),
     },
   },
   server: {

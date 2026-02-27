@@ -2,11 +2,8 @@ import { afterAll, beforeAll, test } from "bun:test";
 import assert from "node:assert/strict";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
+import type { TreeNode } from "@narrative-vox/api-types";
 import { app } from "../../../apps/api/src/app.ts";
-
-type TreeNode =
-  | { name: string; type: "file"; path: string }
-  | { name: string; type: "dir"; children: TreeNode[] };
 
 const PROJECT_ID = `test-runs-${crypto.randomUUID().slice(0, 8)}`;
 const RUN_ID_DEEP = "run-20260101-0000";

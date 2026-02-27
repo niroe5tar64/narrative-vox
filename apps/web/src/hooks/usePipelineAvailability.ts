@@ -1,4 +1,4 @@
-import type { RunStatus } from "@/api/client";
+import type { RunStatus } from "@narrative-vox/api-types";
 import type {
   Layer1StepKey,
   Layer2StepKey,

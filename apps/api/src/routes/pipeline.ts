@@ -1,5 +1,11 @@
 import { isAbsolute, join } from "node:path";
 import type { ServerWebSocket } from "bun";
+import type {
+  JobCancelResult,
+  JobStartResult,
+  LogEntry,
+  PipelineRunRequest,
+} from "@narrative-vox/api-types";
 import { Hono } from "hono";
 import { createBunWebSocket } from "hono/bun";
 import type { WSContext } from "hono/ws";
@@ -234,25 +240,6 @@ function validateCommandArgs(
     i += 1;
   }
   return { ok: true };
-}
-
-// ---------------------------------------------------------------------------
-// 型定義
-// ---------------------------------------------------------------------------
-
-export interface LogEntry {
-  /** ログ種別 */
-  type: "stdout" | "stderr" | "system";
-  /** ログ本文 */
-  data: string;
-  /** ISO8601 タイムスタンプ */
-  ts: string;
-  /** 単調増加シーケンス番号 */
-  seq: number;
-  /** 終了コード（system イベントのみ） */
-  code?: number;
-  /** キャンセルによる終了（system イベントのみ） */
-  cancelled?: boolean;
 }
 
 /** WebSocket 送信インタフェース（Hono WSContext の send のみ使用） */
@@ -506,7 +493,7 @@ pipelineRouter.post("/run", async (c) => {
     });
   }
 
-  const { command, args } = body as Record<string, unknown>;
+  const { command, args } = body as Partial<PipelineRunRequest>;
 
   if (typeof command !== "string" || !isAllowedCommand(command)) {
     return problem(c, {
@@ -559,15 +546,13 @@ pipelineRouter.post("/run", async (c) => {
     command: job.command,
   });
 
-  return c.json(
-    {
-      jobId: job.id,
-      command: job.command,
-      args: job.args,
-      startedAt: job.startedAt,
-    },
-    202,
-  );
+  const response: JobStartResult = {
+    jobId: job.id,
+    command: job.command,
+    args: job.args,
+    startedAt: job.startedAt,
+  };
+  return c.json(response, 202);
 });
 
 /** POST /api/pipeline/:jobId/cancel — ジョブキャンセル */
@@ -593,7 +578,12 @@ pipelineRouter.post("/:jobId/cancel", async (c) => {
     status: 200,
     command: job.command,
   });
-  return c.json({ jobId: job.id, status: job.status, cancelled: true });
+  const response: JobCancelResult = {
+    jobId: job.id,
+    status: job.status,
+    cancelled: true,
+  };
+  return c.json(response);
 });
 
 // ---------------------------------------------------------------------------

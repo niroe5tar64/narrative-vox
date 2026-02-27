@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import type { RunStatus } from "@/api/client";
+import type { RunStatus } from "@narrative-vox/api-types";
 import { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import type { Paths, StepKey } from "@/lib/pipeline-steps";
 

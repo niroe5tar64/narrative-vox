@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
-import type { ManifestData, VoicevoxText } from "@/api/client";
+import type { VoicevoxText } from "@narrative-vox/api-types";
+import type { ManifestData } from "@/api/client";
 import { api } from "@/api/client";
 import { UtteranceTable } from "@/components/runs/UtteranceTable";
 import { Button } from "@/components/ui/button";

@@ -17,7 +17,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@narrative-vox/api-types": ["../../packages/api-types/src/index.ts"]
     },
 
     /* Linting */

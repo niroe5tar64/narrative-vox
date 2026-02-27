@@ -2,38 +2,8 @@ import { afterAll, beforeAll, test } from "bun:test";
 import assert from "node:assert/strict";
 import { cp, rm } from "node:fs/promises";
 import path from "node:path";
+import type { RunStatus, TreeNode, VoicevoxText } from "@narrative-vox/api-types";
 import { app } from "../../../apps/api/src/app.ts";
-
-type TreeNode =
-  | { name: string; type: "file"; path: string }
-  | { name: string; type: "dir"; children: TreeNode[] };
-
-type StageInfo =
-  | { status: "completed" }
-  | { status: "partial" | "idle"; episodeIds: string[] };
-
-type RunStatus = {
-  projectId: string;
-  runId: string;
-  stages: {
-    blueprint: { status: "completed" | "partial" | "idle" };
-    material: StageInfo;
-    script: StageInfo;
-    context: StageInfo;
-    voicevox_text: StageInfo;
-    voicevox_project: StageInfo;
-    audio: StageInfo;
-  };
-  plannedEpisodeIds: string[];
-};
-
-type VoicevoxText = {
-  utterances: Array<{
-    utterance_id: string;
-    text: string;
-    pause_length_ms: number;
-  }>;
-};
 
 const PROJECT_ID = `test-runs-happy-${crypto.randomUUID().slice(0, 8)}`;
 const RUN_ID = "run-20260212-0101";

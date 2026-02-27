@@ -1,5 +1,10 @@
 import { readdir, readFile, rename, stat } from "node:fs/promises";
 import { join } from "node:path";
+import type {
+  RunStatus,
+  TreeNode,
+  UtteranceUpdate,
+} from "@narrative-vox/api-types";
 import { Hono } from "hono";
 import { config } from "../config.ts";
 import { isTextExtension } from "../lib/content-type.ts";
@@ -45,10 +50,6 @@ async function computeETag(content: string): Promise<string> {
     .join("");
   return `"${hex}"`;
 }
-
-type TreeNode =
-  | { name: string; type: "file"; path: string }
-  | { name: string; type: "dir"; children: TreeNode[] };
 
 const MAX_TREE_DEPTH = 10;
 
@@ -100,28 +101,10 @@ async function globEpisodeIds(dir: string, suffix: string): Promise<string[]> {
   return ids.sort();
 }
 
-type StageStatus = "completed" | "partial" | "idle";
-
-type StageInfo =
-  | { status: "completed" }
-  | { status: "partial" | "idle"; episodeIds: string[] };
-
-type RunStatus = {
-  projectId: string;
-  runId: string;
-  stages: {
-    blueprint: { status: StageStatus };
-    material: StageInfo;
-    script: StageInfo;
-    context: StageInfo;
-    voicevox_text: StageInfo;
-    voicevox_project: StageInfo;
-    audio: StageInfo;
-  };
-  plannedEpisodeIds: string[];
-};
-
-function toStageInfo(episodeIds: string[], planned: string[]): StageInfo {
+function toStageInfo(
+  episodeIds: string[],
+  planned: string[],
+): RunStatus["stages"]["material"] {
   if (
     planned.length > 0 &&
     planned.every((plannedId) => episodeIds.includes(plannedId))
@@ -494,8 +477,10 @@ runsRouter.put("/:projectId/:runId/file", async (c) => {
     }
 
     // 更新マップを構築（utterance_id → {text?, pause_length_ms?}）
-    type UtteranceUpdate = { text?: string; pause_length_ms?: number };
-    const updateMap = new Map<string, UtteranceUpdate>();
+    const updateMap = new Map<
+      string,
+      Pick<UtteranceUpdate, "text" | "pause_length_ms">
+    >();
     for (const u of updates) {
       if (
         !u ||
@@ -509,7 +494,7 @@ runsRouter.put("/:projectId/:runId/file", async (c) => {
         });
       }
       const rec = u as Record<string, unknown>;
-      const upd: UtteranceUpdate = {};
+      const upd: Pick<UtteranceUpdate, "text" | "pause_length_ms"> = {};
       if ("text" in rec) {
         if (
           typeof rec.text !== "string" ||

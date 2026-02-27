@@ -1,26 +1,6 @@
+import type { ProblemDetail } from "@narrative-vox/api-types";
 import type { Context } from "hono";
 import type { AppVariables } from "../types.ts";
-
-/**
- * RFC7807 Problem Details (application/problem+json) のフィールド。
- * https://www.rfc-editor.org/rfc/rfc7807
- */
-export interface ProblemDetail {
-  /** 問題タイプを識別するURIリファレンス。省略時は "about:blank"。 */
-  type?: string;
-  /** 問題タイプの短い人間可読サマリー。 */
-  title: string;
-  /** HTTPステータスコード。 */
-  status: number;
-  /** この発生に固有の詳細説明。 */
-  detail?: string;
-  /** 問題の発生箇所を識別するURIリファレンス。省略時はリクエストURLを使用。 */
-  instance?: string;
-  /** アプリケーション固有のエラーコード。 */
-  errorCode?: string;
-  /** バリデーションエラーなどの追加詳細。 */
-  details?: unknown;
-}
 
 /** HTTP 400 Bad Request */
 export const STATUS_400 = 400 as const;
