@@ -18,7 +18,7 @@ function makeUtterance(text: string, id = "U001"): VoicevoxTextUtterance {
 
 const URL_RULE: NormalizationRule = {
   id: "url",
-  pattern: "https?://\\S+",
+  pattern: "https?://[\\w./?#&=%~:@!$'()*+,;\\-]+",
   replacement: "ユーアールエル",
   enabled: true,
 };
@@ -45,6 +45,12 @@ test("normalizer: URL replacement", () => {
     URL_RULE,
   ]);
   assert.equal(result[0]?.text, "詳しくは ユーアールエル をご覧ください。");
+});
+
+test("normalizer: URL pattern does not consume trailing Japanese punctuation", () => {
+  const utterances = [makeUtterance("参照はhttps://example.com。次に進みます。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [URL_RULE]);
+  assert.equal(result[0]?.text, "参照はユーアールエル。次に進みます。");
 });
 
 test("normalizer: inline code strip", () => {

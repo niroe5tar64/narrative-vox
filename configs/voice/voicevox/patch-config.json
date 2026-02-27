@@ -5,7 +5,7 @@
     "rules": [
       {
         "id": "url",
-        "pattern": "https?://\\S+",
+        "pattern": "https?://[\\w./?#&=%~:@!$'()*+,;\\-]+",
         "replacement": "ユーアールエル",
         "enabled": true,
         "description": "URLを読み替え"
