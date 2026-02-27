@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import type { ServerWebSocket } from "bun";
 import { Hono } from "hono";
 import { createBunWebSocket } from "hono/bun";
@@ -32,6 +32,213 @@ type AllowedCommand = (typeof ALLOWED_COMMANDS)[number];
 
 function isAllowedCommand(cmd: string): cmd is AllowedCommand {
   return (ALLOWED_COMMANDS as readonly string[]).includes(cmd);
+}
+
+const PROJECT_ID_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
+const EPISODE_ID_PATTERN = /^E\d{2}$/;
+const RUN_ID_PATTERN = /^run-\d{8}-\d{4}$/;
+const SAFE_TEXT_PATTERN = /^[A-Za-z0-9._:-]+$/;
+const RUN_DIR_PATTERN =
+  /^data\/projects\/[a-z0-9][a-z0-9_-]*\/run-\d{8}-\d{4}$/;
+const SCRIPT_PATH_PATTERN =
+  /^data\/projects\/[a-z0-9][a-z0-9_-]*\/run-\d{8}-\d{4}\/script\/E\d{2}_script\.md$/;
+const VOICEVOX_TEXT_PATH_PATTERN =
+  /^data\/projects\/[a-z0-9][a-z0-9_-]*\/run-\d{8}-\d{4}\/voicevox_text\/E\d{2}_voicevox_text(?:\.patched)?\.json$/;
+const VVPROJ_PATH_PATTERN =
+  /^data\/projects\/[a-z0-9][a-z0-9_-]*\/run-\d{8}-\d{4}\/voicevox_project\/E\d{2}\.vvproj$/;
+
+type ArgRule = {
+  expectsValue: boolean;
+  validate?: (value: string) => boolean;
+};
+
+type CommandArgSpec = Record<string, ArgRule>;
+
+function isSafeRelativePath(value: string): boolean {
+  if (!value || value.includes("\0")) return false;
+  if (isAbsolute(value)) return false;
+  return !value.split("/").some((segment) => segment === "..");
+}
+
+function isSafeConfigPath(value: string): boolean {
+  return (
+    isSafeRelativePath(value) &&
+    value.startsWith("configs/") &&
+    value.endsWith(".json")
+  );
+}
+
+function isSafeRunDir(value: string): boolean {
+  return isSafeRelativePath(value) && RUN_DIR_PATTERN.test(value);
+}
+
+function isSafeScriptPath(value: string): boolean {
+  return isSafeRelativePath(value) && SCRIPT_PATH_PATTERN.test(value);
+}
+
+function isSafeVoicevoxTextPath(value: string): boolean {
+  return isSafeRelativePath(value) && VOICEVOX_TEXT_PATH_PATTERN.test(value);
+}
+
+function isSafeVvprojPath(value: string): boolean {
+  return isSafeRelativePath(value) && VVPROJ_PATH_PATTERN.test(value);
+}
+
+function isSafeVoicevoxUrl(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "http:") return false;
+  return [
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "voicevox",
+    "host.docker.internal",
+  ].includes(url.hostname);
+}
+
+function isFiniteNumberValue(value: string): boolean {
+  const parsed = Number(value);
+  return Number.isFinite(parsed);
+}
+
+function isIntegerValue(value: string): boolean {
+  if (!/^-?\d+$/.test(value)) return false;
+  return Number.isSafeInteger(Number(value));
+}
+
+const COMMAND_ARG_SPECS: Record<AllowedCommand, CommandArgSpec> = {
+  "gen-blueprint": {
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+  },
+  "gen-material": {
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+    "episode-id": { expectsValue: true, validate: (v) => EPISODE_ID_PATTERN.test(v) },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "gen-script": {
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+    "episode-id": { expectsValue: true, validate: (v) => EPISODE_ID_PATTERN.test(v) },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "gen-digest": {
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+    "episode-id": { expectsValue: true, validate: (v) => EPISODE_ID_PATTERN.test(v) },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "build-text": {
+    script: { expectsValue: true, validate: isSafeScriptPath },
+    "build-text-config": { expectsValue: true, validate: isSafeConfigPath },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+    "episode-id": { expectsValue: true, validate: (v) => EPISODE_ID_PATTERN.test(v) },
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+    "run-id": { expectsValue: true, validate: (v) => RUN_ID_PATTERN.test(v) },
+  },
+  "patch-voicevox-text": {
+    "voicevox-text-json": { expectsValue: true, validate: isSafeVoicevoxTextPath },
+    "patch-config": { expectsValue: true, validate: isSafeConfigPath },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "build-project": {
+    "voicevox-text-json": { expectsValue: true, validate: isSafeVoicevoxTextPath },
+    "use-patched": { expectsValue: false },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+    "synthesis-defaults": { expectsValue: true, validate: isSafeConfigPath },
+    "character-map": { expectsValue: true, validate: isSafeConfigPath },
+    "character-key": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "engine-id": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "speaker-id": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "style-id": { expectsValue: true, validate: isIntegerValue },
+    emotion: { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "app-version": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },
+    "speed-preset": {
+      expectsValue: true,
+      validate: (v) => ["slow", "normal", "fast"].includes(v),
+    },
+    "speed-profiles": { expectsValue: true, validate: isSafeConfigPath },
+    "intonation-scale": { expectsValue: true, validate: isFiniteNumberValue },
+  },
+  "build-audio": {
+    vvproj: { expectsValue: true, validate: isSafeVvprojPath },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+    "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },
+    "compressed-format": {
+      expectsValue: true,
+      validate: (v) => ["mp3", "m4a", "ogg", "none"].includes(v),
+    },
+    "compressed-bitrate-kbps": { expectsValue: true, validate: isIntegerValue },
+  },
+  "build-all": {
+    script: { expectsValue: true, validate: isSafeScriptPath },
+    patch: { expectsValue: false },
+    "patch-config": { expectsValue: true, validate: isSafeConfigPath },
+    "build-text-config": { expectsValue: true, validate: isSafeConfigPath },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+    "run-id": { expectsValue: true, validate: (v) => RUN_ID_PATTERN.test(v) },
+    dict: { expectsValue: true, validate: isSafeConfigPath },
+    "project-id": { expectsValue: true, validate: (v) => PROJECT_ID_PATTERN.test(v) },
+    "episode-id": { expectsValue: true, validate: (v) => EPISODE_ID_PATTERN.test(v) },
+  },
+  "check-run": {
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+    "synthesis-defaults": { expectsValue: true, validate: isSafeConfigPath },
+    "character-map": { expectsValue: true, validate: isSafeConfigPath },
+    "character-key": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "engine-id": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "speaker-id": { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "style-id": { expectsValue: true, validate: isIntegerValue },
+    emotion: { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
+    "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },
+    "speed-preset": {
+      expectsValue: true,
+      validate: (v) => ["slow", "normal", "fast"].includes(v),
+    },
+    "speed-profiles": { expectsValue: true, validate: isSafeConfigPath },
+  },
+  "prepare-run": {
+    "source-run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "dict-sync": {
+    "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },
+    dict: { expectsValue: true, validate: isSafeConfigPath },
+    "dry-run": { expectsValue: false },
+    "legacy-sync": { expectsValue: false },
+  },
+};
+
+function validateCommandArgs(
+  command: AllowedCommand,
+  args: string[],
+): { ok: true } | { ok: false; detail: string } {
+  const spec = COMMAND_ARG_SPECS[command];
+  for (let i = 0; i < args.length; i += 1) {
+    const token = args[i];
+    if (!token.startsWith("--")) {
+      return { ok: false, detail: `Invalid argument token: ${token}` };
+    }
+    const flag = token.slice(2);
+    const rule = spec[flag];
+    if (!rule) {
+      return { ok: false, detail: `Unknown flag for ${command}: --${flag}` };
+    }
+    if (!rule.expectsValue) {
+      continue;
+    }
+    const value = args[i + 1];
+    if (!value || value.startsWith("--")) {
+      return { ok: false, detail: `Flag --${flag} requires a value` };
+    }
+    if (rule.validate && !rule.validate(value)) {
+      return { ok: false, detail: `Invalid value for --${flag}: ${value}` };
+    }
+    i += 1;
+  }
+  return { ok: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -313,6 +520,16 @@ pipelineRouter.post("/run", async (c) => {
       title: "Invalid args",
       status: STATUS_400,
       detail: "args must be an array of strings",
+    });
+  }
+
+  const validatedArgs = validateCommandArgs(command, resolvedArgs as string[]);
+  if (!validatedArgs.ok) {
+    return problem(c, {
+      title: "Invalid args",
+      status: STATUS_400,
+      detail: validatedArgs.detail,
+      errorCode: "INVALID_ARGS",
     });
   }
 

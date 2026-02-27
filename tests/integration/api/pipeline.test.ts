@@ -175,6 +175,36 @@ test("args に文字列以外の要素が含まれる場合は 400 を返す", a
   assert.equal(res.status, 400);
 });
 
+test("未知フラグを含む args は 400 INVALID_ARGS を返す", async () => {
+  const res = await fetch(`${baseUrl}/api/pipeline/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      command: "check-run",
+      args: ["--run-dir", "data/projects/p1/run-20260101-0000", "--cwd", "/etc"],
+    }),
+  });
+
+  assert.equal(res.status, 400);
+  const body = (await res.json()) as Record<string, unknown>;
+  assert.equal(body.errorCode, "INVALID_ARGS");
+});
+
+test("run-dir が data/projects 外のパスなら 400 INVALID_ARGS を返す", async () => {
+  const res = await fetch(`${baseUrl}/api/pipeline/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      command: "check-run",
+      args: ["--run-dir", "/tmp/nonexistent-test-run"],
+    }),
+  });
+
+  assert.equal(res.status, 400);
+  const body = (await res.json()) as Record<string, unknown>;
+  assert.equal(body.errorCode, "INVALID_ARGS");
+});
+
 test("同時 2 ジョブ: 2 番目は 400 JOB_ALREADY_RUNNING を返す", async () => {
   // ジョブ 1 を開始
   const { jobId, status: status1 } = await startJob("build-audio", []);
@@ -268,7 +298,7 @@ test("WS: 完了したジョブのログを seq 昇順で受信できる", async
   // ジョブを開始し、完了まで WS で待機
   const { jobId, status } = await startJob("check-run", [
     "--run-dir",
-    "/tmp/nonexistent-test-run",
+    "data/projects/pipeline-test/run-20260101-0000",
   ]);
   assert.equal(status, 202);
 
@@ -295,7 +325,7 @@ test("WS: 再接続時にリングバッファのログが再送される", asyn
   // 別のジョブを開始・完了させる
   const { jobId, status } = await startJob("check-run", [
     "--run-dir",
-    "/tmp/nonexistent-replay-test",
+    "data/projects/pipeline-test/run-20260101-0001",
   ]);
   assert.equal(status, 202);
 
