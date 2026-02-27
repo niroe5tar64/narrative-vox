@@ -2,6 +2,7 @@ import { readdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono } from "hono";
 import { config } from "../config.ts";
+import { auditApiEvent } from "../lib/audit-log.ts";
 import {
   problem,
   STATUS_400,
@@ -155,6 +156,11 @@ configsRouter.post("/characters", async (c) => {
       });
     }
     await writeJsonFile(relPath, parsed.body);
+    await auditApiEvent(c, {
+      action: "config.create",
+      status: 201,
+      configName: `characters/${key}`,
+    });
     return c.json(parsed.body, 201);
   } catch (e) {
     if (e instanceof SafePathError)
@@ -197,6 +203,11 @@ configsRouter.put("/characters/:key", async (c) => {
     if (!existing)
       return problem(c, { title: "Character not found", status: STATUS_404 });
     await writeJsonFile(relPath, parsed.body);
+    await auditApiEvent(c, {
+      action: "config.update",
+      status: 200,
+      configName: `characters/${key}`,
+    });
     return c.json(parsed.body);
   } catch (e) {
     if (e instanceof SafePathError)
@@ -219,6 +230,11 @@ configsRouter.delete("/characters/:key", async (c) => {
     if (!result)
       return problem(c, { title: "Character not found", status: STATUS_404 });
     await unlink(result.absPath);
+    await auditApiEvent(c, {
+      action: "config.delete",
+      status: 204,
+      configName: `characters/${key}`,
+    });
     return new Response(null, { status: 204 });
   } catch (e) {
     if (e instanceof SafePathError)
@@ -291,6 +307,12 @@ configsRouter.post("/projects", async (c) => {
       });
     }
     await writeJsonFile(relPath, parsed.body);
+    await auditApiEvent(c, {
+      action: "config.create",
+      status: 201,
+      configName: `projects/${id}`,
+      projectId: id,
+    });
     return c.json(parsed.body, 201);
   } catch (e) {
     if (e instanceof SafePathError)
@@ -329,6 +351,12 @@ configsRouter.put("/projects/:id", async (c) => {
     if (!existing)
       return problem(c, { title: "Project not found", status: STATUS_404 });
     await writeJsonFile(relPath, parsed.body);
+    await auditApiEvent(c, {
+      action: "config.update",
+      status: 200,
+      configName: `projects/${id}`,
+      projectId: id,
+    });
     return c.json(parsed.body);
   } catch (e) {
     if (e instanceof SafePathError)
@@ -351,6 +379,12 @@ configsRouter.delete("/projects/:id", async (c) => {
     if (!result)
       return problem(c, { title: "Project not found", status: STATUS_404 });
     await unlink(result.absPath);
+    await auditApiEvent(c, {
+      action: "config.delete",
+      status: 204,
+      configName: `projects/${id}`,
+      projectId: id,
+    });
     return new Response(null, { status: 204 });
   } catch (e) {
     if (e instanceof SafePathError)
@@ -455,6 +489,11 @@ for (const [name, entry] of Object.entries(VOICEVOX_CONFIGS)) {
 
     try {
       await writeJsonFile(entry.relPath, parsed.body);
+      await auditApiEvent(c, {
+        action: "config.update",
+        status: 200,
+        configName: `voicevox/${name}`,
+      });
       return c.json(parsed.body);
     } catch (e) {
       if (e instanceof SafePathError)

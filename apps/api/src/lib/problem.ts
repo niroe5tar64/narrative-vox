@@ -36,6 +36,8 @@ export const STATUS_413 = 413 as const;
 export const STATUS_415 = 415 as const;
 /** HTTP 422 Unprocessable Entity */
 export const STATUS_422 = 422 as const;
+/** HTTP 429 Too Many Requests */
+export const STATUS_429 = 429 as const;
 /** HTTP 500 Internal Server Error */
 export const STATUS_500 = 500 as const;
 /** HTTP 503 Service Unavailable */

@@ -3,8 +3,16 @@ import type { ServerWebSocket } from "bun";
 import { Hono } from "hono";
 import { createBunWebSocket } from "hono/bun";
 import type { WSContext } from "hono/ws";
+import { auditApiEvent } from "../lib/audit-log.ts";
+import { createFixedWindowRateLimiter } from "../lib/rate-limit.ts";
+import {
+  problem,
+  STATUS_400,
+  STATUS_404,
+  STATUS_429,
+} from "../lib/problem.ts";
+import { isAllowedVoicevoxUrl } from "../lib/voicevox-url.ts";
 import { config } from "../config.ts";
-import { problem, STATUS_400, STATUS_404 } from "../lib/problem.ts";
 import type { AppVariables } from "../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -85,20 +93,7 @@ function isSafeVvprojPath(value: string): boolean {
 }
 
 function isSafeVoicevoxUrl(value: string): boolean {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return false;
-  }
-  if (url.protocol !== "http:") return false;
-  return [
-    "localhost",
-    "127.0.0.1",
-    "::1",
-    "voicevox",
-    "host.docker.internal",
-  ].includes(url.hostname);
+  return isAllowedVoicevoxUrl(value);
 }
 
 function isFiniteNumberValue(value: string): boolean {
@@ -284,6 +279,7 @@ interface Job {
   subscribers: Set<Subscriber>;
   exitCode?: number;
   cancelled: boolean;
+  nextSeq: number;
   ttlTimer?: ReturnType<typeof setTimeout>;
   timeoutHandle?: ReturnType<typeof setTimeout>;
 }
@@ -295,6 +291,7 @@ interface Job {
 const JOB_TIMEOUT_MS = 30 * 60 * 1000; // 30 分
 const LOG_TTL_MS = 30 * 60 * 1000; // 終了ジョブの TTL 30 分
 const LOG_RING_SIZE = 500; // リングバッファサイズ
+const RUN_RATE_LIMIT = createFixedWindowRateLimiter(10, 60_000);
 
 // ---------------------------------------------------------------------------
 // グローバル状態
@@ -306,15 +303,12 @@ let runningJob: Job | null = null;
 /** 終了ジョブのキャッシュ（TTL 付き） */
 const completedJobs = new Map<string, Job>();
 
-/** ログシーケンス番号（単調増加） */
-let seqCounter = 0;
-
 // ---------------------------------------------------------------------------
 // ヘルパー関数
 // ---------------------------------------------------------------------------
 
 function pushLog(job: Job, entry: Omit<LogEntry, "seq">): void {
-  const logEntry: LogEntry = { ...entry, seq: ++seqCounter };
+  const logEntry: LogEntry = { ...entry, seq: job.nextSeq++ };
   if (job.logs.length >= LOG_RING_SIZE) {
     job.logs.shift(); // 古いエントリを削除
   }
@@ -486,6 +480,18 @@ pipelineRouter.post("/run", async (c) => {
     });
   }
 
+  const rateLimit = RUN_RATE_LIMIT();
+  if (!rateLimit.ok) {
+    const res = problem(c, {
+      title: "Too many pipeline run attempts",
+      status: STATUS_429,
+      detail: "Retry later",
+      errorCode: "RATE_LIMITED",
+    });
+    res.headers.set("Retry-After", String(rateLimit.retryAfterSec));
+    return res;
+  }
+
   let body: unknown;
   try {
     body = await c.req.json();
@@ -542,9 +548,16 @@ pipelineRouter.post("/run", async (c) => {
     logs: [],
     subscribers: new Set(),
     cancelled: false,
+    nextSeq: 1,
   };
   runningJob = job;
   startJob(job);
+
+  await auditApiEvent(c, {
+    action: "pipeline.run",
+    status: 202,
+    command: job.command,
+  });
 
   return c.json(
     {
@@ -575,6 +588,11 @@ pipelineRouter.post("/:jobId/cancel", async (c) => {
   }
 
   await cancelJobProcess(job);
+  await auditApiEvent(c, {
+    action: "pipeline.cancel",
+    status: 200,
+    command: job.command,
+  });
   return c.json({ jobId: job.id, status: job.status, cancelled: true });
 });
 
@@ -605,7 +623,7 @@ export const pipelineWsRoute = upgradeWebSocket((c) => {
             type: "system",
             data: `Job not found: ${jobId}`,
             ts: new Date().toISOString(),
-            seq: ++seqCounter,
+            seq: 0,
           }),
         );
         ws.close(1008, "Job not found");

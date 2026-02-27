@@ -35,6 +35,7 @@ export function resolvePromptTemplatePath(genre: string, step: string): string {
 
 const PLACEHOLDER_RE = /\{\{([A-Z0-9_]+)\}\}/g;
 const PROMPT_SECTION_RE = /^## Prompt$/m;
+const DISALLOWED_VALUE_PLACEHOLDER_RE = /\{\{[^{}]+\}\}/;
 
 /**
  * Resolve placeholders in a prompt template using a config map.
@@ -96,12 +97,22 @@ export async function renderPrompt(
   const config: Record<string, string> = {};
   for (const [key, value] of Object.entries(rawConfig)) {
     if (typeof value === "string") {
+      if (DISALLOWED_VALUE_PLACEHOLDER_RE.test(value)) {
+        throw new Error(
+          `Config field ${key} contains unsupported placeholder syntax: ${value}`,
+        );
+      }
       config[key] = value;
     }
   }
 
   // Override EPISODE_ID if provided
   if (options.episodeId) {
+    if (DISALLOWED_VALUE_PLACEHOLDER_RE.test(options.episodeId)) {
+      throw new Error(
+        `Config field EPISODE_ID contains unsupported placeholder syntax: ${options.episodeId}`,
+      );
+    }
     config.EPISODE_ID = options.episodeId;
   }
 
