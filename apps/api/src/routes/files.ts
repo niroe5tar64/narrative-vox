@@ -81,7 +81,7 @@ async function buildTree(
 
 // ===== Run Status =====
 
-const EPISODE_ID_RE = /^(E\d{2})_/;
+const EPISODE_ID_RE = /^(E\d{2})(?:_|\.|$)/;
 
 /** ディレクトリ内のファイル名からエピソードIDを抽出（存在しない場合は空配列） */
 async function globEpisodeIds(dir: string, suffix: string): Promise<string[]> {
