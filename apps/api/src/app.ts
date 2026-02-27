@@ -1,6 +1,8 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { config } from "./config.ts";
+import { problem, STATUS_413 } from "./lib/problem.ts";
 import { requestIdMiddleware } from "./middleware/request-id.ts";
 import { configsRouter } from "./routes/configs.ts";
 import { editorRouter } from "./routes/editor.ts";
@@ -18,6 +20,36 @@ export { pipelineWebsocket };
 const app = new Hono<{ Variables: AppVariables }>();
 
 app.use("*", requestIdMiddleware);
+
+const jsonBodyLimit = bodyLimit({
+  maxSize: 1 * 1024 * 1024,
+  onError: (c) =>
+    problem(c, {
+      title: "Payload Too Large",
+      status: STATUS_413,
+      detail: "Request body exceeds 1MB limit",
+      errorCode: "PAYLOAD_TOO_LARGE",
+    }),
+});
+
+const synthesisBodyLimit = bodyLimit({
+  maxSize: 10 * 1024 * 1024,
+  onError: (c) =>
+    problem(c, {
+      title: "Payload Too Large",
+      status: STATUS_413,
+      detail: "Request body exceeds 10MB limit for synthesis endpoint",
+      errorCode: "PAYLOAD_TOO_LARGE",
+    }),
+});
+
+app.use("/api/voicevox/synthesis", synthesisBodyLimit);
+app.use("/api/*", (c, next) => {
+  if (c.req.path === "/api/voicevox/synthesis") {
+    return next();
+  }
+  return jsonBodyLimit(c, next);
+});
 
 if (config.allowedOrigin) {
   app.use(

@@ -30,6 +30,8 @@ export const STATUS_403 = 403 as const;
 export const STATUS_404 = 404 as const;
 /** HTTP 409 Conflict */
 export const STATUS_409 = 409 as const;
+/** HTTP 413 Payload Too Large */
+export const STATUS_413 = 413 as const;
 /** HTTP 415 Unsupported Media Type */
 export const STATUS_415 = 415 as const;
 /** HTTP 422 Unprocessable Entity */
