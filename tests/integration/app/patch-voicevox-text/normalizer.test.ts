@@ -37,6 +37,41 @@ const NUMBER_MS_RULE: NormalizationRule = {
   enabled: true,
 };
 
+const NUMBER_MB_RULE: NormalizationRule = {
+  id: "number_mb",
+  pattern: "(\\d+)MB",
+  replacement: "$1メガバイト",
+  enabled: true,
+};
+
+const NUMBER_GB_RULE: NormalizationRule = {
+  id: "number_gb",
+  pattern: "(\\d+)GB",
+  replacement: "$1ギガバイト",
+  enabled: true,
+};
+
+const NUMBER_HZ_RULE: NormalizationRule = {
+  id: "number_hz",
+  pattern: "(\\d+(?:\\.\\d+)?)Hz",
+  replacement: "$1ヘルツ",
+  enabled: true,
+};
+
+const NUMBER_KHZ_RULE: NormalizationRule = {
+  id: "number_khz",
+  pattern: "(\\d+(?:\\.\\d+)?)kHz",
+  replacement: "$1キロヘルツ",
+  enabled: true,
+};
+
+const NUMBER_FPS_RULE: NormalizationRule = {
+  id: "number_fps",
+  pattern: "(\\d+)fps",
+  replacement: "$1エフピーエス",
+  enabled: true,
+};
+
 test("normalizer: URL replacement", () => {
   const utterances = [
     makeUtterance("詳しくは https://example.com/foo をご覧ください。"),
@@ -67,6 +102,46 @@ test("normalizer: number+ms", () => {
     NUMBER_MS_RULE,
   ]);
   assert.equal(result[0]?.text, "処理時間は500ミリ秒です。");
+});
+
+test("normalizer: MB unit replacement", () => {
+  const utterances = [makeUtterance("転送速度は100MBです。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    NUMBER_MB_RULE,
+  ]);
+  assert.equal(result[0]?.text, "転送速度は100メガバイトです。");
+});
+
+test("normalizer: GB unit replacement", () => {
+  const utterances = [makeUtterance("メモリは4GBです。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    NUMBER_GB_RULE,
+  ]);
+  assert.equal(result[0]?.text, "メモリは4ギガバイトです。");
+});
+
+test("normalizer: Hz unit replacement", () => {
+  const utterances = [makeUtterance("サンプル周波数は440Hzです。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    NUMBER_HZ_RULE,
+  ]);
+  assert.equal(result[0]?.text, "サンプル周波数は440ヘルツです。");
+});
+
+test("normalizer: kHz unit replacement", () => {
+  const utterances = [makeUtterance("帯域は44.1kHzです。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    NUMBER_KHZ_RULE,
+  ]);
+  assert.equal(result[0]?.text, "帯域は44.1キロヘルツです。");
+});
+
+test("normalizer: fps unit replacement", () => {
+  const utterances = [makeUtterance("描画は60fpsです。")];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    NUMBER_FPS_RULE,
+  ]);
+  assert.equal(result[0]?.text, "描画は60エフピーエスです。");
 });
 
 test("normalizer: disabled rule is skipped", () => {

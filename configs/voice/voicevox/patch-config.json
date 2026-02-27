@@ -32,6 +32,48 @@
         "description": "px単位を日本語に"
       },
       {
+        "id": "number_kb",
+        "pattern": "(\\d+)KB",
+        "replacement": "$1キロバイト",
+        "enabled": true,
+        "description": "KB単位を日本語に"
+      },
+      {
+        "id": "number_mb",
+        "pattern": "(\\d+)MB",
+        "replacement": "$1メガバイト",
+        "enabled": true,
+        "description": "MB単位を日本語に"
+      },
+      {
+        "id": "number_gb",
+        "pattern": "(\\d+)GB",
+        "replacement": "$1ギガバイト",
+        "enabled": true,
+        "description": "GB単位を日本語に"
+      },
+      {
+        "id": "number_hz",
+        "pattern": "(\\d+(?:\\.\\d+)?)Hz",
+        "replacement": "$1ヘルツ",
+        "enabled": true,
+        "description": "Hz単位を日本語に"
+      },
+      {
+        "id": "number_khz",
+        "pattern": "(\\d+(?:\\.\\d+)?)kHz",
+        "replacement": "$1キロヘルツ",
+        "enabled": true,
+        "description": "kHz単位を日本語に"
+      },
+      {
+        "id": "number_fps",
+        "pattern": "(\\d+)fps",
+        "replacement": "$1エフピーエス",
+        "enabled": true,
+        "description": "fps単位を日本語に"
+      },
+      {
         "id": "arrow_right",
         "pattern": "→",
         "replacement": "から",
