@@ -7,7 +7,7 @@
 | 警告名 | 条件 | 期待する JSON フィールド | 例（桁） |
 | --- | --- | --- | --- |
 | Speakability score is low | `speakability.score < 70` | `score`（評価値） | E04 run: 60 |
-| Terminal punctuation is infrequent | `speakability.terminal_punctuation_ratio < 0.65` | `terminal_punctuation_ratio` | E01 run: 0.50、E02 run: 0.467、E04 run: 0 |
+| Terminal punctuation is infrequent | `speakability.terminal_punctuation_ratio < 0.80` | `terminal_punctuation_ratio` | E01 run: 0.50、E02 run: 0.467、E04 run: 0 |
 | Long utterance ratio is high | `speakability.long_utterance_ratio > 0.25` | `long_utterance_ratio` | E04 run: 0.444 |
 
 ## 再現用スクリプト
@@ -49,7 +49,7 @@
 | 警告 | `SpeakabilityWarningConfig` 設定 | README/チェックリストで追記すべきポイント | Phase5 ガイド |
 | --- | --- | --- | --- |
 | Speakability score is low | `SpeakabilityWarningConfig.scoreThreshold` | スコア 70 以上の状態を「読みやすい」と定義し、分割/`PauseConfig` 係数調整の手順を記録 | `docs/phase5-speakability-guidance.md` の該当行 |
-| Terminal punctuation is infrequent | `SpeakabilityWarningConfig.minTerminalPunctuationRatio` | 終端句読点が 0.65 以上になるまでのアクション（句点追加例など）を案内 | 同上 |
+| Terminal punctuation is infrequent | `SpeakabilityWarningConfig.minTerminalPunctuationRatio` | 終端句読点が 0.80 以上になるまでのアクション（句点追加例など）を案内 | 同上 |
 | Long utterance ratio is high | `SpeakabilityWarningConfig.maxLongUtteranceRatio` | 25% 以下に抑えるための `splitIntoSentences` 識別ルールやテストケースを追加 | 同上 |
 
 ## Phase5 に向けた追加作業

@@ -61,7 +61,7 @@ interface RawBuildTextConfig {
 
 const DEFAULT_WARNING_THRESHOLDS: SpeakabilityWarningConfig = {
   scoreThreshold: 70,
-  minTerminalPunctuationRatio: 0.65,
+  minTerminalPunctuationRatio: 0.8,
   maxLongUtteranceRatio: 0.25,
 };
 

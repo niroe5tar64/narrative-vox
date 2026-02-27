@@ -15,7 +15,7 @@ const VALID_CONFIG = {
   speakability: {
     warningThresholds: {
       scoreThreshold: 70,
-      minTerminalPunctuationRatio: 0.65,
+      minTerminalPunctuationRatio: 0.8,
       maxLongUtteranceRatio: 0.25,
     },
     scoring: {
@@ -50,7 +50,7 @@ test("loadBuildTextConfig loads valid config file", async () => {
   assert.equal(config.speakability.warningThresholds.scoreThreshold, 70);
   assert.equal(
     config.speakability.warningThresholds.minTerminalPunctuationRatio,
-    0.65,
+    0.8,
   );
   assert.equal(config.pause.minMs, 120);
   assert.equal(config.pause.maxMs, 520);

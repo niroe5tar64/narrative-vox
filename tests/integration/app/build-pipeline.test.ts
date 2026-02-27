@@ -1700,6 +1700,103 @@ test("build-text adds warning when speakability score is low", async () => {
   );
 });
 
+test("build-text lists utterance IDs without terminal punctuation when ratio is below threshold", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(
+    tempRoot,
+    "introducing-rescript",
+    "run-20260211-4445",
+  );
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E97_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "一つ目は句点あり。",
+      "二つ目は句点なし",
+      "三つ目も句点なし",
+      "四つ目は句点あり。",
+    ].join("\n"),
+    "utf-8",
+  );
+
+  const result = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E97",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-4445",
+  });
+  const textJson = JSON.parse(
+    await readFile(result.voicevoxTextJsonPath, "utf-8"),
+  ) as VoicevoxTextJsonTest;
+
+  assert.equal(textJson.quality_checks.speakability.terminal_punctuation_ratio, 0.5);
+  assert.equal(
+    textJson.quality_checks.warnings.some((message) =>
+      message.includes("Terminal punctuation is infrequent"),
+    ),
+    true,
+  );
+  assert.equal(
+    textJson.quality_checks.warnings.some((message) =>
+      message.includes("no terminal punctuation: U002, U003"),
+    ),
+    true,
+  );
+});
+
+test("build-text does not add terminal punctuation warnings when ratio equals threshold", async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
+  const runDir = path.join(
+    tempRoot,
+    "introducing-rescript",
+    "run-20260211-4446",
+  );
+  await mkdir(runDir, { recursive: true });
+
+  const scriptPath = path.join(tempRoot, "E96_script.md");
+  await writeFile(
+    scriptPath,
+    [
+      "1. 導入",
+      "一つ目。",
+      "二つ目。",
+      "三つ目。",
+      "四つ目。",
+      "五つ目",
+    ].join("\n"),
+    "utf-8",
+  );
+
+  const result = await buildText({
+    scriptPath,
+    runDir,
+    episodeId: "E96",
+    projectId: "introducing-rescript",
+    runId: "run-20260211-4446",
+  });
+  const textJson = JSON.parse(
+    await readFile(result.voicevoxTextJsonPath, "utf-8"),
+  ) as VoicevoxTextJsonTest;
+
+  assert.equal(textJson.quality_checks.speakability.terminal_punctuation_ratio, 0.8);
+  assert.equal(
+    textJson.quality_checks.warnings.some((message) =>
+      message.includes("Terminal punctuation is infrequent"),
+    ),
+    false,
+  );
+  assert.equal(
+    textJson.quality_checks.warnings.some((message) =>
+      message.includes("no terminal punctuation:"),
+    ),
+    false,
+  );
+});
+
 test("build-text applies build-text config values to pause and warning thresholds", async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-test-"));
   const baseRunDir = path.join(
@@ -1745,7 +1842,7 @@ test("build-text applies build-text config values to pause and warning threshold
         speakability: {
           warningThresholds: {
             scoreThreshold: 101,
-            minTerminalPunctuationRatio: 0.65,
+            minTerminalPunctuationRatio: 0.8,
             maxLongUtteranceRatio: 0.25,
           },
           scoring: {

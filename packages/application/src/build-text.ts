@@ -188,6 +188,9 @@ function buildQualityChecks(
   );
   const warningThresholds = buildTextConfig.speakability.warningThresholds;
   const warnings: string[] = [];
+  const utteranceIdsWithoutTerminalPunctuation = utterances
+    .filter((utterance) => !/[。！？!?]$/.test(utterance.text.trim()))
+    .map((utterance) => utterance.utterance_id);
 
   if (maxChars > 80) {
     warnings.push(
@@ -208,6 +211,11 @@ function buildQualityChecks(
         speakability.terminal_punctuation_ratio,
       )}, threshold=${warningThresholds.minTerminalPunctuationRatio}). Add clearer sentence endings. See ${speakabilityChecklistPath} for SpeakabilityWarningConfig.minTerminalPunctuationRatio guidance.`,
     );
+    if (utteranceIdsWithoutTerminalPunctuation.length > 0) {
+      warnings.push(
+        `no terminal punctuation: ${utteranceIdsWithoutTerminalPunctuation.join(", ")}`,
+      );
+    }
   }
   if (
     speakability.long_utterance_ratio > warningThresholds.maxLongUtteranceRatio
