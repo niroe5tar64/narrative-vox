@@ -164,7 +164,7 @@
     "category": "non_ascii",
     "script_text": "## 1. オープニング\n[speaker:teacher] 形態素解析を学びます。\n## 2. 本編\n[speaker:student] 例を続けます。",
     "term": "形態素解析",
-    "expected_in_script": false,
+    "expected_in_script": true,
     "gold_in_script": true,
     "expected_skip": false,
     "morph_mode": "available",

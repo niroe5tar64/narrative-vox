@@ -26,5 +26,5 @@
 ## 更新ルール
 
 - 仕様変更で挙動が変わる場合は、`expected_in_script`・`expected_notation_inconsistencies`・集計期待値を同時更新する。
-- 既知 limitation を保持する場合は `gold_in_script` と `expected_in_script` の差分を明示する。
+- 既知 limitation をあえて保持する場合のみ、`gold_in_script` と `expected_in_script` の差分を明示する。
 - 既存の個別ケースがこの fixture で十分に表現できる場合は、段階的に fixture ベースへ統合する。

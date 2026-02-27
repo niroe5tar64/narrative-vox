@@ -183,12 +183,12 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     total: 11,
     evaluated: 10,
     skipped: 1,
-    tp: 6,
+    tp: 7,
     fp: 0,
-    fn: 1,
+    fn: 0,
     tn: 3,
     precision: 1,
-    recall: 0.8571,
+    recall: 1,
   });
   const notationMetrics: NotationMetrics = {
     notation_targets: notationTargets,

@@ -464,17 +464,12 @@ function collectNonAsciiMorphMatchSpans(params: {
   }
 
   const concatenatedSpans: TokenSpan[] = [];
-  const maxWindow = Math.max(4, termTokens.length + 2);
   for (let i = 0; i < params.scriptMorphTokenSpans.length; i++) {
     const start = params.scriptMorphTokenSpans[i]?.start;
     if (start === undefined) {
       continue;
     }
-    for (
-      let j = i;
-      j < params.scriptMorphTokenSpans.length && j - i + 1 <= maxWindow;
-      j++
-    ) {
+    for (let j = i; j < params.scriptMorphTokenSpans.length; j++) {
       const end = params.scriptMorphTokenSpans[j]?.end;
       if (end === undefined || end <= start) {
         continue;
