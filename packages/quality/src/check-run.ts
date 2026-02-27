@@ -190,6 +190,23 @@ interface TokenSpan {
   end: number;
 }
 
+interface CoverageVariantEval {
+  inScript: boolean;
+  variants: string[];
+  skipped: boolean;
+}
+
+interface CoverageRuntimeContext {
+  scriptText: string;
+  scriptTokenSpans: ScriptTokenSpan[];
+  scriptTokens: string[];
+  normalizedScriptText: string;
+  rawStartByNormalizedIndex: number[];
+  rawEndByNormalizedIndex: number[];
+  scriptMorphTokenSpans: MorphScriptTokenSpan[];
+  morphTokenizer?: MorphTokenizer | null;
+}
+
 interface NormalizedTextIndexMap {
   normalizedText: string;
   rawStartByNormalizedIndex: number[];
@@ -450,16 +467,14 @@ function dedupeSpans(spans: TokenSpan[]): TokenSpan[] {
 function collectNonAsciiMorphMatchSpans(params: {
   scriptText: string;
   scriptMorphTokenSpans: MorphScriptTokenSpan[];
-  term: string;
-  morphTokenizer: MorphTokenizer;
+  termMorphTokens: string[];
+  normalizedTarget: string;
 }): TokenSpan[] {
-  const termTokens = tokenizeMorphTerm(params.term, params.morphTokenizer);
   const sequenceSpans =
-    termTokens.length > 0
-      ? collectTokenSequenceSpans(params.scriptMorphTokenSpans, termTokens)
+    params.termMorphTokens.length > 0
+      ? collectTokenSequenceSpans(params.scriptMorphTokenSpans, params.termMorphTokens)
       : [];
-  const target = normalizeTechnicalTermToken(params.term);
-  if (!target) {
+  if (!params.normalizedTarget) {
     return sequenceSpans;
   }
 
@@ -482,15 +497,15 @@ function collectNonAsciiMorphMatchSpans(params: {
         continue;
       }
 
-      if (normalizedConcat === target) {
+      if (normalizedConcat === params.normalizedTarget) {
         concatenatedSpans.push({ start, end });
         break;
       }
 
-      if (normalizedConcat.length > target.length) {
+      if (normalizedConcat.length > params.normalizedTarget.length) {
         break;
       }
-      if (!target.startsWith(normalizedConcat)) {
+      if (!params.normalizedTarget.startsWith(normalizedConcat)) {
         break;
       }
     }
@@ -675,24 +690,6 @@ function findTextNotationVariants(params: {
   return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
 }
 
-function findNonAsciiNotationVariantsByMorph(params: {
-  scriptText: string;
-  scriptMorphTokenSpans: MorphScriptTokenSpan[];
-  term: string;
-  morphTokenizer: MorphTokenizer;
-  precomputedSpans?: TokenSpan[];
-}): string[] {
-  const spans =
-    params.precomputedSpans ??
-    collectNonAsciiMorphMatchSpans({
-      scriptText: params.scriptText,
-      scriptMorphTokenSpans: params.scriptMorphTokenSpans,
-      term: params.term,
-      morphTokenizer: params.morphTokenizer,
-    });
-  return collectNotationVariantsFromSpans(params.scriptText, spans);
-}
-
 function findNotationVariants(params: {
   scriptText: string;
   term: string;
@@ -708,7 +705,7 @@ function findNotationVariants(params: {
   }
 
   const isMixed = isMixedTechnicalTerm(params.term);
-  if (isMixed || !hasAsciiAlphaNum(params.term)) {
+  if (isMixed) {
     return findTextNotationVariants({
       scriptText: params.scriptText,
       normalizedScriptText: params.normalizedScriptText,
@@ -744,6 +741,51 @@ function findNotationVariants(params: {
   return [...variants].sort((a, b) => a.localeCompare(b, "ja"));
 }
 
+function evaluateCoverageAndVariants(params: {
+  term: string;
+  context: CoverageRuntimeContext;
+}): CoverageVariantEval {
+  const { term, context } = params;
+  const isNonAsciiTerm = !hasAsciiAlphaNum(term);
+
+  if (isNonAsciiTerm) {
+    if (!context.morphTokenizer) {
+      return { inScript: false, variants: [], skipped: true };
+    }
+
+    const termMorphTokens = tokenizeMorphTerm(term, context.morphTokenizer);
+    const normalizedTarget = normalizeTechnicalTermToken(term);
+    const nonAsciiMatchSpans = collectNonAsciiMorphMatchSpans({
+      scriptText: context.scriptText,
+      scriptMorphTokenSpans: context.scriptMorphTokenSpans,
+      termMorphTokens,
+      normalizedTarget,
+    });
+    const inScript = nonAsciiMatchSpans.length > 0;
+    const variants = inScript
+      ? collectNotationVariantsFromSpans(context.scriptText, nonAsciiMatchSpans)
+      : [];
+    return { inScript, variants, skipped: false };
+  }
+
+  const inScript = isTechnicalTermCoveredInScript(
+    context.scriptTokens,
+    context.normalizedScriptText,
+    term,
+  );
+  const variants = inScript
+    ? findNotationVariants({
+        scriptText: context.scriptText,
+        term,
+        scriptTokenSpans: context.scriptTokenSpans,
+        normalizedScriptText: context.normalizedScriptText,
+        rawStartByNormalizedIndex: context.rawStartByNormalizedIndex,
+        rawEndByNormalizedIndex: context.rawEndByNormalizedIndex,
+      })
+    : [];
+  return { inScript, variants, skipped: false };
+}
+
 function buildTechnicalTermsAuditReport(params: {
   episodeId: string;
   projectId: string;
@@ -764,13 +806,22 @@ function buildTechnicalTermsAuditReport(params: {
   const scriptMorphTokenSpans = params.morphTokenizer
     ? tokenizeMorphScript(params.scriptText, params.morphTokenizer)
     : [];
+  const coverageContext: CoverageRuntimeContext = {
+    scriptText: params.scriptText,
+    scriptTokenSpans,
+    scriptTokens,
+    normalizedScriptText,
+    rawStartByNormalizedIndex: normalizedTextIndexMap.rawStartByNormalizedIndex,
+    rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
+    scriptMorphTokenSpans,
+    morphTokenizer: params.morphTokenizer,
+  };
   const normalizedDictionary = new Set(
     params.dictionarySurfaces.map((surface) =>
       normalizeTechnicalTermToken(surface),
     ),
   );
   const dictionaryCoverageSkipped = params.dictionaryCoverageSkipped;
-  const morphTokenizer = params.morphTokenizer;
   const missingInScript: string[] = [];
   const missingInDictionaryCandidates: string[] = [];
   const unresolvedHighRiskTerms: string[] = [];
@@ -786,50 +837,17 @@ function buildTechnicalTermsAuditReport(params: {
       continue;
     }
 
-    const isNonAsciiTerm = !hasAsciiAlphaNum(term);
-
-    let inScript = false;
-    let variants: string[] = [];
-    if (isNonAsciiTerm) {
-      const tokenizer = morphTokenizer;
-      if (!tokenizer) {
-        skippedNonAsciiTerms.push(term);
-        continue;
-      }
-      const nonAsciiMatchSpans = collectNonAsciiMorphMatchSpans({
-        scriptText: params.scriptText,
-        scriptMorphTokenSpans,
-        term,
-        morphTokenizer: tokenizer,
-      });
-      inScript = nonAsciiMatchSpans.length > 0;
-      if (inScript) {
-        variants = findNonAsciiNotationVariantsByMorph({
-          scriptText: params.scriptText,
-          scriptMorphTokenSpans,
-          term,
-          morphTokenizer: tokenizer,
-          precomputedSpans: nonAsciiMatchSpans,
-        });
-      }
-    } else {
-      inScript = isTechnicalTermCoveredInScript(
-        scriptTokens,
-        normalizedScriptText,
-        term,
-      );
-      if (inScript) {
-        variants = findNotationVariants({
-          scriptText: params.scriptText,
-          term,
-          scriptTokenSpans,
-          normalizedScriptText,
-          rawStartByNormalizedIndex:
-            normalizedTextIndexMap.rawStartByNormalizedIndex,
-          rawEndByNormalizedIndex: normalizedTextIndexMap.rawEndByNormalizedIndex,
-        });
-      }
+    const coverageEval = evaluateCoverageAndVariants({
+      term,
+      context: coverageContext,
+    });
+    if (coverageEval.skipped) {
+      skippedNonAsciiTerms.push(term);
+      continue;
     }
+
+    const inScript = coverageEval.inScript;
+    const variants = coverageEval.variants;
     if (!inScript) {
       missingInScript.push(term);
     } else {
