@@ -230,6 +230,35 @@
     "expected_notation_inconsistencies": []
   },
   {
+    "id": "non_ascii_choonpu_variant_positive",
+    "category": "non_ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] サーバを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "サーバー",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "available",
+    "morph_tokens": {
+      "## 1. オープニング\n[speaker:teacher] サーバを説明します。\n## 2. 本編\n[speaker:student] 例を続けます。": [
+        "サーバ",
+        "を",
+        "説明",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます"
+      ],
+      "サーバー": ["サーバー"]
+    },
+    "expected_notation_inconsistencies": [
+      {
+        "term": "サーバー",
+        "variants": ["サーバ", "サーバー"]
+      }
+    ]
+  },
+  {
     "id": "non_ascii_unavailable_skip",
     "category": "non_ascii",
     "script_text": "## 1. オープニング\n[speaker:teacher] 関数の基本を説明します。\n## 2. 本編\n[speaker:student] 例を続けます。",

@@ -773,10 +773,37 @@ function evaluateCoverageAndVariants(params: {
       termMorphTokens,
       normalizedTarget,
     });
-    const inScript = nonAsciiMatchSpans.length > 0;
+    const trimmedLongVowelTerm = term.endsWith("ー")
+      ? term.slice(0, -1).trim()
+      : "";
+    const trimmedLongVowelMatchSpans =
+      trimmedLongVowelTerm.length > 0
+        ? collectNonAsciiMorphMatchSpans({
+            scriptText: context.scriptText,
+            scriptMorphTokenSpans: context.scriptMorphTokenSpans,
+            termMorphTokens: tokenizeMorphTerm(
+              trimmedLongVowelTerm,
+              context.morphTokenizer,
+            ),
+            normalizedTarget: normalizeTechnicalTermToken(trimmedLongVowelTerm),
+          })
+        : [];
+    const allMatchSpans = dedupeSpans([
+      ...nonAsciiMatchSpans,
+      ...trimmedLongVowelMatchSpans,
+    ]);
+    const inScript = allMatchSpans.length > 0;
     const variants = inScript
-      ? collectNotationVariantsFromSpans(context.scriptText, nonAsciiMatchSpans)
+      ? collectNotationVariantsFromSpans(context.scriptText, allMatchSpans)
       : [];
+    if (
+      variants.length > 0 &&
+      trimmedLongVowelMatchSpans.length > 0 &&
+      nonAsciiMatchSpans.length === 0
+    ) {
+      variants.push(term);
+      variants.sort((a, b) => a.localeCompare(b, "ja"));
+    }
     return { inScript, variants, skipped: false };
   }
 
