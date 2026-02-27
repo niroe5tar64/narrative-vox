@@ -149,3 +149,20 @@ test("requestId: X-Request-Id ヘッダーを渡すと同じ値が problem+json 
   assert.equal(body.requestId, customId);
   assert.equal(res.headers.get("x-request-id"), customId);
 });
+
+test("requestId: 不正な X-Request-Id は受け付けず UUID に置換される", async () => {
+  const maliciousId = "<img src=x onerror=alert(1)>";
+  const res = await apiFetch("/api/configs/characters/INVALID_KEY", {
+    headers: { "X-Request-Id": maliciousId },
+  });
+
+  assert.equal(res.status, 400);
+  const body = (await res.json()) as Record<string, unknown>;
+  const requestId = body.requestId;
+  assert.ok(typeof requestId === "string");
+  assert.notEqual(requestId, maliciousId);
+  assert.match(
+    requestId,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+});
