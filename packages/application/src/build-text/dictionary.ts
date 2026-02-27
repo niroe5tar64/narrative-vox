@@ -75,7 +75,7 @@ const UPPERCASE_ASCII_READING_MAP = Object.freeze({
 
 const HIRAGANA_ONLY_RE = /^[ぁ-ゖー]+$/;
 const KATAKANA_ONLY_RE = /^[ァ-ヴー]+$/;
-const UPPERCASE_ASCII_RE = /^[A-Z]{2,8}$/;
+const UPPERCASE_ASCII_RE = /^[A-Z]{2,}$/;
 const NUMBER_ONLY_RE = /^[0-9]+$/;
 const WORDLIKE_RE = /[一-龠々ぁ-ゖァ-ヴーA-Za-z]/;
 
