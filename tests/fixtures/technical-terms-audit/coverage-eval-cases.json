@@ -11,6 +11,22 @@
     "expected_notation_inconsistencies": []
   },
   {
+    "id": "ascii_fullwidth_api_inconsistency",
+    "category": "ascii",
+    "script_text": "## 1. オープニング\n[speaker:teacher] ＡＰＩとAPIの両方を使います。\n## 2. 本編\n[speaker:student] 例を続けます。",
+    "term": "API",
+    "expected_in_script": true,
+    "gold_in_script": true,
+    "expected_skip": false,
+    "morph_mode": "unavailable",
+    "expected_notation_inconsistencies": [
+      {
+        "term": "API",
+        "variants": ["ＡＰＩ", "API"]
+      }
+    ]
+  },
+  {
     "id": "ascii_double_array_trie_positive",
     "category": "ascii",
     "script_text": "## 1. オープニング\n[speaker:teacher] Double Array Trie と DoubleArrayTrie の基礎を扱います。\n## 2. 本編\n[speaker:student] 例を続けます。",

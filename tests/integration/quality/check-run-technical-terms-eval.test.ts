@@ -180,10 +180,10 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
 
   const metrics = collectMetrics(metricInputs);
   assert.deepEqual(metrics, {
-    total: 12,
-    evaluated: 11,
+    total: 13,
+    evaluated: 12,
     skipped: 1,
-    tp: 8,
+    tp: 9,
     fp: 0,
     fn: 0,
     tn: 3,
@@ -202,8 +202,8 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     ),
   };
   assert.deepEqual(notationMetrics, {
-    notation_targets: 11,
-    notation_exact_matches: 11,
+    notation_targets: 12,
+    notation_exact_matches: 12,
     notation_exact_match_ratio: 1,
   });
 });
