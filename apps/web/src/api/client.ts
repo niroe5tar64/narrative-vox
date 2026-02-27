@@ -179,12 +179,19 @@ export type JobCancelResult = {
 // ===== Error =====
 
 export class ApiError extends Error {
+  status: number;
+  title: string;
+  detail?: string;
+
   constructor(
-    public status: number,
-    public title: string,
-    public detail?: string,
+    status: number,
+    title: string,
+    detail?: string,
   ) {
     super(title);
+    this.status = status;
+    this.title = title;
+    this.detail = detail;
   }
 }
 
