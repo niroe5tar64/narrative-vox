@@ -153,7 +153,10 @@ test("inferReadingFromSurface infers katakana and uppercase acronym readings", (
   assert.equal(inferReadingFromSurface("テストケース"), "テストケース");
   assert.equal(inferReadingFromSurface("API"), "エーピーアイ");
   assert.equal(inferReadingFromSurface("JS"), "ジェーエス");
+  // Current behavior: CamelCase/camelCase readings are not inferred here.
   assert.equal(inferReadingFromSurface("TypeScript"), "");
+  assert.equal(inferReadingFromSurface("useState"), "");
+  assert.equal(inferReadingFromSurface("innerHTML"), "");
 });
 
 test("dictionary candidate extraction infers readings and excludes low-signal tokens", () => {

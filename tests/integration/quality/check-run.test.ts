@@ -1235,6 +1235,88 @@ test("checkRun warns when HIGH dictionary_candidates are not in user-dict", asyn
   );
 });
 
+test("checkRun warns when HIGH/MEDIUM dictionary_candidates have empty reading_or_empty", async () => {
+  const missingHighSurface = `NoReadHigh${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  const missingMediumSurface = `NoReadMedium${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: [
+      "## 1. オープニング",
+      "[speaker:teacher] TypeScript の設計方針を説明します。",
+      "## 2. 本編",
+      "[speaker:student] 例を続けます。",
+    ].join("\n"),
+  });
+  await updateMaterialFiles(runDir, (data) => ({
+    ...data,
+    technical_terms: [{ term: "TypeScript", note: "監査対象" }],
+  }));
+
+  const voicevoxTextDir = path.join(runDir, "voicevox_text");
+  await mkdir(voicevoxTextDir, { recursive: true });
+  await writeFile(
+    path.join(voicevoxTextDir, "E01_voicevox_text.json"),
+    `${JSON.stringify(
+      {
+        ...validVoicevoxText,
+        dictionary_candidates: [
+          {
+            surface: "TypeScript",
+            reading_or_empty: "タイプスクリプト",
+            priority: "HIGH",
+            occurrences: 2,
+            source: "token",
+          },
+          {
+            surface: missingHighSurface,
+            reading_or_empty: "",
+            priority: "HIGH",
+            occurrences: 1,
+            source: "token",
+          },
+          {
+            surface: missingMediumSurface,
+            reading_or_empty: " ",
+            priority: "MEDIUM",
+            occurrences: 1,
+            source: "token",
+          },
+          {
+            surface: "NoReadLowIgnored",
+            reading_or_empty: "",
+            priority: "LOW",
+            occurrences: 1,
+            source: "token",
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf-8",
+  );
+
+  const result = await checkRun({ runDir });
+  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
+    summary: { candidates_without_reading_count: number };
+    details: { candidates_without_reading: string[] };
+  };
+
+  assert.equal(report.summary.candidates_without_reading_count, 2);
+  assert.deepEqual(report.details.candidates_without_reading, [
+    missingHighSurface,
+    missingMediumSurface,
+  ]);
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes(
+        `dictionary_candidates missing reading_or_empty (HIGH/MEDIUM): ${missingHighSurface}, ${missingMediumSurface}`,
+      ),
+    ),
+    `Expected candidates_without_reading warning, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
 test("checkRun warns when technical_terms dictionary audit is skipped", async () => {
   const runDir = await prepareMinimalRun(["E01"], {
     E01: [

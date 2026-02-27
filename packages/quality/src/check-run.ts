@@ -78,6 +78,7 @@ interface VoicevoxTextForCheckRun {
   dictionary_candidates?: Array<{
     surface?: string;
     priority?: string;
+    reading_or_empty?: string;
   }>;
 }
 
@@ -112,6 +113,7 @@ interface TechnicalTermsAuditReport {
     unresolved_high_risk_count: number;
     notation_inconsistency_count: number;
     high_priority_not_in_user_dict_count: number;
+    candidates_without_reading_count: number;
     warnings_count: number;
   };
   warnings: string[];
@@ -122,6 +124,7 @@ interface TechnicalTermsAuditReport {
     skipped_non_ascii_terms: string[];
     notation_inconsistencies: TechnicalTermsAuditDetail[];
     high_priority_not_in_user_dict: string[];
+    candidates_without_reading: string[];
   };
 }
 
@@ -806,6 +809,7 @@ function buildTechnicalTermsAuditReport(params: {
   scriptText: string;
   dictionarySurfaces: string[];
   highPriorityDictionarySurfaces: string[];
+  candidatesWithoutReading: string[];
   dictionaryCoverageSkipped: boolean;
   userDictSurfaces: string[];
   userDictCoverageSkipped: boolean;
@@ -843,6 +847,7 @@ function buildTechnicalTermsAuditReport(params: {
   const skippedNonAsciiTerms: string[] = [];
   const notationInconsistencies: TechnicalTermsAuditDetail[] = [];
   const highPriorityNotInUserDict: string[] = [];
+  const candidatesWithoutReading: string[] = [];
   const warnings: string[] = [];
   let coveredTerms = 0;
 
@@ -943,6 +948,22 @@ function buildTechnicalTermsAuditReport(params: {
       `high-priority dictionary_candidates not in user-dict: ${highPriorityNotInUserDict.join(", ")}`,
     );
   }
+  if (!dictionaryCoverageSkipped) {
+    const seenSurfaces = new Set<string>();
+    for (const surface of params.candidatesWithoutReading) {
+      const normalized = normalizeTechnicalTermToken(surface);
+      if (!normalized || seenSurfaces.has(normalized)) {
+        continue;
+      }
+      seenSurfaces.add(normalized);
+      candidatesWithoutReading.push(surface);
+    }
+  }
+  if (candidatesWithoutReading.length > 0) {
+    warnings.push(
+      `dictionary_candidates missing reading_or_empty (HIGH/MEDIUM): ${candidatesWithoutReading.join(", ")}`,
+    );
+  }
 
   const totalTerms = params.technicalTerms.length;
   const evaluatedTerms = totalTerms - skippedNonAsciiTerms.length;
@@ -969,6 +990,7 @@ function buildTechnicalTermsAuditReport(params: {
       unresolved_high_risk_count: unresolvedHighRiskTerms.length,
       notation_inconsistency_count: notationInconsistencies.length,
       high_priority_not_in_user_dict_count: highPriorityNotInUserDict.length,
+      candidates_without_reading_count: candidatesWithoutReading.length,
       warnings_count: warnings.length,
     },
     warnings,
@@ -979,6 +1001,7 @@ function buildTechnicalTermsAuditReport(params: {
       skipped_non_ascii_terms: skippedNonAsciiTerms,
       notation_inconsistencies: notationInconsistencies,
       high_priority_not_in_user_dict: highPriorityNotInUserDict,
+      candidates_without_reading: candidatesWithoutReading,
     },
   };
 }
@@ -1404,6 +1427,7 @@ export async function checkRun({
   const voicevoxTextDir = path.join(resolvedRunDir, "voicevox_text");
   const dictionarySurfacesByEpisodeId = new Map<string, string[]>();
   const highPriorityDictionarySurfacesByEpisodeId = new Map<string, string[]>();
+  const candidatesWithoutReadingByEpisodeId = new Map<string, string[]>();
   const validVoicevoxTextByEpisodeId = new Set<string>();
   if (await dirExists(voicevoxTextDir)) {
     const textFiles = (await readdir(voicevoxTextDir))
@@ -1428,10 +1452,27 @@ export async function checkRun({
               .map((candidate) => candidate.surface)
               .filter((surface): surface is string => typeof surface === "string")
           : [];
+        const highOrMediumWithoutReadingSurfaces = Array.isArray(
+          voicevoxText.dictionary_candidates,
+        )
+          ? voicevoxText.dictionary_candidates
+              .filter(
+                (candidate) =>
+                  (candidate.priority === "HIGH" || candidate.priority === "MEDIUM") &&
+                  typeof candidate.surface === "string" &&
+                  String(candidate.reading_or_empty ?? "").trim().length === 0,
+              )
+              .map((candidate) => candidate.surface)
+              .filter((surface): surface is string => typeof surface === "string")
+          : [];
         dictionarySurfacesByEpisodeId.set(episodeId, surfaces);
         highPriorityDictionarySurfacesByEpisodeId.set(
           episodeId,
           highPrioritySurfaces,
+        );
+        candidatesWithoutReadingByEpisodeId.set(
+          episodeId,
+          highOrMediumWithoutReadingSurfaces,
         );
         validVoicevoxTextByEpisodeId.add(episodeId);
       } catch (e) {
@@ -1509,6 +1550,8 @@ export async function checkRun({
     const dictionarySurfaces = dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
     const highPriorityDictionarySurfaces =
       highPriorityDictionarySurfacesByEpisodeId.get(episodeId) ?? [];
+    const candidatesWithoutReading =
+      candidatesWithoutReadingByEpisodeId.get(episodeId) ?? [];
     const hasValidVoicevoxText = validVoicevoxTextByEpisodeId.has(episodeId);
     const voicevoxTextPath = hasValidVoicevoxText
       ? `voicevox_text/${episodeId}_voicevox_text.json`
@@ -1524,6 +1567,7 @@ export async function checkRun({
       scriptText,
       dictionarySurfaces,
       highPriorityDictionarySurfaces,
+      candidatesWithoutReading,
       dictionaryCoverageSkipped: !hasValidVoicevoxText,
       userDictSurfaces,
       userDictCoverageSkipped,
