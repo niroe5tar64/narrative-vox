@@ -103,6 +103,37 @@ test("422: プロジェクト設定の AJV バリデーション失敗 → 422 +
   assert.ok((body.details as unknown[]).length > 0);
 });
 
+test("422: synthesis-defaults の AJV バリデーション失敗 → 422 + details[]", async () => {
+  const res = await apiFetch("/api/configs/voice/voicevox/synthesis-defaults", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ appVersion: "0.25.0" }),
+  });
+
+  assert.equal(res.status, 422);
+  const body = (await res.json()) as Record<string, unknown>;
+  assert.equal(body.status, 422);
+  assert.ok(Array.isArray(body.details));
+  assert.ok((body.details as unknown[]).length > 0);
+});
+
+test("422: user-dict の AJV バリデーション失敗 → 422 + details[]", async () => {
+  const res = await apiFetch("/api/configs/voice/voicevox/user-dict", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      version: 1,
+      words: [{ surface: "ReScript" }],
+    }),
+  });
+
+  assert.equal(res.status, 422);
+  const body = (await res.json()) as Record<string, unknown>;
+  assert.equal(body.status, 422);
+  assert.ok(Array.isArray(body.details));
+  assert.ok((body.details as unknown[]).length > 0);
+});
+
 // ---------------------------------------------------------------------------
 // requestId ヘッダー伝搬
 // ---------------------------------------------------------------------------

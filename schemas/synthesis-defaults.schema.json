@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Synthesis Defaults",
+  "type": "object",
+  "required": ["appVersion", "tpqn", "tempoBpm", "timeSignature", "queryDefaults"],
+  "properties": {
+    "appVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tpqn": {
+      "$ref": "#/$defs/positiveNumberLike"
+    },
+    "tempoBpm": {
+      "$ref": "#/$defs/positiveNumberLike"
+    },
+    "timeSignature": {
+      "type": "object",
+      "required": ["beats", "beatType"],
+      "properties": {
+        "beats": {
+          "$ref": "#/$defs/positiveNumberLike"
+        },
+        "beatType": {
+          "$ref": "#/$defs/positiveNumberLike"
+        }
+      },
+      "additionalProperties": false
+    },
+    "queryDefaults": {
+      "type": "object",
+      "required": [
+        "speedScale",
+        "pitchScale",
+        "intonationScale",
+        "volumeScale",
+        "pauseLengthScale",
+        "prePhonemeLength",
+        "postPhonemeLength",
+        "outputSamplingRate",
+        "outputStereo"
+      ],
+      "properties": {
+        "speedScale": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "pitchScale": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "intonationScale": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "volumeScale": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "pauseLengthScale": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "prePhonemeLength": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "postPhonemeLength": {
+          "$ref": "#/$defs/numberLike"
+        },
+        "outputSamplingRate": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            {
+              "const": "engineDefault"
+            }
+          ]
+        },
+        "outputStereo": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "numberLike": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"
+        }
+      ]
+    },
+    "positiveNumberLike": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^(?:0\\.[0-9]+|[1-9][0-9]*(?:\\.[0-9]+)?)$"
+        }
+      ]
+    }
+  }
+}

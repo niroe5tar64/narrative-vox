@@ -411,7 +411,7 @@ type VoicevoxConfigEntry = {
 const VOICEVOX_CONFIGS: Record<string, VoicevoxConfigEntry> = {
   "synthesis-defaults": {
     relPath: "configs/voice/voicevox/synthesis-defaults.json",
-    schemaName: null,
+    schemaName: "synthesis-defaults",
   },
   "build-text-config": {
     relPath: "configs/voice/voicevox/build-text-config.json",
@@ -423,7 +423,7 @@ const VOICEVOX_CONFIGS: Record<string, VoicevoxConfigEntry> = {
   },
   "user-dict": {
     relPath: "configs/voice/voicevox/user-dict.json",
-    schemaName: null,
+    schemaName: "user-dict",
   },
 };
 
