@@ -37,4 +37,21 @@ src/
 bun run dev          # 開発サーバー起動
 bun run build        # ビルド
 bun run typecheck    # 型チェック
+bun run test         # 単体テスト (vitest)
+```
+
+## ガードレールチェック
+
+```bash
+# queryKey 直書き禁止（query-keys.ts 以外）
+COUNT=$(grep -rn 'queryKey: \[' src --include='*.ts' --include='*.tsx' | grep -v 'query-keys.ts' | wc -l)
+test "$COUNT" -eq 0
+
+# ApiError 直接変換禁止（format-api-error.ts 以外）
+COUNT=$(grep -rn 'e instanceof ApiError' src --include='*.ts' --include='*.tsx' | grep -v 'format-api-error.ts' | wc -l)
+test "$COUNT" -eq 0
+
+# setTimeout 直書き禁止（useFlashMessage.ts 以外）
+COUNT=$(grep -rn 'setTimeout(() => set' src --include='*.ts' --include='*.tsx' | grep -v 'useFlashMessage.ts' | wc -l)
+test "$COUNT" -eq 0
 ```
