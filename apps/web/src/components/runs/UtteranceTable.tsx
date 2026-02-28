@@ -1,11 +1,11 @@
-import { useMutation } from "@tanstack/react-query";
-import { Save } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
 import type {
   Utterance,
   UtteranceUpdate,
   VoicevoxText,
 } from "@narrative-vox/api-types";
+import { useMutation } from "@tanstack/react-query";
+import { Save } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { useFlashMessage } from "@/hooks/useFlashMessage";

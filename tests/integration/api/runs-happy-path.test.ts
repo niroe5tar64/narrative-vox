@@ -2,7 +2,11 @@ import { afterAll, beforeAll, test } from "bun:test";
 import assert from "node:assert/strict";
 import { cp, rm } from "node:fs/promises";
 import path from "node:path";
-import type { RunStatus, TreeNode, VoicevoxText } from "@narrative-vox/api-types";
+import type {
+  RunStatus,
+  TreeNode,
+  VoicevoxText,
+} from "@narrative-vox/api-types";
 import { app } from "../../../apps/api/src/app.ts";
 
 const PROJECT_ID = `test-runs-happy-${crypto.randomUUID().slice(0, 8)}`;
@@ -11,11 +15,17 @@ const FIXTURE_ROOT = path.join(process.cwd(), "tests/fixtures/sample-run");
 const RUN_ROOT = path.join(process.cwd(), "data/projects", PROJECT_ID, RUN_ID);
 const VOICEVOX_TEXT_REL_PATH = "voicevox_text/E01_voicevox_text.json";
 
-async function apiFetch(pathname: string, init?: RequestInit): Promise<Response> {
+async function apiFetch(
+  pathname: string,
+  init?: RequestInit,
+): Promise<Response> {
   return app.fetch(new Request(`http://localhost${pathname}`, init));
 }
 
-function findChildDir(node: TreeNode, name: string): Extract<TreeNode, { type: "dir" }> | null {
+function findChildDir(
+  node: TreeNode,
+  name: string,
+): Extract<TreeNode, { type: "dir" }> | null {
   if (node.type !== "dir") return null;
   const child = node.children.find(
     (entry): entry is Extract<TreeNode, { type: "dir" }> =>
@@ -91,13 +101,16 @@ test("run tree: fixture run の主要ディレクトリとファイルを返す"
   assert.ok(voicevoxTextDir, "voicevox_text directory should exist");
   assert.ok(voicevoxProjectDir, "voicevox_project directory should exist");
 
-  assert.equal(findChildFile(scriptDir!, "E01_script.md")?.path, "script/E01_script.md");
   assert.equal(
-    findChildFile(voicevoxTextDir!, "E01_voicevox_text.json")?.path,
+    findChildFile(scriptDir, "E01_script.md")?.path,
+    "script/E01_script.md",
+  );
+  assert.equal(
+    findChildFile(voicevoxTextDir, "E01_voicevox_text.json")?.path,
     "voicevox_text/E01_voicevox_text.json",
   );
   assert.equal(
-    findChildFile(voicevoxProjectDir!, "E01.vvproj")?.path,
+    findChildFile(voicevoxProjectDir, "E01.vvproj")?.path,
     "voicevox_project/E01.vvproj",
   );
 });
@@ -162,10 +175,18 @@ test("run file save: valid If-Match で voicevox_text を更新できる", async
   assert.notEqual(newEtag, currentEtag);
 
   const updatedBody = (await putRes.json()) as VoicevoxText;
-  const updatedU001 = updatedBody.utterances.find((u) => u.utterance_id === "U001");
-  const updatedU002 = updatedBody.utterances.find((u) => u.utterance_id === "U002");
-  const originalU001 = currentBody.utterances.find((u) => u.utterance_id === "U001");
-  const originalU002 = currentBody.utterances.find((u) => u.utterance_id === "U002");
+  const updatedU001 = updatedBody.utterances.find(
+    (u) => u.utterance_id === "U001",
+  );
+  const updatedU002 = updatedBody.utterances.find(
+    (u) => u.utterance_id === "U002",
+  );
+  const originalU001 = currentBody.utterances.find(
+    (u) => u.utterance_id === "U001",
+  );
+  const originalU002 = currentBody.utterances.find(
+    (u) => u.utterance_id === "U002",
+  );
 
   assert.equal(updatedU001?.text, "happy path updated");
   assert.equal(updatedU001?.pause_length_ms, originalU001?.pause_length_ms);
@@ -180,7 +201,8 @@ test("run file save: valid If-Match で voicevox_text を更新できる", async
     "happy path updated",
   );
   assert.equal(
-    confirmBody.utterances.find((u) => u.utterance_id === "U002")?.pause_length_ms,
+    confirmBody.utterances.find((u) => u.utterance_id === "U002")
+      ?.pause_length_ms,
     999,
   );
 });

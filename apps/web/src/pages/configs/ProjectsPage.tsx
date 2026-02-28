@@ -8,7 +8,6 @@ import {
   type ProjectConfig,
   type StyleConfig,
 } from "@/api/client";
-import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { ProjectEditorPane } from "@/components/configs/projects/ProjectEditorPane";
 import { ProjectsListPane } from "@/components/configs/projects/ProjectsListPane";
 import {
@@ -17,6 +16,7 @@ import {
   type ProjForm,
   projToForm,
 } from "@/components/configs/projects/projectForm";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { useFlashMessage } from "@/hooks/useFlashMessage";
 import { formatApiError } from "@/lib/format-api-error";
@@ -223,7 +223,7 @@ export function ProjectsPage() {
             if (!selected) return;
             setConfirmState({
               title: "プロジェクトを削除しますか？",
-              body: `\"${selected}\" を削除します。元に戻せません。`,
+              body: `"${selected}" を削除します。元に戻せません。`,
               confirmLabel: "削除",
               isDestructive: true,
               action: () => deleteMutation.mutate(selected),

@@ -55,9 +55,21 @@ export function SpeedProfilesEditor({
           legendClassName="px-1 text-sm font-semibold capitalize text-slate-700"
         >
           <div className="grid grid-cols-3 gap-3">
-            <NumberField label="speedScale" value={preset.speedScale} onChange={(v) => patchPreset(name, { speedScale: v })} />
-            <NumberField label="pauseLengthScale" value={preset.pauseLengthScale} onChange={(v) => patchPreset(name, { pauseLengthScale: v })} />
-            <NumberField label="postPhonemeLength" value={preset.postPhonemeLength} onChange={(v) => patchPreset(name, { postPhonemeLength: v })} />
+            <NumberField
+              label="speedScale"
+              value={preset.speedScale}
+              onChange={(v) => patchPreset(name, { speedScale: v })}
+            />
+            <NumberField
+              label="pauseLengthScale"
+              value={preset.pauseLengthScale}
+              onChange={(v) => patchPreset(name, { pauseLengthScale: v })}
+            />
+            <NumberField
+              label="postPhonemeLength"
+              value={preset.postPhonemeLength}
+              onChange={(v) => patchPreset(name, { postPhonemeLength: v })}
+            />
           </div>
         </Fieldset>
       ))}

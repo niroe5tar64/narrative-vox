@@ -56,8 +56,16 @@ export async function genBlueprint(
 
   const runId = makeRunIdNow();
   const runDir = path.resolve("data", "projects", projectId, runId);
-  const blueprintPath = path.join(runDir, "blueprint", "project_blueprint.json");
-  await saveJsonArtifact({ stepLabel, filePath: blueprintPath, data: blueprintJson });
+  const blueprintPath = path.join(
+    runDir,
+    "blueprint",
+    "project_blueprint.json",
+  );
+  await saveJsonArtifact({
+    stepLabel,
+    filePath: blueprintPath,
+    data: blueprintJson,
+  });
 
   const contract = createRunContract({ projectId, runId, runDir });
   await saveRunContract(contract);
@@ -82,8 +90,16 @@ export async function genMaterial(options: GenMaterialOptions): Promise<void> {
   logStep(stepLabel, "Running claude --print -...");
   const materialJson = extractJson(await runClaudeWithPrompt(fullPrompt));
 
-  const materialPath = path.join(runDir, "material", `${episodeId}_material.json`);
-  await saveJsonArtifact({ stepLabel, filePath: materialPath, data: materialJson });
+  const materialPath = path.join(
+    runDir,
+    "material",
+    `${episodeId}_material.json`,
+  );
+  await saveJsonArtifact({
+    stepLabel,
+    filePath: materialPath,
+    data: materialJson,
+  });
   await logJsonSchemaValidation({
     stepLabel,
     data: materialJson,
@@ -140,7 +156,11 @@ export async function genDigest(options: GenDigestOptions): Promise<void> {
   logStep(stepLabel, "Running claude --print -...");
   const digestJson = extractJson(await runClaudeWithPrompt(fullPrompt));
 
-  const digestPath = path.join(runDir, "context", `${episodeId}_episode_digest.json`);
+  const digestPath = path.join(
+    runDir,
+    "context",
+    `${episodeId}_episode_digest.json`,
+  );
   await saveJsonArtifact({ stepLabel, filePath: digestPath, data: digestJson });
   await logJsonSchemaValidation({
     stepLabel,

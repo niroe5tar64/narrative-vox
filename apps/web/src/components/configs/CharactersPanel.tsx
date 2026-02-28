@@ -6,12 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  api,
-  type CharacterConfig,
-  type SpeakerInfo,
-} from "@/api/client";
-import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
+import { api, type CharacterConfig, type SpeakerInfo } from "@/api/client";
 import { CharacterEditorPane } from "@/components/configs/characters/CharacterEditorPane";
 import { CharactersListPane } from "@/components/configs/characters/CharactersListPane";
 import {
@@ -21,6 +16,7 @@ import {
   type EmotionRow,
   formToChar,
 } from "@/components/configs/characters/characterForm";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 import { useFlashMessage } from "@/hooks/useFlashMessage";
 import { formatApiError } from "@/lib/format-api-error";
@@ -233,7 +229,7 @@ export function CharactersPanel({
             if (!selected) return;
             setConfirmState({
               title: "キャラクターを削除しますか？",
-              body: `\"${selected}\" を削除します。元に戻せません。`,
+              body: `"${selected}" を削除します。元に戻せません。`,
               confirmLabel: "削除",
               isDestructive: true,
               action: () => deleteMutation.mutate(selected),

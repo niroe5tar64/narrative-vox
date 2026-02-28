@@ -181,7 +181,12 @@ test("未知フラグを含む args は 400 INVALID_ARGS を返す", async () =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       command: "check-run",
-      args: ["--run-dir", "data/projects/p1/run-20260101-0000", "--cwd", "/etc"],
+      args: [
+        "--run-dir",
+        "data/projects/p1/run-20260101-0000",
+        "--cwd",
+        "/etc",
+      ],
     }),
   });
 

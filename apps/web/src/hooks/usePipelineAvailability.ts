@@ -155,12 +155,12 @@ export function usePipelineAvailability({
   const isNextLayer1Step = (index: number, stepKey: Layer1StepKey): boolean => {
     const isThisCompleted = getLayer1StepDisplayStatus(stepKey) === "done";
     const isPrevCompleted =
-      index === 0 || getLayer1StepDisplayStatus(([
-        "gen-blueprint",
-        "gen-material",
-        "gen-script",
-        "gen-digest",
-      ] as const)[index - 1]) === "done";
+      index === 0 ||
+      getLayer1StepDisplayStatus(
+        (
+          ["gen-blueprint", "gen-material", "gen-script", "gen-digest"] as const
+        )[index - 1],
+      ) === "done";
     return !isThisCompleted && isPrevCompleted && canRunLayer1Step(stepKey);
   };
 
@@ -174,7 +174,12 @@ export function usePipelineAvailability({
     const isThisCompleted = getLayer2StepDisplayStatus(stepKey) === "done";
     const isPrevCompleted =
       index === 0 || getLayer2StepDisplayStatus(ordered[index - 1]) === "done";
-    return !isThisCompleted && !!paths && isPrevCompleted && canRunLayer2Step(stepKey);
+    return (
+      !isThisCompleted &&
+      !!paths &&
+      isPrevCompleted &&
+      canRunLayer2Step(stepKey)
+    );
   };
 
   const canRunBuildAll =

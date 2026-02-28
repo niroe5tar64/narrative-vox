@@ -16,7 +16,10 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
   const [pendingAutoSelectRun, setPendingAutoSelectRun] = useState(false);
 
   const runIdFromKey = runKey ? runKey.slice(runKey.indexOf("/") + 1) : "";
-  const paths = useMemo(() => derivePaths(runKey, episodeId), [runKey, episodeId]);
+  const paths = useMemo(
+    () => derivePaths(runKey, episodeId),
+    [runKey, episodeId],
+  );
 
   const voicevoxQuery = useQuery({
     queryKey: queryKeys.voicevox.status(),
@@ -41,7 +44,8 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
 
   const runsQuery = useQuery({
     queryKey: queryKeys.runs.byProject(projectId),
-    queryFn: () => api.runs.list({ projectId: projectId || undefined, pageSize: 50 }),
+    queryFn: () =>
+      api.runs.list({ projectId: projectId || undefined, pageSize: 50 }),
     staleTime: 30_000,
   });
 
@@ -59,8 +63,9 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
     setPendingAutoSelectRun(false);
   }, [pendingAutoSelectRun, runsQuery.data, projectId, runKey]);
 
-  const selectedProject = (projectsQuery.data?.items as ProjectConfig[] | undefined)
-    ?.find((project) => project.PROJECT_ID === projectId);
+  const selectedProject = (
+    projectsQuery.data?.items as ProjectConfig[] | undefined
+  )?.find((project) => project.PROJECT_ID === projectId);
 
   const projectEpisodeId = selectedProject?.EPISODE_ID;
 

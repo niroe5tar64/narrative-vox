@@ -55,9 +55,10 @@ export function SynthesisDefaultsEditor({
   if (!local) return <p className="text-sm text-slate-500">データ取得失敗</p>;
 
   function patchQD(patch: Partial<QueryDefaults>) {
-    editor.update(
-      (l) => ({ ...l, queryDefaults: { ...l.queryDefaults, ...patch } }),
-    );
+    editor.update((l) => ({
+      ...l,
+      queryDefaults: { ...l.queryDefaults, ...patch },
+    }));
   }
 
   return (

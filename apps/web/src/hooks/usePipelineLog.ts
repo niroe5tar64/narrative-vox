@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import type { LogEntry } from "@narrative-vox/api-types";
+import { useEffect, useRef, useState } from "react";
 
 export type PipelineLogStatus =
   | "idle"

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import React from "react";
+
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
+  createMemoryRouter,
   Link,
   Outlet,
   RouterProvider,
-  createMemoryRouter,
 } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { CharacterConfig } from "@/api/client";
@@ -92,7 +92,11 @@ describe("CharactersPanel", () => {
       ({ queryKey }: { queryKey: readonly unknown[] }) => {
         const key = queryKey[0];
         if (key === "characters") {
-          return { data: { items: characters }, isLoading: false, isError: false };
+          return {
+            data: { items: characters },
+            isLoading: false,
+            isError: false,
+          };
         }
         if (key === "voicevox-status") {
           return { data: undefined, isLoading: false, isError: false };
@@ -129,7 +133,9 @@ describe("CharactersPanel", () => {
       target: { value: "draft-char" },
     });
 
-    fireEvent.click(screen.getByText("Bob Character").closest("button") as HTMLButtonElement);
+    fireEvent.click(
+      screen.getByText("Bob Character").closest("button") as HTMLButtonElement,
+    );
 
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(screen.getByText("未保存の変更があります")).toBeTruthy();
@@ -162,7 +168,9 @@ describe("CharactersPanel", () => {
       target: { value: "draft-char" },
     });
 
-    fireEvent.click(screen.getByText("Bob Character").closest("button") as HTMLButtonElement);
+    fireEvent.click(
+      screen.getByText("Bob Character").closest("button") as HTMLButtonElement,
+    );
     fireEvent.click(screen.getByRole("button", { name: "破棄して開く" }));
 
     await waitFor(() => {

@@ -12,7 +12,9 @@ export function usePipelineJob(options: {
 }) {
   const { onGenBlueprintDone, onRunStatusRefresh } = options;
 
-  const [stepStatuses, setStepStatuses] = useState<Partial<Record<StepKey, StepStatus>>>({});
+  const [stepStatuses, setStepStatuses] = useState<
+    Partial<Record<StepKey, StepStatus>>
+  >({});
   const [activeStep, setActiveStep] = useState<StepKey | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [runningCommand, setRunningCommand] = useState<string | null>(null);
@@ -35,8 +37,12 @@ export function usePipelineJob(options: {
     },
     onError: (e) => {
       setApiError(formatApiError(e));
-      if (activeStepRef.current) {
-        setStepStatuses((prev) => ({ ...prev, [activeStepRef.current!]: "error" }));
+      const activeStep = activeStepRef.current;
+      if (activeStep) {
+        setStepStatuses((prev) => ({
+          ...prev,
+          [activeStep]: "error",
+        }));
         setActiveStep(null);
       }
     },

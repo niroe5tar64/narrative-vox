@@ -89,7 +89,7 @@ describe("composePrompt", () => {
     ]);
 
     assert.ok(prompt.includes("## Blueprint JSON"));
-    assert.ok(prompt.includes("```json\n{\n  \"ok\": true\n}\n```"));
+    assert.ok(prompt.includes('```json\n{\n  "ok": true\n}\n```'));
     assert.ok(prompt.includes("## Script (Markdown)\n\n## 1. Intro"));
     assert.ok(prompt.includes("=== a.md ===\nA\n\n---\n\n=== b.md ===\nB"));
   });
@@ -117,9 +117,14 @@ describe("loadPriorDigests", () => {
 describe("validateJsonSchema", () => {
   test("returns ok for schema-valid blueprint json", async () => {
     const blueprint = JSON.parse(
-      await Bun.file("tests/fixtures/sample-run/blueprint/project_blueprint.json").text(),
+      await Bun.file(
+        "tests/fixtures/sample-run/blueprint/project_blueprint.json",
+      ).text(),
     );
-    const result = await validateJsonSchema(blueprint, "schemas/blueprint.schema.json");
+    const result = await validateJsonSchema(
+      blueprint,
+      "schemas/blueprint.schema.json",
+    );
     assert.deepEqual(result, { ok: true });
   });
 

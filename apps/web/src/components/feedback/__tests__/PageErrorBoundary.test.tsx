@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import React, { useState } from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { PageErrorBoundary } from "@/components/feedback/PageErrorBoundary";
 
@@ -22,7 +23,9 @@ describe("PageErrorBoundary", () => {
       </PageErrorBoundary>,
     );
 
-    expect(screen.getByText("ページの表示中にエラーが発生しました")).toBeTruthy();
+    expect(
+      screen.getByText("ページの表示中にエラーが発生しました"),
+    ).toBeTruthy();
     expect(screen.getByText("boom")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
   });
@@ -52,7 +55,9 @@ describe("PageErrorBoundary", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Crash" }));
-    expect(screen.getByText("ページの表示中にエラーが発生しました")).toBeTruthy();
+    expect(
+      screen.getByText("ページの表示中にエラーが発生しました"),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(screen.getByText("Recovered")).toBeTruthy();
   });

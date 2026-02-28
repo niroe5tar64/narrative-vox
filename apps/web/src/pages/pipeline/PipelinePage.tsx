@@ -15,9 +15,9 @@ import { usePipelineContext } from "@/hooks/usePipelineContext";
 import { usePipelineJob } from "@/hooks/usePipelineJob";
 import {
   getLayer1StepArgs,
-  PIPELINE_TABS,
   type Layer1StepKey,
   type Layer2StepKey,
+  PIPELINE_TABS,
   type PipelineTab,
 } from "@/lib/pipeline-steps";
 import { queryKeys } from "@/lib/query-keys";
@@ -134,7 +134,9 @@ export function PipelinePage() {
               <span className="text-slate-500">VOICEVOX offline</span>
             </>
           ) : (
-            <span className="animate-pulse text-slate-400">VOICEVOX 確認中...</span>
+            <span className="animate-pulse text-slate-400">
+              VOICEVOX 確認中...
+            </span>
           )
         }
       />

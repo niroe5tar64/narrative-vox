@@ -71,7 +71,11 @@ async function buildTree(
     if (entry.name.startsWith(".")) continue;
     const relPath = relBase ? `${relBase}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
-      const children = await buildTree(join(absDir, entry.name), relPath, depth + 1);
+      const children = await buildTree(
+        join(absDir, entry.name),
+        relPath,
+        depth + 1,
+      );
       nodes.push({ name: entry.name, type: "dir", children });
     } else {
       nodes.push({ name: entry.name, type: "file", path: relPath });

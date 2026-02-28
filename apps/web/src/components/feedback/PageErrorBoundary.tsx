@@ -38,7 +38,9 @@ export class PageErrorBoundary extends Component<Props, State> {
 
     return (
       <section className="rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-rose-900">
-        <h2 className="text-base font-semibold">ページの表示中にエラーが発生しました</h2>
+        <h2 className="text-base font-semibold">
+          ページの表示中にエラーが発生しました
+        </h2>
         {this.state.errorMessage ? (
           <p className="mt-2 text-sm">{this.state.errorMessage}</p>
         ) : null}

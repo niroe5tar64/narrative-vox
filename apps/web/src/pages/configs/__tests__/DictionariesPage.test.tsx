@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
-import React from "react";
+
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { Link, Outlet, RouterProvider, createMemoryRouter } from "react-router-dom";
+import {
+  createMemoryRouter,
+  Link,
+  Outlet,
+  RouterProvider,
+} from "react-router-dom";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { DictionariesPage } from "@/pages/configs/DictionariesPage";
 
@@ -63,7 +68,10 @@ describe("DictionariesPage", () => {
     globalThis.AbortController = window.AbortController;
     globalThis.AbortSignal = window.AbortSignal;
     globalThis.Request = class RequestWithoutSignal extends NativeRequest {
-      constructor(input: ConstructorParameters<typeof NativeRequest>[0], init?: ConstructorParameters<typeof NativeRequest>[1]) {
+      constructor(
+        input: ConstructorParameters<typeof NativeRequest>[0],
+        init?: ConstructorParameters<typeof NativeRequest>[1],
+      ) {
         super(input, init ? { ...init, signal: undefined } : init);
       }
     } as typeof Request;

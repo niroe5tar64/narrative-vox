@@ -30,7 +30,10 @@ export async function appendAuditLog(event: AuditEvent): Promise<void> {
 
 export async function auditApiEvent(
   c: Context<{ Variables: AppVariables }>,
-  event: Omit<AuditEvent, "ts" | "requestId" | "route" | "method" | "status"> & {
+  event: Omit<
+    AuditEvent,
+    "ts" | "requestId" | "route" | "method" | "status"
+  > & {
     status: number;
   },
 ): Promise<void> {

@@ -19,11 +19,17 @@ export function SaveStatus({
   return (
     <div className="flex items-center gap-3">
       <Button onClick={onSave} disabled={isSaving || disabled}>
-        {isSaving ? <Spinner className="mr-1" /> : <Save className="mr-1 h-4 w-4" />}
+        {isSaving ? (
+          <Spinner className="mr-1" />
+        ) : (
+          <Save className="mr-1 h-4 w-4" />
+        )}
         Save
       </Button>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {success && <p className="text-sm text-emerald-600">Saved successfully.</p>}
+      {success && (
+        <p className="text-sm text-emerald-600">Saved successfully.</p>
+      )}
     </div>
   );
 }

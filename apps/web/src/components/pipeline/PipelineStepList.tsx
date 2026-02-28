@@ -134,7 +134,9 @@ export function PipelineStepList({
                     停止
                   </Button>
                 ) : stepStatus === "done" ? (
-                  <span title={!canRun ? disabledReason ?? undefined : undefined}>
+                  <span
+                    title={!canRun ? (disabledReason ?? undefined) : undefined}
+                  >
                     <Button
                       size="sm"
                       variant="ghost"
@@ -147,7 +149,9 @@ export function PipelineStepList({
                     </Button>
                   </span>
                 ) : (
-                  <span title={!canRun ? disabledReason ?? undefined : undefined}>
+                  <span
+                    title={!canRun ? (disabledReason ?? undefined) : undefined}
+                  >
                     <Button
                       size="sm"
                       onClick={() => onRunStep(step.key)}

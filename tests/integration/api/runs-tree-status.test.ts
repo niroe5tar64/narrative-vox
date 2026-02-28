@@ -11,7 +11,10 @@ const RUN_ID_STATUS_PARTIAL = "run-20260101-0001";
 const RUN_ID_STATUS_COMPLETE = "run-20260101-0002";
 const PROJECT_ROOT = path.join(process.cwd(), "data/projects", PROJECT_ID);
 
-async function apiFetch(pathname: string, init?: RequestInit): Promise<Response> {
+async function apiFetch(
+  pathname: string,
+  init?: RequestInit,
+): Promise<Response> {
   return app.fetch(new Request(`http://localhost${pathname}`, init));
 }
 
@@ -39,8 +42,14 @@ beforeAll(async () => {
       2,
     )}\n`,
   );
-  await Bun.write(path.join(partialRunRoot, "material", "E01_material.json"), "{}\n");
-  await Bun.write(path.join(partialRunRoot, "material", "E99_material.json"), "{}\n");
+  await Bun.write(
+    path.join(partialRunRoot, "material", "E01_material.json"),
+    "{}\n",
+  );
+  await Bun.write(
+    path.join(partialRunRoot, "material", "E99_material.json"),
+    "{}\n",
+  );
 
   const completeRunRoot = path.join(PROJECT_ROOT, RUN_ID_STATUS_COMPLETE);
   await mkdir(path.join(completeRunRoot, "blueprint"), { recursive: true });
@@ -55,9 +64,18 @@ beforeAll(async () => {
       2,
     )}\n`,
   );
-  await Bun.write(path.join(completeRunRoot, "material", "E01_material.json"), "{}\n");
-  await Bun.write(path.join(completeRunRoot, "material", "E02_material.json"), "{}\n");
-  await Bun.write(path.join(completeRunRoot, "material", "E99_material.json"), "{}\n");
+  await Bun.write(
+    path.join(completeRunRoot, "material", "E01_material.json"),
+    "{}\n",
+  );
+  await Bun.write(
+    path.join(completeRunRoot, "material", "E02_material.json"),
+    "{}\n",
+  );
+  await Bun.write(
+    path.join(completeRunRoot, "material", "E99_material.json"),
+    "{}\n",
+  );
 });
 
 afterAll(async () => {
@@ -94,6 +112,8 @@ test("run status: planned episode を全て含む場合は completed になる",
     `/api/runs/${PROJECT_ID}/${RUN_ID_STATUS_COMPLETE}/status`,
   );
   assert.equal(res.status, 200);
-  const body = (await res.json()) as { stages: { material: { status: string } } };
+  const body = (await res.json()) as {
+    stages: { material: { status: string } };
+  };
   assert.equal(body.stages.material.status, "completed");
 });

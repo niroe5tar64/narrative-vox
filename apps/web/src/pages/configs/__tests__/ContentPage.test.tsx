@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import React from "react";
 import { describe, expect, test, vi } from "vitest";
 import { ContentPage } from "@/pages/configs/ContentPage";
 

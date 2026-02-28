@@ -7,7 +7,9 @@ const useBlockerMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
   const actual =
-    await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...actual,
     useBlocker: (...args: unknown[]) => useBlockerMock(...args),
@@ -52,7 +54,9 @@ describe("useDirtyGuard", () => {
 
     expect(useBlockerMock).toHaveBeenCalledWith(true);
     expect(result.current.confirmDialogProps.open).toBe(true);
-    expect(result.current.confirmDialogProps.title).toBe("未保存の変更があります");
+    expect(result.current.confirmDialogProps.title).toBe(
+      "未保存の変更があります",
+    );
 
     result.current.confirmDialogProps.onCancel();
     expect(blocker.reset).toHaveBeenCalledTimes(1);
@@ -64,10 +68,9 @@ describe("useDirtyGuard", () => {
 
   test("blocked 中に dirty が解消されたら blocker を reset する", () => {
     blocker.state = "blocked";
-    const { rerender } = renderHook(
-      ({ isDirty }) => useDirtyGuard(isDirty),
-      { initialProps: { isDirty: true } },
-    );
+    const { rerender } = renderHook(({ isDirty }) => useDirtyGuard(isDirty), {
+      initialProps: { isDirty: true },
+    });
 
     rerender({ isDirty: false });
 

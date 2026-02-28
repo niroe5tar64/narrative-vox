@@ -1,7 +1,6 @@
 import { useState } from "react";
-
-import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { UserDictSection } from "@/components/configs/dictionaries/UserDictSection";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 
 export function DictionariesPage() {

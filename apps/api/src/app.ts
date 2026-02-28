@@ -55,7 +55,9 @@ app.use(
   "*",
   cors({
     origin: (origin) =>
-      !origin || origin === config.allowedOrigin ? origin ?? config.allowedOrigin : "",
+      !origin || origin === config.allowedOrigin
+        ? (origin ?? config.allowedOrigin)
+        : "",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "X-Request-Id", "If-Match"],
     exposeHeaders: ["X-Request-Id", "ETag", "Retry-After"],

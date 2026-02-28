@@ -9,7 +9,9 @@ import {
   saveTextArtifact,
 } from "@narrative-vox/cli/gen-layer1/artifacts.ts";
 
-function withCapturedLogs<T>(run: () => Promise<T>): Promise<{ result: T; logs: string[] }> {
+function withCapturedLogs<T>(
+  run: () => Promise<T>,
+): Promise<{ result: T; logs: string[] }> {
   const logs: string[] = [];
   const original = console.log;
   console.log = (...args: unknown[]) => {
@@ -63,7 +65,9 @@ describe("saveTextArtifact", () => {
 describe("logJsonSchemaValidation", () => {
   test("logs OK for valid data", async () => {
     const blueprint = JSON.parse(
-      await Bun.file("tests/fixtures/sample-run/blueprint/project_blueprint.json").text(),
+      await Bun.file(
+        "tests/fixtures/sample-run/blueprint/project_blueprint.json",
+      ).text(),
     );
 
     const { logs } = await withCapturedLogs(() =>

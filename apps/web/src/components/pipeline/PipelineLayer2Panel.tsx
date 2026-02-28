@@ -1,5 +1,11 @@
-import { getLayer2StepArgs, LAYER1_STEPS, LAYER2_STEPS, type Layer2StepKey, type Paths } from "@/lib/pipeline-steps";
 import type { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
+import {
+  getLayer2StepArgs,
+  LAYER1_STEPS,
+  LAYER2_STEPS,
+  type Layer2StepKey,
+  type Paths,
+} from "@/lib/pipeline-steps";
 import { PipelineShortcutPanel } from "./PipelineShortcutPanel";
 import { PipelineStepList } from "./PipelineStepList";
 

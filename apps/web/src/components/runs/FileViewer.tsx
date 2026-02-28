@@ -1,7 +1,7 @@
+import type { VoicevoxText } from "@narrative-vox/api-types";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
-import type { VoicevoxText } from "@narrative-vox/api-types";
 import type { ManifestData } from "@/api/client";
 import { api } from "@/api/client";
 import { UtteranceTable } from "@/components/runs/UtteranceTable";
@@ -100,7 +100,9 @@ export function FileViewer({
             <Spinner />
           </div>
         ) : error ? (
-          <div className="p-4 text-sm text-red-600">{formatApiError(error)}</div>
+          <div className="p-4 text-sm text-red-600">
+            {formatApiError(error)}
+          </div>
         ) : data ? (
           <FileContent
             fileType={fileType}

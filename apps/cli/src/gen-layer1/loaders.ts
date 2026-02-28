@@ -3,8 +3,8 @@ import path from "node:path";
 import {
   loadPriorDigests,
   logStep,
-  readJsonFile,
   type ProjectConfig,
+  readJsonFile,
 } from "./shared.ts";
 
 export type ScriptStepResources = {

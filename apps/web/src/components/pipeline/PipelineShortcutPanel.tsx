@@ -32,7 +32,9 @@ export function PipelineShortcutPanel({
             停止
           </Button>
         ) : (
-          <span title={!canRunBuildAll ? disabledReason ?? undefined : undefined}>
+          <span
+            title={!canRunBuildAll ? (disabledReason ?? undefined) : undefined}
+          >
             <Button
               size="sm"
               onClick={onRunBuildAll}

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { PipelineLayer2Panel } from "@/components/pipeline/PipelineLayer2Panel";
-import { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
+import type { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import type { Paths } from "@/lib/pipeline-steps";
 
 const paths: Paths = {
@@ -20,7 +20,9 @@ const availability: ReturnType<typeof usePipelineAvailability> = {
   getLayer1StepDisplayStatus: vi.fn(),
   getLayer2StepDisplayStatus: vi.fn(() => "idle"),
   canRunLayer1Step: vi.fn(),
-  canRunLayer2Step: vi.fn((stepKey: string) => !["build-project", "build-all"].includes(stepKey)),
+  canRunLayer2Step: vi.fn(
+    (stepKey: string) => !["build-project", "build-all"].includes(stepKey),
+  ),
   getLayer1DisabledReason: vi.fn(),
   getLayer2DisabledReason: vi.fn((stepKey: string) =>
     stepKey === "build-project"
@@ -51,10 +53,14 @@ describe("PipelineLayer2Panel", () => {
       />,
     );
 
-    expect(screen.getAllByTitle("VOICEVOX が offline のため実行できません")).toHaveLength(2);
+    expect(
+      screen.getAllByTitle("VOICEVOX が offline のため実行できません"),
+    ).toHaveLength(2);
     expect(
       (
-        screen.getByRole("button", { name: "ステップ ⑤⑥⑦ をまとめて実行" }) as HTMLButtonElement
+        screen.getByRole("button", {
+          name: "ステップ ⑤⑥⑦ をまとめて実行",
+        }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
   });
@@ -83,7 +89,9 @@ describe("PipelineLayer2Panel", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "ステップ ⑤⑥⑦ をまとめて実行" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "ステップ ⑤⑥⑦ をまとめて実行" }),
+    );
     expect(onRunBuildAll).toHaveBeenCalledTimes(1);
   });
 });

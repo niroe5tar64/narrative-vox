@@ -1733,7 +1733,10 @@ test("build-text lists utterance IDs without terminal punctuation when ratio is 
     await readFile(result.voicevoxTextJsonPath, "utf-8"),
   ) as VoicevoxTextJsonTest;
 
-  assert.equal(textJson.quality_checks.speakability.terminal_punctuation_ratio, 0.5);
+  assert.equal(
+    textJson.quality_checks.speakability.terminal_punctuation_ratio,
+    0.5,
+  );
   assert.equal(
     textJson.quality_checks.warnings.some((message) =>
       message.includes("Terminal punctuation is infrequent"),
@@ -1760,14 +1763,9 @@ test("build-text does not add terminal punctuation warnings when ratio equals th
   const scriptPath = path.join(tempRoot, "E96_script.md");
   await writeFile(
     scriptPath,
-    [
-      "1. 導入",
-      "一つ目。",
-      "二つ目。",
-      "三つ目。",
-      "四つ目。",
-      "五つ目",
-    ].join("\n"),
+    ["1. 導入", "一つ目。", "二つ目。", "三つ目。", "四つ目。", "五つ目"].join(
+      "\n",
+    ),
     "utf-8",
   );
 
@@ -1782,7 +1780,10 @@ test("build-text does not add terminal punctuation warnings when ratio equals th
     await readFile(result.voicevoxTextJsonPath, "utf-8"),
   ) as VoicevoxTextJsonTest;
 
-  assert.equal(textJson.quality_checks.speakability.terminal_punctuation_ratio, 0.8);
+  assert.equal(
+    textJson.quality_checks.speakability.terminal_punctuation_ratio,
+    0.8,
+  );
   assert.equal(
     textJson.quality_checks.warnings.some((message) =>
       message.includes("Terminal punctuation is infrequent"),

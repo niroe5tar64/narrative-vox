@@ -10,7 +10,9 @@ import {
   buildScriptPrompt,
 } from "@narrative-vox/cli/gen-layer1/prompts.ts";
 
-function withCapturedLogs<T>(run: () => Promise<T>): Promise<{ result: T; logs: string[] }> {
+function withCapturedLogs<T>(
+  run: () => Promise<T>,
+): Promise<{ result: T; logs: string[] }> {
   const logs: string[] = [];
   const original = console.log;
   console.log = (...args: unknown[]) => {
@@ -23,9 +25,15 @@ function withCapturedLogs<T>(run: () => Promise<T>): Promise<{ result: T; logs: 
     });
 }
 
-async function withTempProjectConfig<T>(config: Record<string, unknown>, run: (projectId: string) => Promise<T>): Promise<T> {
+async function withTempProjectConfig<T>(
+  config: Record<string, unknown>,
+  run: (projectId: string) => Promise<T>,
+): Promise<T> {
   const projectId = `_test_gen_layer1_${crypto.randomUUID().replaceAll("-", "")}`;
-  const configPath = path.resolve("configs/pipeline/projects", `${projectId}.json`);
+  const configPath = path.resolve(
+    "configs/pipeline/projects",
+    `${projectId}.json`,
+  );
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
   try {
     return await run(projectId);
@@ -90,9 +98,15 @@ describe("buildBlueprintPrompt", () => {
           assert.ok(result.includes("=== tmp/"));
           assert.ok(result.includes("alpha"));
           assert.ok(result.includes("beta"));
-          assert.ok(logs.some((line) => line.includes("Loading project config: ")));
-          assert.ok(logs.some((line) => line.includes("Resolving prompt template: ")));
-          assert.ok(logs.some((line) => line.includes("Loading source files: ")));
+          assert.ok(
+            logs.some((line) => line.includes("Loading project config: ")),
+          );
+          assert.ok(
+            logs.some((line) => line.includes("Resolving prompt template: ")),
+          );
+          assert.ok(
+            logs.some((line) => line.includes("Loading source files: ")),
+          );
         },
       );
     } finally {
@@ -104,7 +118,9 @@ describe("buildBlueprintPrompt", () => {
 describe("buildMaterialPrompt", () => {
   test("loads blueprint and source materials in the expected section order", async () => {
     const sourceFixture = await createRepoSourceFixture();
-    const tempRunDir = await mkdtemp(path.join(os.tmpdir(), "nv-build-material-prompt-"));
+    const tempRunDir = await mkdtemp(
+      path.join(os.tmpdir(), "nv-build-material-prompt-"),
+    );
     await mkdir(path.join(tempRunDir, "blueprint"), { recursive: true });
     await cp(
       "tests/fixtures/sample-run/blueprint/project_blueprint.json",
@@ -127,10 +143,13 @@ describe("buildMaterialPrompt", () => {
           assert.ok(result.includes("## Blueprint JSON"));
           assert.ok(result.includes("## Source Materials"));
           assert.ok(
-            result.indexOf("## Blueprint JSON") < result.indexOf("## Source Materials"),
+            result.indexOf("## Blueprint JSON") <
+              result.indexOf("## Source Materials"),
           );
           assert.ok(logs.some((line) => line.includes("Loading blueprint: ")));
-          assert.ok(logs.some((line) => line.includes("Loading source files: ")));
+          assert.ok(
+            logs.some((line) => line.includes("Loading source files: ")),
+          );
         },
       );
     } finally {
@@ -142,7 +161,9 @@ describe("buildMaterialPrompt", () => {
 
 describe("buildScriptPrompt", () => {
   test("builds script prompt with prior digests when available", async () => {
-    const tempRunDir = await mkdtemp(path.join(os.tmpdir(), "nv-build-script-prompt-"));
+    const tempRunDir = await mkdtemp(
+      path.join(os.tmpdir(), "nv-build-script-prompt-"),
+    );
     await mkdir(path.join(tempRunDir, "material"), { recursive: true });
     await mkdir(path.join(tempRunDir, "context"), { recursive: true });
     await cp(
@@ -174,14 +195,18 @@ describe("buildScriptPrompt", () => {
       assert.ok(result.includes("## Prior Episode Digests"));
       assert.ok(logs.some((line) => line.includes("Loading material: ")));
       assert.ok(logs.some((line) => line.includes("Loading style: ")));
-      assert.ok(logs.some((line) => line.includes("Loading character [lead]: ")));
+      assert.ok(
+        logs.some((line) => line.includes("Loading character [lead]: ")),
+      );
     });
 
     await rm(tempRunDir, { recursive: true, force: true });
   });
 
   test("omits prior digest section when none exist", async () => {
-    const tempRunDir = await mkdtemp(path.join(os.tmpdir(), "nv-build-script-prompt-empty-"));
+    const tempRunDir = await mkdtemp(
+      path.join(os.tmpdir(), "nv-build-script-prompt-empty-"),
+    );
     await mkdir(path.join(tempRunDir, "material"), { recursive: true });
     await cp(
       "tests/fixtures/sample-run/material/E01_material.json",
@@ -205,7 +230,9 @@ describe("buildScriptPrompt", () => {
 
 describe("buildDigestPrompt", () => {
   test("builds digest prompt with expected section order and no character detail logs", async () => {
-    const tempRunDir = await mkdtemp(path.join(os.tmpdir(), "nv-build-digest-prompt-"));
+    const tempRunDir = await mkdtemp(
+      path.join(os.tmpdir(), "nv-build-digest-prompt-"),
+    );
     await mkdir(path.join(tempRunDir, "script"), { recursive: true });
     await mkdir(path.join(tempRunDir, "material"), { recursive: true });
     await mkdir(path.join(tempRunDir, "blueprint"), { recursive: true });
@@ -233,13 +260,16 @@ describe("buildDigestPrompt", () => {
       );
 
       assert.ok(
-        result.indexOf("## Script (Markdown)") < result.indexOf("## Material JSON"),
+        result.indexOf("## Script (Markdown)") <
+          result.indexOf("## Material JSON"),
       );
       assert.ok(
-        result.indexOf("## Material JSON") < result.indexOf("## Blueprint JSON"),
+        result.indexOf("## Material JSON") <
+          result.indexOf("## Blueprint JSON"),
       );
       assert.ok(
-        result.indexOf("## Blueprint JSON") < result.indexOf("## Character Profiles"),
+        result.indexOf("## Blueprint JSON") <
+          result.indexOf("## Character Profiles"),
       );
       assert.ok(logs.some((line) => line.includes("Loading script: ")));
       assert.ok(logs.some((line) => line.includes("Loading material: ")));

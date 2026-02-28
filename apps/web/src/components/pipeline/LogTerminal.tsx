@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
-
 import type { LogEntry } from "@narrative-vox/api-types";
+import { useEffect, useRef } from "react";
 import type { PipelineLogStatus } from "@/hooks/usePipelineLog";
 
 // ---------------------------------------------------------------------------

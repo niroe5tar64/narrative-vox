@@ -1,11 +1,6 @@
 import { Hono } from "hono";
 import { config } from "../config.ts";
-import {
-  problem,
-  STATUS_400,
-  STATUS_500,
-  STATUS_503,
-} from "../lib/problem.ts";
+import { problem, STATUS_400, STATUS_500, STATUS_503 } from "../lib/problem.ts";
 import { normalizeVoicevoxBaseUrl } from "../lib/voicevox-url.ts";
 import type { AppVariables } from "../types.ts";
 
@@ -56,9 +51,13 @@ function mapVoicevoxError(
   fallbackTitle: string,
 ): Response {
   if (error instanceof Error && error.message === "VOICEVOX_URL_INVALID") {
-    return voicevoxUnavailable(c, "VOICEVOX_URL is not an allowed local address");
+    return voicevoxUnavailable(
+      c,
+      "VOICEVOX_URL is not an allowed local address",
+    );
   }
-  const isTimeout = error instanceof DOMException && error.name === "TimeoutError";
+  const isTimeout =
+    error instanceof DOMException && error.name === "TimeoutError";
   const isNetworkError = error instanceof TypeError;
   if (isTimeout || isNetworkError) {
     return voicevoxUnavailable(
@@ -143,7 +142,11 @@ voicevoxProxyRouter.get("/status", async (c) => {
       version: version.trim().replace(/^"|"$/g, ""),
     });
   } catch (error) {
-    return mapVoicevoxError(c, error, "Unexpected error checking VOICEVOX status");
+    return mapVoicevoxError(
+      c,
+      error,
+      "Unexpected error checking VOICEVOX status",
+    );
   }
 });
 

@@ -3,9 +3,9 @@ import { Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/api/client";
-import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { SpeedProfilesEditor } from "@/components/configs/voicevox/SpeedProfilesEditor";
 import { SynthesisDefaultsEditor } from "@/components/configs/voicevox/SynthesisDefaultsEditor";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { TabBar } from "@/components/ui/tab-bar";

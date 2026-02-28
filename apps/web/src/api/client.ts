@@ -2,6 +2,7 @@ import type {
   FileResult,
   JobCancelResult,
   JobStartResult,
+  LogEntry,
   PipelineRunRequest,
   ProblemResponse,
   RunListResult,
@@ -11,7 +12,6 @@ import type {
   Utterance,
   UtteranceUpdate,
   VoicevoxText,
-  LogEntry,
 } from "@narrative-vox/api-types";
 
 // ===== Domain Types =====
@@ -124,11 +124,7 @@ export class ApiError extends Error {
   title: string;
   detail?: string;
 
-  constructor(
-    status: number,
-    title: string,
-    detail?: string,
-  ) {
+  constructor(status: number, title: string, detail?: string) {
     super(title);
     this.status = status;
     this.title = title;
@@ -306,7 +302,9 @@ export const api = {
         `/api/runs/${projectId}/${runId}/file?path=${encodeURIComponent(filePath)}`,
       );
       if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as Partial<ProblemResponse>;
+        const json = (await res
+          .json()
+          .catch(() => ({}))) as Partial<ProblemResponse>;
         throw new ApiError(
           res.status,
           json.title ?? "Unknown error",
@@ -334,7 +332,9 @@ export const api = {
         },
       );
       if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as Partial<ProblemResponse>;
+        const json = (await res
+          .json()
+          .catch(() => ({}))) as Partial<ProblemResponse>;
         throw new ApiError(
           res.status,
           json.title ?? "Unknown error",

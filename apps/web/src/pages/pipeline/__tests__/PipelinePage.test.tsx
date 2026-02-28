@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
+import type React from "react";
 import { act } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { PipelinePage } from "@/pages/pipeline/PipelinePage";
@@ -40,7 +41,11 @@ vi.mock("@/hooks/usePipelineContext", () => ({
       vvproj: "episode.vvproj",
       runDir: "data/projects/demo/run-20260227-1200",
     },
-    voicevoxQuery: { isSuccess: true, isError: false, data: { version: "0.25.1" } },
+    voicevoxQuery: {
+      isSuccess: true,
+      isError: false,
+      data: { version: "0.25.1" },
+    },
     runStatusQuery: { data: { plannedEpisodeIds: ["E01"], stages: {} } },
     projectsQuery: { data: { items: [] } },
     runsQuery: { data: { items: [] } },
@@ -77,7 +82,15 @@ vi.mock("@/components/pipeline/PipelineHeader", () => ({
 }));
 
 vi.mock("@/components/ui/tab-bar", () => ({
-  TabBar: ({ tabs, activeTab, onTabChange }: { tabs: Array<{ id: string; label: string }>; activeTab: string; onTabChange: (tab: string) => void }) => (
+  TabBar: ({
+    tabs,
+    activeTab,
+    onTabChange,
+  }: {
+    tabs: Array<{ id: string; label: string }>;
+    activeTab: string;
+    onTabChange: (tab: string) => void;
+  }) => (
     <div>
       <div data-testid="active-tab">{activeTab}</div>
       {tabs.map((tab) => (
@@ -208,6 +221,8 @@ describe("PipelinePage", () => {
       await options.onRunStatusRefresh();
     });
 
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["run-status"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["run-status"],
+    });
   });
 });

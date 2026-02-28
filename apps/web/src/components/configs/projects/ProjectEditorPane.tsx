@@ -52,7 +52,9 @@ export function ProjectEditorPane({
   onSave,
   onDelete,
 }: Props) {
-  const selectedStyle = styles.find((style) => style.style_id === form.STYLE_ID);
+  const selectedStyle = styles.find(
+    (style) => style.style_id === form.STYLE_ID,
+  );
   const requiredRoles = new Set(
     selectedStyle?.format.speaker_roles.map((role) => role.role) ?? [],
   );
@@ -78,7 +80,9 @@ export function ProjectEditorPane({
     if (!charKey) {
       castErrors.push(`CAST role "${role}" の charKey が空です。`);
     } else if (!charKeys.includes(charKey)) {
-      castErrors.push(`CAST role "${role}" の charKey "${charKey}" は未定義です。`);
+      castErrors.push(
+        `CAST role "${role}" の charKey "${charKey}" は未定義です。`,
+      );
     }
     if (requiredRoles.size > 0 && !requiredRoles.has(role)) {
       castWarnings.push(`CAST role "${role}" は STYLE 定義にありません。`);
@@ -87,7 +91,9 @@ export function ProjectEditorPane({
 
   for (const requiredRole of requiredRoles) {
     if (!form.castRows.some((row) => row.role.trim() === requiredRole)) {
-      castWarnings.push(`STYLE が要求する role "${requiredRole}" が未設定です。`);
+      castWarnings.push(
+        `STYLE が要求する role "${requiredRole}" が未設定です。`,
+      );
     }
   }
 

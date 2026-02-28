@@ -83,8 +83,12 @@ test("normalizer: URL replacement", () => {
 });
 
 test("normalizer: URL pattern does not consume trailing Japanese punctuation", () => {
-  const utterances = [makeUtterance("参照はhttps://example.com。次に進みます。")];
-  const { utterances: result } = applyNormalizationRules(utterances, [URL_RULE]);
+  const utterances = [
+    makeUtterance("参照はhttps://example.com。次に進みます。"),
+  ];
+  const { utterances: result } = applyNormalizationRules(utterances, [
+    URL_RULE,
+  ]);
   assert.equal(result[0]?.text, "参照はユーアールエル。次に進みます。");
 });
 

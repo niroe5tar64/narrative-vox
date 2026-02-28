@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { CharactersPanel } from "@/components/configs/CharactersPanel";
-import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { GenrePanel } from "@/components/configs/GenrePanel";
 import { StylesPanel } from "@/components/configs/StylesPanel";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { TabBar } from "@/components/ui/tab-bar";
 
 type Tab = "characters" | "styles" | "genre";

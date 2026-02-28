@@ -7,10 +7,7 @@ export type RateLimitResult =
   | { ok: true; remaining: number; resetAt: number }
   | { ok: false; retryAfterSec: number; resetAt: number };
 
-export function createFixedWindowRateLimiter(
-  limit: number,
-  windowMs: number,
-) {
+export function createFixedWindowRateLimiter(limit: number, windowMs: number) {
   let state: FixedWindowState = {
     count: 0,
     resetAt: Date.now() + windowMs,

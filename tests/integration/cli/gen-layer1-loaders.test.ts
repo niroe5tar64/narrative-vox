@@ -32,7 +32,9 @@ const sampleProjectConfig: ProjectConfig = {
   },
 };
 
-function withCapturedLogs<T>(run: () => Promise<T>): Promise<{ result: T; logs: string[] }> {
+function withCapturedLogs<T>(
+  run: () => Promise<T>,
+): Promise<{ result: T; logs: string[] }> {
   const logs: string[] = [];
   const original = console.log;
   console.log = (...args: unknown[]) => {
@@ -55,7 +57,9 @@ describe("loadStyleForScript", () => {
     );
 
     assert.equal(typeof result, "object");
-    assert.ok(logs.some((line) => line.includes("[gen-script] Loading style: ")));
+    assert.ok(
+      logs.some((line) => line.includes("[gen-script] Loading style: ")),
+    );
     assert.ok(logs.some((line) => line.includes("configs/content/styles")));
   });
 });
@@ -73,7 +77,9 @@ describe("loadCharactersForStep", () => {
     assert.equal(typeof result.lead, "object");
     assert.equal(typeof result.questioner, "object");
     assert.ok(logs.some((line) => line.includes("Loading character [lead]: ")));
-    assert.ok(logs.some((line) => line.includes("Loading character [questioner]: ")));
+    assert.ok(
+      logs.some((line) => line.includes("Loading character [questioner]: ")),
+    );
   });
 
   test("suppresses per-role logs when disabled", async () => {
@@ -133,7 +139,9 @@ describe("loadScriptStepResources", () => {
 
 describe("loadMaterialStepResources", () => {
   test("loads blueprint json and logs the resolved path", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "nv-material-loader-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "nv-material-loader-"),
+    );
     await mkdir(path.join(tempRoot, "blueprint"), { recursive: true });
     await cp(
       "tests/fixtures/sample-run/blueprint/project_blueprint.json",

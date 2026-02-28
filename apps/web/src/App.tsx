@@ -1,9 +1,9 @@
+import type { ReactNode } from "react";
 import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
 } from "react-router-dom";
-import type { ReactNode } from "react";
 
 import { PageErrorBoundary } from "@/components/feedback/PageErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";

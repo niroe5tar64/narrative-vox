@@ -50,8 +50,8 @@ describe("step args", () => {
 
   test("layer2 build-text", () => {
     const paths = derivePaths("proj/run-001", "E01");
-    expect(paths).not.toBeNull();
-    expect(getLayer2StepArgs("build-text", paths!)).toEqual([
+    if (!paths) throw new Error("paths should not be null");
+    expect(getLayer2StepArgs("build-text", paths)).toEqual([
       "--script",
       "data/projects/proj/run-001/script/E01_script.md",
     ]);
@@ -59,8 +59,8 @@ describe("step args", () => {
 
   test("layer2 build-audio", () => {
     const paths = derivePaths("proj/run-001", "E01");
-    expect(paths).not.toBeNull();
-    expect(getLayer2StepArgs("build-audio", paths!)).toEqual([
+    if (!paths) throw new Error("paths should not be null");
+    expect(getLayer2StepArgs("build-audio", paths)).toEqual([
       "--vvproj",
       "data/projects/proj/run-001/voicevox_project/E01.vvproj",
     ]);

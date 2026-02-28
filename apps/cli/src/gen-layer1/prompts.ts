@@ -5,11 +5,11 @@ import {
 } from "./loaders.ts";
 import {
   composePrompt,
+  type Layer1Step,
   loadProjectConfig,
   loadPromptSection,
   loadSourceFiles,
   logStep,
-  type Layer1Step,
   type ProjectConfig,
 } from "./shared.ts";
 
@@ -26,7 +26,11 @@ async function loadProjectPromptContext(options: {
     stepLabel,
     `Resolving prompt template: ${projectConfig.GENRE_ID}/${step}`,
   );
-  const promptSection = await loadPromptSection({ projectConfig, step, episodeId });
+  const promptSection = await loadPromptSection({
+    projectConfig,
+    step,
+    episodeId,
+  });
   return { projectConfig, promptSection };
 }
 

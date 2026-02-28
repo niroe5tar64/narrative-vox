@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import React from "react";
+
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
+  createMemoryRouter,
   Link,
   Outlet,
   RouterProvider,
-  createMemoryRouter,
 } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type {
@@ -104,7 +104,10 @@ describe("ProjectsPage", () => {
       }
     } as typeof Request;
 
-    const projects = [makeProject("alpha", "Alpha"), makeProject("beta", "Beta")];
+    const projects = [
+      makeProject("alpha", "Alpha"),
+      makeProject("beta", "Beta"),
+    ];
     const genres: GenreConfig[] = [
       {
         genre_id: "tech-explainer",

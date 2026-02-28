@@ -93,7 +93,10 @@ export function getLayer1StepArgs(
   }
 }
 
-export function getLayer2StepArgs(stepKey: Layer2StepKey, paths: Paths): string[] {
+export function getLayer2StepArgs(
+  stepKey: Layer2StepKey,
+  paths: Paths,
+): string[] {
   switch (stepKey) {
     case "build-text":
       return ["--script", paths.script];

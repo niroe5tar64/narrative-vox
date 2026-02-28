@@ -2,7 +2,6 @@
 
 import type { LogEntry, RunTreeResult } from "@narrative-vox/api-types";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import React from "react";
 import {
   createMemoryRouter,
   Link,
@@ -10,7 +9,6 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { api } from "@/api/client";
 import { RunDetailPage } from "@/pages/runs/RunDetailPage";
 
 const invalidateQueries = vi.fn(() => Promise.resolve());
