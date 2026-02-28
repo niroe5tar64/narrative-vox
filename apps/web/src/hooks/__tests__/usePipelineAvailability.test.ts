@@ -1,5 +1,7 @@
-import { describe, expect, test, vi } from "vitest";
+// @vitest-environment jsdom
 import type { RunStatus } from "@narrative-vox/api-types";
+import { renderHook } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
 import { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import type { Paths, StepKey } from "@/lib/pipeline-steps";
 
@@ -30,24 +32,33 @@ const paths: Paths = {
   runDir: "data/projects/demo/run-20260227-1200",
 };
 
-function createAvailability(overrides?: Partial<Parameters<typeof usePipelineAvailability>[0]>) {
-  return usePipelineAvailability({
-    runStatus: createRunStatus(),
-    episodeId: "E01",
-    paths,
-    isAnyStepRunning: false,
-    voicevoxOffline: false,
-    getSessionStatus: vi.fn((_stepKey: StepKey) => "idle"),
-    ...overrides,
-  });
+function createAvailability(
+  overrides?: Partial<Parameters<typeof usePipelineAvailability>[0]>,
+) {
+  const { result } = renderHook(() =>
+    usePipelineAvailability({
+      runStatus: createRunStatus(),
+      episodeId: "E01",
+      paths,
+      isAnyStepRunning: false,
+      voicevoxOffline: false,
+      getSessionStatus: vi.fn((_stepKey: StepKey) => "idle"),
+      ...overrides,
+    }),
+  );
+  return result.current;
 }
 
 describe("usePipelineAvailability", () => {
   test("layer1 prerequisite と next step 判定を維持する", () => {
     const availability = createAvailability();
 
-    expect(availability.getLayer1StepDisplayStatus("gen-blueprint")).toBe("done");
-    expect(availability.getLayer1StepDisplayStatus("gen-material")).toBe("done");
+    expect(availability.getLayer1StepDisplayStatus("gen-blueprint")).toBe(
+      "done",
+    );
+    expect(availability.getLayer1StepDisplayStatus("gen-material")).toBe(
+      "done",
+    );
     expect(availability.getLayer1StepDisplayStatus("gen-script")).toBe("done");
     expect(availability.getLayer1StepDisplayStatus("gen-digest")).toBe("idle");
     expect(availability.canRunLayer1Step("gen-digest")).toBe(true);
@@ -57,7 +68,10 @@ describe("usePipelineAvailability", () => {
   test("VOICEVOX offline 時は audio 系 step と build-all を止める", () => {
     const runStatus = createRunStatus();
     runStatus.stages.voicevox_text = { status: "partial", episodeIds: ["E01"] };
-    runStatus.stages.voicevox_project = { status: "partial", episodeIds: ["E01"] };
+    runStatus.stages.voicevox_project = {
+      status: "partial",
+      episodeIds: ["E01"],
+    };
 
     const availability = createAvailability({
       runStatus,
