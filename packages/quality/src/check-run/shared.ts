@@ -96,7 +96,10 @@ export function toRelativePath(filePath: string): string {
   return path.relative(process.cwd(), filePath) || ".";
 }
 
-export function collectEpisodeIds(fileNames: string[], pattern: RegExp): string[] {
+export function collectEpisodeIds(
+  fileNames: string[],
+  pattern: RegExp,
+): string[] {
   const episodeIds: string[] = [];
   for (const name of fileNames) {
     const match = name.match(pattern);
@@ -108,7 +111,10 @@ export function collectEpisodeIds(fileNames: string[], pattern: RegExp): string[
   return episodeIds.sort();
 }
 
-export function diffEpisodes(baseIds: string[], compareIds: string[]): string[] {
+export function diffEpisodes(
+  baseIds: string[],
+  compareIds: string[],
+): string[] {
   const compareSet = new Set(compareIds);
   return baseIds.filter((id) => !compareSet.has(id));
 }

@@ -2,10 +2,7 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
-import {
-  dirExists,
-  type VoicevoxTextForCheckRun,
-} from "../shared.ts";
+import { dirExists, type VoicevoxTextForCheckRun } from "../shared.ts";
 
 const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
 const VVPROJ_META_RE = /^(E[0-9]{2})_voicevox_project_meta\.json$/;
@@ -40,13 +37,19 @@ export async function validateLayer2Artifacts(params: {
         const surfaces = Array.isArray(voicevoxText.dictionary_candidates)
           ? voicevoxText.dictionary_candidates
               .map((candidate) => candidate.surface)
-              .filter((surface): surface is string => typeof surface === "string")
+              .filter(
+                (surface): surface is string => typeof surface === "string",
+              )
           : [];
-        const highPrioritySurfaces = Array.isArray(voicevoxText.dictionary_candidates)
+        const highPrioritySurfaces = Array.isArray(
+          voicevoxText.dictionary_candidates,
+        )
           ? voicevoxText.dictionary_candidates
               .filter((candidate) => candidate.priority === "HIGH")
               .map((candidate) => candidate.surface)
-              .filter((surface): surface is string => typeof surface === "string")
+              .filter(
+                (surface): surface is string => typeof surface === "string",
+              )
           : [];
         const highOrMediumWithoutReadingSurfaces = Array.isArray(
           voicevoxText.dictionary_candidates,
@@ -54,12 +57,15 @@ export async function validateLayer2Artifacts(params: {
           ? voicevoxText.dictionary_candidates
               .filter(
                 (candidate) =>
-                  (candidate.priority === "HIGH" || candidate.priority === "MEDIUM") &&
+                  (candidate.priority === "HIGH" ||
+                    candidate.priority === "MEDIUM") &&
                   typeof candidate.surface === "string" &&
                   String(candidate.reading_or_empty ?? "").trim().length === 0,
               )
               .map((candidate) => candidate.surface)
-              .filter((surface): surface is string => typeof surface === "string")
+              .filter(
+                (surface): surface is string => typeof surface === "string",
+              )
           : [];
         dictionarySurfacesByEpisodeId.set(episodeId, surfaces);
         highPriorityDictionarySurfacesByEpisodeId.set(
@@ -79,7 +85,10 @@ export async function validateLayer2Artifacts(params: {
     }
   }
 
-  const voicevoxProjectDir = path.join(params.resolvedRunDir, "voicevox_project");
+  const voicevoxProjectDir = path.join(
+    params.resolvedRunDir,
+    "voicevox_project",
+  );
   if (await dirExists(voicevoxProjectDir)) {
     const metaFiles = (await readdir(voicevoxProjectDir))
       .filter((name) => VVPROJ_META_RE.test(name))

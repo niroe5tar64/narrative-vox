@@ -108,12 +108,18 @@ function collectMetrics(
 
 test("checkRun coverage eval fixtures lock expected outcomes and precision/recall metrics", async () => {
   const evalCases = await loadEvalCases();
-  const metricInputs: Array<{ actual: boolean; gold: boolean; skipped: boolean }> = [];
+  const metricInputs: Array<{
+    actual: boolean;
+    gold: boolean;
+    skipped: boolean;
+  }> = [];
   let notationTargets = 0;
   let notationExactMatches = 0;
 
   for (const evalCase of evalCases) {
-    const runDir = await prepareMinimalRun(["E01"], { E01: evalCase.script_text });
+    const runDir = await prepareMinimalRun(["E01"], {
+      E01: evalCase.script_text,
+    });
     await updateMaterialFiles(runDir, (data) => ({
       ...data,
       technical_terms: [{ term: evalCase.term, note: `eval:${evalCase.id}` }],
@@ -123,7 +129,10 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
       evalCase.morph_mode === "available"
         ? createMockMorphTokenizer(evalCase.morph_tokens ?? {})
         : null;
-    if (evalCase.morph_mode === "available" && evalCase.category === "non_ascii") {
+    if (
+      evalCase.morph_mode === "available" &&
+      evalCase.category === "non_ascii"
+    ) {
       assert.ok(
         evalCase.morph_tokens?.[evalCase.script_text],
         `Fixture ${evalCase.id} requires morph_tokens for script_text`,
@@ -135,12 +144,18 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     }
 
     await checkRun({ runDir, morphTokenizerOverride });
-    const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+    const reportPath = path.join(
+      runDir,
+      "context",
+      "E01_technical_terms_audit.json",
+    );
     const report = JSON.parse(
       await readFile(reportPath, "utf-8"),
     ) as TechnicalTermsAuditReportForEval;
 
-    const skipped = report.details.skipped_non_ascii_terms.includes(evalCase.term);
+    const skipped = report.details.skipped_non_ascii_terms.includes(
+      evalCase.term,
+    );
     const inScript =
       !skipped && !report.details.missing_in_script.includes(evalCase.term);
     const actualNotation = report.details.notation_inconsistencies;
@@ -194,10 +209,9 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     notation_targets: notationTargets,
     notation_exact_matches: notationExactMatches,
     notation_exact_match_ratio: Number(
-      (
-        notationTargets > 0
-          ? notationExactMatches / notationTargets
-          : 1
+      (notationTargets > 0
+        ? notationExactMatches / notationTargets
+        : 1
       ).toFixed(4),
     ),
   };

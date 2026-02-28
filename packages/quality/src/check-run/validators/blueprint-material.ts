@@ -3,8 +3,8 @@ import path from "node:path";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {
-  collectEpisodeIds,
   type BlueprintForCheckRun,
+  collectEpisodeIds,
   type EpisodeMaterialForCheckRun,
   MATERIAL_FILE_RE,
   toRelativePath,
@@ -84,7 +84,9 @@ export function validateEpisodePrerequisites(
   blueprint: BlueprintForCheckRun,
   blueprintPath: string,
 ): void {
-  const episodeIds = blueprint.episode_plan.map((episode) => episode.episode_id);
+  const episodeIds = blueprint.episode_plan.map(
+    (episode) => episode.episode_id,
+  );
   const episodeIdSet = new Set(episodeIds);
   const dependencies = new Map<string, string[]>();
 
@@ -163,7 +165,9 @@ export async function validateBlueprintAndMaterial(params: {
     .filter((name) => MATERIAL_FILE_RE.test(name))
     .sort();
   if (materialFiles.length === 0) {
-    throw new Error(`${toRelativePath(materialDir)} has no E##_material.json files`);
+    throw new Error(
+      `${toRelativePath(materialDir)} has no E##_material.json files`,
+    );
   }
 
   const materialEpisodeIds = collectEpisodeIds(materialFiles, MATERIAL_FILE_RE);

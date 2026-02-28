@@ -8,12 +8,12 @@ import {
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {
+  type ContentStyleForCheckRun,
   collectEpisodeIds,
   DIGEST_FILE_RE,
   diffEpisodes,
   dirExists,
   SCRIPT_FILE_RE,
-  type ContentStyleForCheckRun,
   toRelativePath,
 } from "../shared.ts";
 
@@ -181,7 +181,11 @@ export async function validateDigestsIfPresent(params: {
     );
     const match = fileName.match(DIGEST_FILE_RE);
     const fileEpisodeId = match?.[1];
-    if (fileEpisodeId && digest.episode_id && digest.episode_id !== fileEpisodeId) {
+    if (
+      fileEpisodeId &&
+      digest.episode_id &&
+      digest.episode_id !== fileEpisodeId
+    ) {
       throw new Error(
         `${toRelativePath(filePath)}: episode_id "${digest.episode_id}" does not match filename "${fileEpisodeId}"`,
       );

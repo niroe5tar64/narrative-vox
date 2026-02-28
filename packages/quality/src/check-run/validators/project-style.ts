@@ -3,9 +3,9 @@ import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {
   type ContentStyleForCheckRun,
+  dirExists,
   type ProjectConfigForCheckRun,
   toRelativePath,
-  dirExists,
 } from "../shared.ts";
 
 export async function validateProjectStyle(projectId: string): Promise<{

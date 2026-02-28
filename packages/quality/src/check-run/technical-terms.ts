@@ -5,10 +5,10 @@ import {
   type MorphTokenizer,
 } from "@narrative-vox/infrastructure/japanese-morph-tokenizer.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
-import {
-  type TechnicalTermsAuditDetail,
-  type TechnicalTermsAuditReport,
-  type UserDictForCheckRun,
+import type {
+  TechnicalTermsAuditDetail,
+  TechnicalTermsAuditReport,
+  UserDictForCheckRun,
 } from "./shared.ts";
 
 // For token-level matching and dictionary surface comparison.
@@ -17,7 +17,7 @@ function normalizeTechnicalTermToken(term: string): string {
     .trim()
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[_./+\-]/g, " ")
+    .replace(/[_./+-]/g, " ")
     .replace(/[()[\]{}"'`“”‘’<>]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -30,7 +30,7 @@ function normalizeTechnicalTermText(term: string): string {
     .trim()
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[_./+\-]/g, " ")
+    .replace(/[_./+-]/g, " ")
     .replace(/[()[\]{}"'`“”‘’<>]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -79,7 +79,7 @@ interface NormalizedTextIndexMap {
 }
 
 const TECHNICAL_TOKEN_PATTERN =
-  /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+\-]*/g;
+  /[A-Za-z0-9Ａ-Ｚａ-ｚ０-９][A-Za-z0-9Ａ-Ｚａ-ｚ０-９_./+-]*/g;
 const TECHNICAL_TO_SPACE_CHARS = new Set([
   "_",
   ".",
@@ -171,13 +171,16 @@ function normalizeTechnicalTextChar(char: string): string {
   return char;
 }
 
-function buildNormalizedTextIndexMap(scriptText: string): NormalizedTextIndexMap {
+function buildNormalizedTextIndexMap(
+  scriptText: string,
+): NormalizedTextIndexMap {
   const normalizedChars: string[] = [];
   const rawStartByNormalizedIndex: number[] = [];
   const rawEndByNormalizedIndex: number[] = [];
   let previousWasSpace = false;
 
-  const clusters: Array<{ rawStart: number; rawEnd: number; text: string }> = [];
+  const clusters: Array<{ rawStart: number; rawEnd: number; text: string }> =
+    [];
   for (let rawIndex = 0; rawIndex < scriptText.length; ) {
     const current = scriptText[rawIndex];
     if (!current) {
@@ -244,7 +247,9 @@ function buildNormalizedTextIndexMap(scriptText: string): NormalizedTextIndexMap
   };
 }
 
-function normalizedTokensFromSpans(scriptTokenSpans: ScriptTokenSpan[]): string[] {
+function normalizedTokensFromSpans(
+  scriptTokenSpans: ScriptTokenSpan[],
+): string[] {
   return scriptTokenSpans.map((token) => token.normalized);
 }
 
@@ -253,7 +258,10 @@ function hasAsciiAlphaNum(value: string): boolean {
 }
 
 function hasNonAsciiChar(value: string): boolean {
-  return /[^\x00-\x7F]/.test(value.normalize("NFKC"));
+  return value
+    .normalize("NFKC")
+    .split("")
+    .some((c) => c.charCodeAt(0) >= 0x80);
 }
 
 function isMixedTechnicalTerm(term: string): boolean {
@@ -339,7 +347,10 @@ function collectNonAsciiMorphMatchSpans(params: {
 }): TokenSpan[] {
   const sequenceSpans =
     params.termMorphTokens.length > 0
-      ? collectTokenSequenceSpans(params.scriptMorphTokenSpans, params.termMorphTokens)
+      ? collectTokenSequenceSpans(
+          params.scriptMorphTokenSpans,
+          params.termMorphTokens,
+        )
       : [];
   if (!params.normalizedTarget) {
     return sequenceSpans;
@@ -444,7 +455,10 @@ function isTechnicalTermCoveredInScript(
 ): boolean {
   if (isMixedTechnicalTerm(term)) {
     const normalizedTermText = normalizeTechnicalTermText(term);
-    return hasMixedTermAsciiBoundaryMatch(normalizedScriptText, normalizedTermText);
+    return hasMixedTermAsciiBoundaryMatch(
+      normalizedScriptText,
+      normalizedTermText,
+    );
   }
 
   const normalizedTermToken = normalizeTechnicalTermToken(term);
@@ -688,10 +702,14 @@ export function buildTechnicalTermsAuditReport(params: {
     morphTokenizer: params.morphTokenizer,
   };
   const normalizedDictionary = new Set(
-    params.dictionarySurfaces.map((surface) => normalizeTechnicalTermToken(surface)),
+    params.dictionarySurfaces.map((surface) =>
+      normalizeTechnicalTermToken(surface),
+    ),
   );
   const normalizedUserDict = new Set(
-    params.userDictSurfaces.map((surface) => normalizeTechnicalTermToken(surface)),
+    params.userDictSurfaces.map((surface) =>
+      normalizeTechnicalTermToken(surface),
+    ),
   );
   const missingInScript: string[] = [];
   const missingInDictionaryCandidates: string[] = [];
@@ -726,7 +744,9 @@ export function buildTechnicalTermsAuditReport(params: {
     } else {
       coveredTerms += 1;
       if (variants.length === 0) {
-        warnings.push(`covered technical term has no notation variants: ${term}`);
+        warnings.push(
+          `covered technical term has no notation variants: ${term}`,
+        );
       }
       if (variants.length >= 2) {
         notationInconsistencies.push({ term, variants });
@@ -742,7 +762,8 @@ export function buildTechnicalTermsAuditReport(params: {
     if (isHighRiskTechnicalTerm(term)) {
       const resolvedByRuby = hasRubyReadingForTerm(params.scriptText, term);
       const resolvedByDictionary =
-        !params.dictionaryCoverageSkipped && normalizedDictionary.has(normalized);
+        !params.dictionaryCoverageSkipped &&
+        normalizedDictionary.has(normalized);
       if (!resolvedByRuby && !resolvedByDictionary) {
         unresolvedHighRiskTerms.push(term);
       }
@@ -750,9 +771,14 @@ export function buildTechnicalTermsAuditReport(params: {
   }
 
   if (missingInScript.length > 0) {
-    warnings.push(`technical_terms missing in script: ${missingInScript.join(", ")}`);
+    warnings.push(
+      `technical_terms missing in script: ${missingInScript.join(", ")}`,
+    );
   }
-  if (!params.dictionaryCoverageSkipped && missingInDictionaryCandidates.length > 0) {
+  if (
+    !params.dictionaryCoverageSkipped &&
+    missingInDictionaryCandidates.length > 0
+  ) {
     warnings.push(
       `technical_terms missing in dictionary_candidates: ${missingInDictionaryCandidates.join(", ")}`,
     );
@@ -873,8 +899,14 @@ export async function writeTechnicalTermsAuditReports(params: {
 }): Promise<void> {
   const contextDirForAudit = path.join(params.resolvedRunDir, "context");
   await mkdir(contextDirForAudit, { recursive: true });
-  const userDictPath = path.resolve(process.cwd(), "configs/voice/voicevox/user-dict.json");
-  const userDictSchemaPath = path.resolve(process.cwd(), "schemas/user-dict.schema.json");
+  const userDictPath = path.resolve(
+    process.cwd(),
+    "configs/voice/voicevox/user-dict.json",
+  );
+  const userDictSchemaPath = path.resolve(
+    process.cwd(),
+    "schemas/user-dict.schema.json",
+  );
   let userDictSurfaces: string[] = [];
   let userDictCoverageSkipped = false;
   try {
@@ -900,7 +932,8 @@ export async function writeTechnicalTermsAuditReports(params: {
       : params.morphTokenizerOverride;
 
   for (const episodeId of params.materialEpisodeIds) {
-    const technicalTerms = params.technicalTermsByEpisodeId.get(episodeId) ?? [];
+    const technicalTerms =
+      params.technicalTermsByEpisodeId.get(episodeId) ?? [];
     if (technicalTerms.length === 0) {
       continue;
     }
@@ -912,12 +945,14 @@ export async function writeTechnicalTermsAuditReports(params: {
       continue;
     }
 
-    const dictionarySurfaces = params.dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
+    const dictionarySurfaces =
+      params.dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
     const highPriorityDictionarySurfaces =
       params.highPriorityDictionarySurfacesByEpisodeId.get(episodeId) ?? [];
     const candidatesWithoutReading =
       params.candidatesWithoutReadingByEpisodeId.get(episodeId) ?? [];
-    const hasValidVoicevoxText = params.validVoicevoxTextByEpisodeId.has(episodeId);
+    const hasValidVoicevoxText =
+      params.validVoicevoxTextByEpisodeId.has(episodeId);
     const voicevoxTextPath = hasValidVoicevoxText
       ? `voicevox_text/${episodeId}_voicevox_text.json`
       : undefined;
@@ -941,7 +976,11 @@ export async function writeTechnicalTermsAuditReports(params: {
     });
     const reportFileName = `${episodeId}_technical_terms_audit.json`;
     const reportPath = path.join(contextDirForAudit, reportFileName);
-    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
+    await writeFile(
+      reportPath,
+      `${JSON.stringify(report, null, 2)}\n`,
+      "utf-8",
+    );
     if (report.warnings.length > 0) {
       for (const warning of report.warnings) {
         params.warnings.push(`${episodeId}: ${warning}`);

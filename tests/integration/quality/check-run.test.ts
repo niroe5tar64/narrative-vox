@@ -1151,12 +1151,17 @@ test("checkRun writes technical_terms audit report under context/", async () => 
   );
 
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
-  const report = JSON.parse(
-    await readFile(reportPath, "utf-8"),
-  ) as {
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
+  const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { total_terms: number; covered_terms: number };
-    details: { missing_in_script: string[]; missing_in_dictionary_candidates: string[] };
+    details: {
+      missing_in_script: string[];
+      missing_in_dictionary_candidates: string[];
+    };
   };
 
   assert.equal(report.summary.total_terms, 2);
@@ -1165,7 +1170,9 @@ test("checkRun writes technical_terms audit report under context/", async () => 
   assert.deepEqual(report.details.missing_in_dictionary_candidates, []);
   assert.ok(
     !result.warnings.some((warning) =>
-      warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
+      warning.includes(
+        "technical_terms audit report written to context/E01_technical_terms_audit.json",
+      ),
     ),
     `Expected no report-written warning when audit has no warnings, got: ${JSON.stringify(result.warnings)}`,
   );
@@ -1217,14 +1224,20 @@ test("checkRun warns when HIGH dictionary_candidates are not in user-dict", asyn
   );
 
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { high_priority_not_in_user_dict_count: number };
     details: { high_priority_not_in_user_dict: string[] };
   };
 
   assert.equal(report.summary.high_priority_not_in_user_dict_count, 1);
-  assert.deepEqual(report.details.high_priority_not_in_user_dict, [missingSurface]);
+  assert.deepEqual(report.details.high_priority_not_in_user_dict, [
+    missingSurface,
+  ]);
   assert.ok(
     result.warnings.some((warning) =>
       warning.includes(
@@ -1296,7 +1309,11 @@ test("checkRun warns when HIGH/MEDIUM dictionary_candidates have empty reading_o
   );
 
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { candidates_without_reading_count: number };
     details: { candidates_without_reading: string[] };
@@ -1358,7 +1375,11 @@ test("checkRun warns on notation inconsistencies and unresolved high-risk terms"
   }));
 
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       notation_inconsistencies: Array<{ term: string; variants: string[] }>;
@@ -1396,7 +1417,11 @@ test("checkRun treats multi-word technical term as covered when words are contig
     technical_terms: [{ term: "Double Array Trie", note: "複合語" }],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1419,7 +1444,11 @@ test("checkRun treats joined notation as covered for multi-word technical term",
     technical_terms: [{ term: "Double Array Trie", note: "結合表記許可" }],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1442,7 +1471,11 @@ test("checkRun finds notation variants for multi-word term across spaced, joined
     technical_terms: [{ term: "Double Array Trie", note: "表記ゆれ確認" }],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -1472,13 +1505,19 @@ test("checkRun resolves high-risk term by ruby notation case-insensitively", asy
     technical_terms: [{ term: "TypeScript", note: "Ruby解決テスト" }],
   }));
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: { unresolved_high_risk_terms: string[] };
   };
   assert.deepEqual(report.details.unresolved_high_risk_terms, []);
   assert.ok(
-    !result.warnings.some((warning) => warning.includes("high-risk technical_terms unresolved")),
+    !result.warnings.some((warning) =>
+      warning.includes("high-risk technical_terms unresolved"),
+    ),
   );
 });
 
@@ -1493,12 +1532,16 @@ test("checkRun adds report-written warning when technical_terms warnings exist",
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "TypeScript", note: "missing warningを発生させる" }],
+    technical_terms: [
+      { term: "TypeScript", note: "missing warningを発生させる" },
+    ],
   }));
   const result = await checkRun({ runDir });
   assert.ok(
     result.warnings.some((warning) =>
-      warning.includes("technical_terms audit report written to context/E01_technical_terms_audit.json"),
+      warning.includes(
+        "technical_terms audit report written to context/E01_technical_terms_audit.json",
+      ),
     ),
     `Expected report written warning when audit has warnings, got: ${JSON.stringify(result.warnings)}`,
   );
@@ -1518,7 +1561,11 @@ test("checkRun matches non-ascii technical term by normalized substring", async 
     technical_terms: [{ term: "形態素解析", note: "非ASCII term" }],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1544,7 +1591,11 @@ test("checkRun treats contiguous mixed technical terms as covered", async () => 
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1564,16 +1615,24 @@ test("checkRun does not treat spaced or hyphenated mixed technical term as cover
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "HTTPリクエスト", note: "mixed term strict contiguous" }],
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed term strict contiguous" },
+    ],
   }));
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: { missing_in_script: string[] };
   };
   assert.deepEqual(report.details.missing_in_script, ["HTTPリクエスト"]);
   assert.ok(
-    result.warnings.some((warning) => warning.includes("technical_terms missing in script")),
+    result.warnings.some((warning) =>
+      warning.includes("technical_terms missing in script"),
+    ),
   );
 });
 
@@ -1594,7 +1653,11 @@ test("checkRun normalizes mixed technical term coverage by NFKC and case", async
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1614,10 +1677,16 @@ test("checkRun reports mixed term notation inconsistencies with raw variants", a
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "HTTPリクエスト", note: "mixed notation variants" }],
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed notation variants" },
+    ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       notation_inconsistencies: Array<{ term: string; variants: string[] }>;
@@ -1642,10 +1711,16 @@ test("checkRun ignores mixed-term variants detected only at invalid ASCII bounda
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "HTTPリクエスト", note: "mixed boundary variant filter" }],
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed boundary variant filter" },
+    ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -1672,7 +1747,11 @@ test("checkRun keeps at least one variant for covered mixed term", async () => {
     technical_terms: [{ term: "HTTPリクエスト", note: "variant invariant" }],
   }));
   const result = await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -1699,10 +1778,16 @@ test("checkRun reports non-ascii notation inconsistencies with raw variants", as
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "サーバー", note: "non-ascii notation variants" }],
+    technical_terms: [
+      { term: "サーバー", note: "non-ascii notation variants" },
+    ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       notation_inconsistencies: Array<{ term: string; variants: string[] }>;
@@ -1726,17 +1811,32 @@ test("checkRun avoids non-ascii substring false-positive when morph tokenizer is
   const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "関数", note: "substring false-positive regression" }],
+    technical_terms: [
+      { term: "関数", note: "substring false-positive regression" },
+    ],
   }));
 
   const result = await checkRun({
     runDir,
     morphTokenizerOverride: createMockMorphTokenizer({
-      [scriptText]: ["相関数値", "を", "計算", "します", "例", "を", "続け", "ます"],
+      [scriptText]: [
+        "相関数値",
+        "を",
+        "計算",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます",
+      ],
       関数: ["関数"],
     }),
   });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -1766,7 +1866,11 @@ test("checkRun skips non-ascii technical term audit when morph tokenizer is unav
   }));
 
   const result = await checkRun({ runDir, morphTokenizerOverride: null });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     schema_version: string;
     summary: {
@@ -1816,9 +1920,17 @@ test("checkRun keeps ascii technical term audit active when morph tokenizer is u
   }));
 
   const result = await checkRun({ runDir, morphTokenizerOverride: null });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { total_terms: number; evaluated_terms: number; covered_terms: number };
+    summary: {
+      total_terms: number;
+      evaluated_terms: number;
+      covered_terms: number;
+    };
     details: { skipped_non_ascii_terms: string[]; missing_in_script: string[] };
   };
 
@@ -1828,7 +1940,9 @@ test("checkRun keeps ascii technical term audit active when morph tokenizer is u
   assert.deepEqual(report.details.skipped_non_ascii_terms, []);
   assert.deepEqual(report.details.missing_in_script, []);
   assert.ok(
-    !result.warnings.some((warning) => warning.includes("skipped 1 non-ASCII term")),
+    !result.warnings.some((warning) =>
+      warning.includes("skipped 1 non-ASCII term"),
+    ),
   );
 });
 
@@ -1843,13 +1957,23 @@ test("checkRun does not skip mixed technical term audit when morph tokenizer is 
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "HTTPリクエスト", note: "mixed should not be skipped" }],
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed should not be skipped" },
+    ],
   }));
 
   const result = await checkRun({ runDir, morphTokenizerOverride: null });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
-    summary: { total_terms: number; evaluated_terms: number; covered_terms: number };
+    summary: {
+      total_terms: number;
+      evaluated_terms: number;
+      covered_terms: number;
+    };
     details: { skipped_non_ascii_terms: string[]; missing_in_script: string[] };
   };
 
@@ -1859,7 +1983,9 @@ test("checkRun does not skip mixed technical term audit when morph tokenizer is 
   assert.deepEqual(report.details.skipped_non_ascii_terms, []);
   assert.deepEqual(report.details.missing_in_script, []);
   assert.ok(
-    !result.warnings.some((warning) => warning.includes("skipped 1 non-ASCII term")),
+    !result.warnings.some((warning) =>
+      warning.includes("skipped 1 non-ASCII term"),
+    ),
   );
 });
 
@@ -1893,7 +2019,11 @@ test("checkRun skips dictionary and high-risk checks for non-ascii term when mor
   );
 
   const result = await checkRun({ runDir, morphTokenizerOverride: null });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       skipped_non_ascii_terms: string[];
@@ -1922,7 +2052,9 @@ test("checkRun extracts non-ascii notation variants from morph concatenated span
   const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "形態素解析", note: "morph concatenated variant extraction" }],
+    technical_terms: [
+      { term: "形態素解析", note: "morph concatenated variant extraction" },
+    ],
   }));
 
   await checkRun({
@@ -1948,7 +2080,11 @@ test("checkRun extracts non-ascii notation variants from morph concatenated span
       形態素解析: ["形態素", "解析"],
     }),
   });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       notation_inconsistencies: Array<{ term: string; variants: string[] }>;
@@ -1973,17 +2109,34 @@ test("checkRun ignores non-ascii concatenated variants extended only by removabl
   const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "形態素解析", note: "ignore removable punctuation extension" }],
+    technical_terms: [
+      { term: "形態素解析", note: "ignore removable punctuation extension" },
+    ],
   }));
 
   await checkRun({
     runDir,
     morphTokenizerOverride: createMockMorphTokenizer({
-      [scriptText]: ["形態素", "解析", "(", "を", "説明", "します", "例", "を", "続け", "ます"],
+      [scriptText]: [
+        "形態素",
+        "解析",
+        "(",
+        "を",
+        "説明",
+        "します",
+        "例",
+        "を",
+        "続け",
+        "ます",
+      ],
       形態素解析: ["形態素", "解析"],
     }),
   });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -2007,17 +2160,34 @@ test("checkRun matches non-ascii morph spans across gap characters by raw slice 
   const runDir = await prepareMinimalRun(["E01"], { E01: scriptText });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "形態素解析", note: "gap character normalization" }],
+    technical_terms: [
+      { term: "形態素解析", note: "gap character normalization" },
+    ],
   }));
 
   await checkRun({
     runDir,
     morphTokenizerOverride: createMockMorphTokenizer({
-      [scriptText]: ["形態素", " ", "解析", "を", "学び", "ます", "例", "を", "続け", "ます"],
+      [scriptText]: [
+        "形態素",
+        " ",
+        "解析",
+        "を",
+        "学び",
+        "ます",
+        "例",
+        "を",
+        "続け",
+        "ます",
+      ],
       形態素解析: ["形態素", "解析"],
     }),
   });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -2065,7 +2235,11 @@ test("checkRun extracts non-ascii notation variants from morph token-sequence ma
       サーバー: ["サーバー"],
     }),
   });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     details: {
       notation_inconsistencies: Array<{ term: string; variants: string[] }>;
@@ -2094,7 +2268,11 @@ test("checkRun treats mixed technical terms as covered at Japanese particle and 
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -2120,7 +2298,11 @@ test("checkRun rejects mixed technical term when adjacent to ASCII letters", asy
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -2153,14 +2335,20 @@ test("checkRun rejects mixed technical term when adjacent to fullwidth ASCII let
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
   };
   assert.equal(report.summary.covered_terms, 0);
   assert.deepEqual(
-    [...report.details.missing_in_script].sort((a, b) => a.localeCompare(b, "ja")),
+    [...report.details.missing_in_script].sort((a, b) =>
+      a.localeCompare(b, "ja"),
+    ),
     ["HTTPリクエスト", "v8エンジン"],
   );
 });
@@ -2182,7 +2370,11 @@ test("checkRun treats mixed technical terms at line-end boundaries as covered", 
     ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
@@ -2202,10 +2394,16 @@ test("checkRun keeps mixed term covered when valid and invalid boundaries coexis
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "HTTPリクエスト", note: "mixed valid+invalid boundary coexist" }],
+    technical_terms: [
+      { term: "HTTPリクエスト", note: "mixed valid+invalid boundary coexist" },
+    ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: {
@@ -2229,10 +2427,16 @@ test("checkRun does not allow substring false-positive for mixed technical term 
   });
   await updateMaterialFiles(runDir, (data) => ({
     ...data,
-    technical_terms: [{ term: "v8エンジン", note: "fullwidth digit suffix false-positive" }],
+    technical_terms: [
+      { term: "v8エンジン", note: "fullwidth digit suffix false-positive" },
+    ],
   }));
   await checkRun({ runDir });
-  const reportPath = path.join(runDir, "context", "E01_technical_terms_audit.json");
+  const reportPath = path.join(
+    runDir,
+    "context",
+    "E01_technical_terms_audit.json",
+  );
   const report = JSON.parse(await readFile(reportPath, "utf-8")) as {
     summary: { covered_terms: number };
     details: { missing_in_script: string[] };
