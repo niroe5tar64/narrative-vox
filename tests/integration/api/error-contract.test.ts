@@ -134,6 +134,21 @@ test("422: user-dict の AJV バリデーション失敗 → 422 + details[]", a
   assert.ok((body.details as unknown[]).length > 0);
 });
 
+test("404: patch-config は API 公開対象ではない", async () => {
+  const getRes = await apiFetch("/api/configs/voice/voicevox/patch-config");
+  assert.equal(getRes.status, 404);
+
+  const putRes = await apiFetch("/api/configs/voice/voicevox/patch-config", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      replacements: [],
+      dictionaryPatches: [],
+    }),
+  });
+  assert.equal(putRes.status, 404);
+});
+
 // ---------------------------------------------------------------------------
 // requestId ヘッダー伝搬
 // ---------------------------------------------------------------------------
