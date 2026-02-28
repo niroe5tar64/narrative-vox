@@ -50,7 +50,7 @@ export function CharactersPanel({
     ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
     : savedFormStr !== null && JSON.stringify(form) !== savedFormStr;
 
-  useDirtyGuard(isDirty);
+  const dirtyGuard = useDirtyGuard(isDirty);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -258,6 +258,7 @@ export function CharactersPanel({
           setConfirmState(null);
         }}
       />
+      <ConfirmDialog {...dirtyGuard.confirmDialogProps} />
     </div>
   );
 }

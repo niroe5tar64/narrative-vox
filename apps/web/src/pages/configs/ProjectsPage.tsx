@@ -42,7 +42,7 @@ export function ProjectsPage() {
     ? JSON.stringify(form) !== JSON.stringify(EMPTY_FORM)
     : savedFormStr !== null && JSON.stringify(form) !== savedFormStr;
 
-  useDirtyGuard(isDirty);
+  const dirtyGuard = useDirtyGuard(isDirty);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: queryKeys.projects.list(),
@@ -248,6 +248,7 @@ export function ProjectsPage() {
           setConfirmState(null);
         }}
       />
+      <ConfirmDialog {...dirtyGuard.confirmDialogProps} />
     </div>
   );
 }

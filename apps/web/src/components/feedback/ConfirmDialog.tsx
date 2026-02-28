@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 
-type Props = {
+export type ConfirmDialogProps = {
   open: boolean;
   title: string;
   body: string;
@@ -20,7 +20,7 @@ export function ConfirmDialog({
   isDestructive = false,
   onConfirm,
   onCancel,
-}: Props) {
+}: ConfirmDialogProps) {
   if (!open) return null;
 
   return (

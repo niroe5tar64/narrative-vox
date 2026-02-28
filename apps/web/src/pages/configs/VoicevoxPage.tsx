@@ -131,7 +131,7 @@ export function VoicevoxPage() {
   const [pendingTab, setPendingTab] = useState<Tab | null>(null);
 
   const isDirty = Object.values(dirtyEditors).some(Boolean);
-  useDirtyGuard(isDirty);
+  const dirtyGuard = useDirtyGuard(isDirty);
 
   const handleDirtyChange = useCallback((editorTab: Tab, dirty: boolean) => {
     setDirtyEditors((prev) => ({ ...prev, [editorTab]: dirty }));
@@ -203,6 +203,7 @@ export function VoicevoxPage() {
           setPendingTab(null);
         }}
       />
+      <ConfirmDialog {...dirtyGuard.confirmDialogProps} />
     </div>
   );
 }

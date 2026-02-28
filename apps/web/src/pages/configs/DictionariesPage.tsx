@@ -1,11 +1,12 @@
 import { useState } from "react";
 
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { UserDictSection } from "@/components/configs/dictionaries/UserDictSection";
 import { useDirtyGuard } from "@/hooks/useDirtyGuard";
 
 export function DictionariesPage() {
   const [userDirty, setUserDirty] = useState(false);
-  useDirtyGuard(userDirty);
+  const dirtyGuard = useDirtyGuard(userDirty);
 
   return (
     <div className="space-y-5">
@@ -13,6 +14,7 @@ export function DictionariesPage() {
       <div className="rounded-xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur space-y-8">
         <UserDictSection onDirtyChange={setUserDirty} />
       </div>
+      <ConfirmDialog {...dirtyGuard.confirmDialogProps} />
     </div>
   );
 }

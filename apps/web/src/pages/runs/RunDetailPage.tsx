@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { api } from "@/api/client";
 import { ApiErrorBanner } from "@/components/feedback/ApiErrorBanner";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { FileViewer } from "@/components/runs/FileViewer";
 import { RunFileTree } from "@/components/runs/RunFileTree";
@@ -28,7 +29,7 @@ export function RunDetailPage() {
   const [pipelineError, setPipelineError] = useState<string | null>(null);
   const [fileViewerDirty, setFileViewerDirty] = useState(false);
 
-  useDirtyGuard(fileViewerDirty);
+  const dirtyGuard = useDirtyGuard(fileViewerDirty);
 
   const { logs, status: pipelineStatus, reset } = usePipelineLog(jobId);
   const prevPipelineStatus = useRef(pipelineStatus);
@@ -216,6 +217,7 @@ export function RunDetailPage() {
           )}
         </div>
       </div>
+      <ConfirmDialog {...dirtyGuard.confirmDialogProps} />
     </div>
   );
 }
