@@ -24,9 +24,6 @@ coverage/
 .env.*
 !.env.example
 
-# generated pipeline runs (safest: ignore all runs)
-projects/*/run-*/
-
 # keep only documentation files under data/
 data/**
 !data/**/
@@ -35,14 +32,6 @@ data/**
 # optional local output buckets
 outputs/
 artifacts/
-
-# copyrighted/raw source data (do not publish)
-inputs/books/*/source/
-inputs/novels/*/source/
-
-# cloned OSS repositories (oss-dive genre)
-inputs/repos/*/
-data/inputs/repos/*/
 
 # generated audio assets (copyright / size risk)
 *.wav
@@ -59,12 +48,11 @@ configs/**/*.local.json
 configs/**/*.local.yaml
 configs/**/*.local.yml
 configs/**/*.secrets.*
-configs/voicevox/synthesis_defaults.json
-configs/voicevox/default_character_map.json
+configs/voice/voicevox/synthesis-defaults.json
 !configs/**/*.example.json
 
 # project/content specific configs (keep local by default)
-configs/projects/*.json
-configs/novels/*.json
-!configs/projects/*.example.json
-!configs/novels/*.example.json
+configs/pipeline/projects/*.json
+configs/content/novels/*.json
+!configs/pipeline/projects/*.example.json
+!configs/content/novels/*.example.json
