@@ -21,7 +21,13 @@ bun test --filter "pattern"     # パターンに一致するテストのみ実�
 # 型チェック
 bun run typecheck
 
-# パイプラインコマンド（すべて --help でフラグ確認可能）
+# Layer 1 コマンド（LLM駆動、Skills /gen-* の実体）
+bun run gen-blueprint -- --project-id <id>
+bun run gen-material -- --project-id <id> --episode-id E01 --run-dir path/to/run-dir
+bun run gen-script -- --project-id <id> --episode-id E01 --run-dir path/to/run-dir
+bun run gen-digest -- --project-id <id> --episode-id E01 --run-dir path/to/run-dir
+
+# Layer 2 コマンド（決定的CLI、すべて --help でフラグ確認可能）
 bun run build-text -- --script path/to/E01_script.md
 bun run patch-voicevox-text -- --voicevox-text-json path/to/voicevox_text/E01_voicevox_text.json
 bun run build-project -- --voicevox-text-json path/to/voicevox_text/E01_voicevox_text.json
