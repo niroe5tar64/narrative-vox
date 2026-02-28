@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { act } from "react";
 import { describe, expect, test, vi } from "vitest";
 import { PipelinePage } from "@/pages/pipeline/PipelinePage";
 
@@ -13,6 +14,7 @@ const resetStatuses = vi.fn();
 const cancel = vi.fn();
 const startJob = vi.fn();
 const startStepJob = vi.fn();
+const usePipelineJobMock = vi.fn();
 
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries }),
@@ -47,18 +49,7 @@ vi.mock("@/hooks/usePipelineContext", () => ({
 }));
 
 vi.mock("@/hooks/usePipelineJob", () => ({
-  usePipelineJob: () => ({
-    logs: [],
-    logStatus: "idle",
-    runningCommand: null,
-    apiError: null,
-    isJobActive: false,
-    getStepStatus: vi.fn(() => "idle"),
-    startJob,
-    startStepJob,
-    cancel,
-    resetStatuses,
-  }),
+  usePipelineJob: (options: unknown) => usePipelineJobMock(options),
 }));
 
 vi.mock("@/hooks/usePipelineAvailability", () => ({
@@ -99,7 +90,31 @@ vi.mock("@/components/ui/tab-bar", () => ({
 }));
 
 vi.mock("@/components/pipeline/PipelineContextSelector", () => ({
-  PipelineContextSelector: () => <div>PipelineContextSelector</div>,
+  PipelineContextSelector: ({
+    onProjectIdChange,
+    onRunKeyChange,
+    onEpisodeIdChange,
+  }: {
+    onProjectIdChange: (id: string) => void;
+    onRunKeyChange: (key: string) => void;
+    onEpisodeIdChange: (id: string) => void;
+  }) => (
+    <div>
+      <div>PipelineContextSelector</div>
+      <button type="button" onClick={() => onProjectIdChange("other")}>
+        change-project
+      </button>
+      <button
+        type="button"
+        onClick={() => onRunKeyChange("demo/run-20260228-0900")}
+      >
+        change-run
+      </button>
+      <button type="button" onClick={() => onEpisodeIdChange("E02")}>
+        change-episode
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock("@/components/pipeline/PipelineLayer1Panel", () => ({
@@ -123,6 +138,22 @@ vi.mock("@/components/pipeline/LogTerminal", () => ({
 }));
 
 describe("PipelinePage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    usePipelineJobMock.mockImplementation(() => ({
+      logs: [],
+      logStatus: "idle",
+      runningCommand: null,
+      apiError: null,
+      isJobActive: false,
+      getStepStatus: vi.fn(() => "idle"),
+      startJob,
+      startStepJob,
+      cancel,
+      resetStatuses,
+    }));
+  });
+
   test("route composition と tab 切り替えを維持する", () => {
     render(<PipelinePage />);
 
@@ -138,5 +169,45 @@ describe("PipelinePage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "ユーティリティ" }));
     expect(screen.getByText("PipelineUtilityPanel")).toBeTruthy();
+  });
+
+  test("context selector の変更操作が setter と status reset に伝播する", () => {
+    render(<PipelinePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "change-project" }));
+    expect(setProjectId).toHaveBeenCalledWith("other");
+    expect(setRunKey).toHaveBeenCalledWith("");
+    expect(setEpisodeId).toHaveBeenCalledWith("");
+    expect(resetStatuses).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "change-run" }));
+    expect(setRunKey).toHaveBeenCalledWith("demo/run-20260228-0900");
+    expect(resetStatuses).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "change-episode" }));
+    expect(setEpisodeId).toHaveBeenCalledWith("E02");
+    expect(resetStatuses).toHaveBeenCalledTimes(3);
+  });
+
+  test("gen-blueprint 完了時に run query を refresh して auto-select を要求する", async () => {
+    render(<PipelinePage />);
+
+    const options = usePipelineJobMock.mock.calls[0]?.[0] as {
+      onGenBlueprintDone: () => Promise<void>;
+      onRunStatusRefresh: () => Promise<void>;
+    };
+
+    await act(async () => {
+      await options.onGenBlueprintDone();
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["runs"] });
+    expect(requestAutoSelectRun).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await options.onRunStatusRefresh();
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["run-status"] });
   });
 });
