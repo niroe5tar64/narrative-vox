@@ -28,6 +28,7 @@ coverage/
 data/**
 !data/**/
 !data/**/README.md
+data/inputs/repos/
 
 # optional local output buckets
 outputs/
