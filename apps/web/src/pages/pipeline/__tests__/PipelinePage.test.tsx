@@ -27,6 +27,7 @@ vi.mock("@/hooks/usePipelineContext", () => ({
     projectId: "demo",
     runKey: "demo/run-20260227-1200",
     episodeId: "E01",
+    episodeOptions: ["E01"],
     setProjectId,
     setRunKey,
     setEpisodeId,

@@ -35,6 +35,7 @@ export function PipelinePage() {
     projectId,
     runKey,
     episodeId,
+    episodeOptions,
     setProjectId,
     setRunKey,
     setEpisodeId,
@@ -148,7 +149,7 @@ export function PipelinePage() {
         projectId={projectId}
         runKey={runKey}
         episodeId={episodeId}
-        plannedEpisodeIds={runStatusQuery.data?.plannedEpisodeIds}
+        episodeOptions={episodeOptions}
         isDisabled={job.isJobActive}
         projects={projectsQuery.data?.items}
         runs={runsQuery.data?.items}

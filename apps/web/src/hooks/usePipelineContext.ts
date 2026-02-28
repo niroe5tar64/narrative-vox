@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { api, type ProjectConfig } from "@/api/client";
+import {
+  buildEpisodeOptions,
+  resolveEpisodeSelection,
+} from "@/lib/pipeline-episode-selection";
 import { derivePaths } from "@/lib/pipeline-steps";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -58,37 +62,41 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
   const selectedProject = (projectsQuery.data?.items as ProjectConfig[] | undefined)
     ?.find((project) => project.PROJECT_ID === projectId);
 
-  useEffect(() => {
-    if (!selectedProject?.EPISODE_ID) return;
-    setEpisodeId((prev) => prev || selectedProject.EPISODE_ID);
-  }, [selectedProject]);
+  const projectEpisodeId = selectedProject?.EPISODE_ID;
+
+  const episodeOptions = useMemo(
+    () =>
+      buildEpisodeOptions({
+        runKey,
+        currentEpisodeId: episodeId,
+        projectEpisodeId,
+        runStatus: runStatusQuery.data,
+      }),
+    [episodeId, projectEpisodeId, runKey, runStatusQuery.data],
+  );
+
+  const resolvedEpisodeId = useMemo(
+    () =>
+      resolveEpisodeSelection({
+        runKey,
+        currentEpisodeId: episodeId,
+        projectEpisodeId,
+        runStatus: runStatusQuery.data,
+      }),
+    [episodeId, projectEpisodeId, runKey, runStatusQuery.data],
+  );
 
   useEffect(() => {
-    if (!runStatusQuery.data || episodeId) return;
-    const stageOrder = [
-      runStatusQuery.data.stages.material,
-      runStatusQuery.data.stages.script,
-      runStatusQuery.data.stages.context,
-      runStatusQuery.data.stages.voicevox_text,
-      runStatusQuery.data.stages.voicevox_project,
-      runStatusQuery.data.stages.audio,
-    ] as const;
-    for (const stage of stageOrder) {
-      if ("episodeIds" in stage && stage.episodeIds.length > 0) {
-        setEpisodeId(stage.episodeIds[0]);
-        return;
-      }
+    if (resolvedEpisodeId !== episodeId) {
+      setEpisodeId(resolvedEpisodeId);
     }
-  }, [episodeId, runStatusQuery.data]);
-
-  useEffect(() => {
-    setEpisodeId((prev) => prev || "E01");
-  }, [episodeId]);
+  }, [episodeId, resolvedEpisodeId]);
 
   return {
     projectId,
     runKey,
     episodeId,
+    episodeOptions,
     setProjectId,
     setRunKey,
     setEpisodeId,
