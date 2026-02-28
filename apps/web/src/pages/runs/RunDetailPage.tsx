@@ -51,42 +51,6 @@ export function RunDetailPage() {
     enabled: !!projectId && !!runId,
   });
 
-  if (!projectId || !runId) {
-    return (
-      <div className="p-4 text-sm text-red-600">
-        プロジェクトIDまたはRun IDが指定されていません
-      </div>
-    );
-  }
-
-  const runDir = `data/projects/${projectId}/${runId}`;
-  const isPipelineActive =
-    pipelineStatus === "connecting" || pipelineStatus === "running";
-
-  const startPipeline = async (command: string, args: string[]) => {
-    reset();
-    setJobId(null);
-    setPipelineError(null);
-    try {
-      const result = await api.pipeline.run(command, args);
-      setJobId(result.jobId);
-      setJobCommand(result.command);
-    } catch (e) {
-      setPipelineError(formatApiError(e));
-    }
-  };
-
-  const handleCheckRun = () =>
-    startPipeline("check-run", ["--run-dir", runDir]);
-
-  const handlePrepareRun = () =>
-    startPipeline("prepare-run", ["--source-run-dir", runDir]);
-
-  const showPipelineLog =
-    logs.length > 0 ||
-    pipelineStatus === "connecting" ||
-    pipelineStatus === "running";
-
   useEffect(() => {
     const prev = prevPipelineStatus.current;
     prevPipelineStatus.current = pipelineStatus;
@@ -123,6 +87,42 @@ export function RunDetailPage() {
     runId,
     selectedFile,
   ]);
+
+  if (!projectId || !runId) {
+    return (
+      <div className="p-4 text-sm text-red-600">
+        プロジェクトIDまたはRun IDが指定されていません
+      </div>
+    );
+  }
+
+  const runDir = `data/projects/${projectId}/${runId}`;
+  const isPipelineActive =
+    pipelineStatus === "connecting" || pipelineStatus === "running";
+
+  const startPipeline = async (command: string, args: string[]) => {
+    reset();
+    setJobId(null);
+    setPipelineError(null);
+    try {
+      const result = await api.pipeline.run(command, args);
+      setJobId(result.jobId);
+      setJobCommand(result.command);
+    } catch (e) {
+      setPipelineError(formatApiError(e));
+    }
+  };
+
+  const handleCheckRun = () =>
+    startPipeline("check-run", ["--run-dir", runDir]);
+
+  const handlePrepareRun = () =>
+    startPipeline("prepare-run", ["--source-run-dir", runDir]);
+
+  const showPipelineLog =
+    logs.length > 0 ||
+    pipelineStatus === "connecting" ||
+    pipelineStatus === "running";
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
