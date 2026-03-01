@@ -14,7 +14,8 @@
         "wayou.vscode-todo-highlight",
         "biomejs.biome",
         "oven.bun-vscode",
-        "bierner.markdown-mermaid"
+        "bierner.markdown-mermaid",
+        "highagency.pencildev"
       ],
       "settings": {
         "editor.formatOnSave": true,

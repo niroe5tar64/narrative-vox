@@ -12,7 +12,8 @@ sudo chown -R $(id -u):$(id -g) ~/.claude ~/.codex 2>/dev/null || true
 
 # Update system packages
 sudo apt-get update
-sudo apt-get install -y vim tree jq unzip ffmpeg
+# libnspr4 libnss3: required for Playwright Chromium on ARM64
+sudo apt-get install -y vim tree jq unzip ffmpeg libnspr4 libnss3
 
 # Install bun
 curl -fsSL https://bun.sh/install | bash
@@ -42,6 +43,9 @@ if [ ! -f "${GIT_CONFIG_GLOBAL}" ]; then
         touch "${GIT_CONFIG_GLOBAL}"
     fi
 fi
+
+# Install Playwright Chromium (used by @playwright/mcp with --browser chromium on ARM64)
+bunx playwright install chromium 2>&1 | grep -v "^$" || true
 
 # Install CLI tools (npm) - check if npm packages are installed (not just command exists)
 if ! npm list -g @anthropic-ai/claude-code @openai/codex &> /dev/null; then
