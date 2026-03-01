@@ -80,6 +80,10 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 
 - **後方互換は不要**: リリース前の個人開発プロダクトのため、既存データ形式・API・スキーマの後方互換を考慮する必要はない。破壊的変更は一括切替で行う。
 
+## Web UI 操作上の注意
+
+- **実行ボタンを押さない**: `http://localhost:5173` の Pipeline ページにある「実行」「再実行」ボタンは重たい LLM 処理・音声合成処理を起動するため、**絶対にクリックしない**。デザイン確認・スクリーンショット取得のみに留める。
+
 ## コミット規約
 
 Japanese Conventional Commits 形式: `<type>: <日本語subject>`（例: `feat: 音声合成パイプラインを追加`）。type: feat, fix, refactor, docs, style, test, chore, perf。コミット時は `/commit` スキル（`git-commit-ja-prefix`）を使用する。
