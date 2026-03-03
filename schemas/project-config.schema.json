@@ -2,85 +2,84 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://narrative-vox/schemas/project-config.schema.json",
   "title": "Project Config",
-  "type": "object",
-  "required": [
-    "GENRE_ID",
-    "PROJECT_ID",
-    "PROJECT_TITLE",
-    "SOURCE_MARKDOWN_PATHS",
-    "AUDIENCE_BACKGROUND",
-    "AUDIENCE_LEVEL",
-    "AUDIENCE_INTEREST",
-    "BASELINE_CONTEXT_OR_EMPTY",
-    "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY",
-    "PROJECT_BLUEPRINT_JSON_PATH",
-    "EPISODE_ID",
-    "STYLE_ID",
-    "CAST"
+  "oneOf": [
+    { "$ref": "#/$defs/techExplainerConfig" },
+    { "$ref": "#/$defs/ossDiveConfig" }
   ],
-  "properties": {
-    "GENRE_ID": {
-      "type": "string",
-      "minLength": 1
-    },
-    "PROJECT_ID": {
-      "type": "string",
-      "minLength": 1
-    },
-    "PROJECT_TITLE": {
-      "type": "string",
-      "minLength": 1
-    },
-    "SOURCE_MARKDOWN_PATHS": {
-      "type": "string"
-    },
-    "AUDIENCE_BACKGROUND": {
-      "type": "string",
-      "minLength": 1
-    },
-    "AUDIENCE_LEVEL": {
-      "type": "string",
-      "minLength": 1
-    },
-    "AUDIENCE_INTEREST": {
-      "type": "string",
-      "minLength": 1
-    },
-    "BASELINE_CONTEXT_OR_EMPTY": {
-      "type": "string"
-    },
-    "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": {
-      "type": "string"
-    },
-    "PROJECT_BLUEPRINT_JSON_PATH": {
-      "type": "string",
-      "minLength": 1
-    },
-    "EPISODE_ID": {
-      "type": "string",
-      "pattern": "^E[0-9]{2}$"
-    },
-    "STYLE_ID": {
-      "type": "string",
-      "minLength": 1
-    },
-    "CAST": {
+  "$defs": {
+    "techExplainerConfig": {
       "type": "object",
-      "minProperties": 1,
-      "additionalProperties": {
-        "type": "string",
-        "pattern": "^[a-z][a-z0-9_-]*$"
+      "additionalProperties": false,
+      "required": ["GENRE_ID", "PROJECT_ID", "STYLE_ID", "CAST", "SOURCE_MARKDOWN_PATHS"],
+      "properties": {
+        "GENRE_ID": { "type": "string", "const": "tech-explainer" },
+        "PROJECT_ID": { "type": "string", "minLength": 1 },
+        "STYLE_ID": { "type": "string", "minLength": 1 },
+        "PROJECT_TITLE": { "type": "string" },
+        "AUDIENCE_BACKGROUND": { "type": "string" },
+        "AUDIENCE_LEVEL": { "type": "string" },
+        "AUDIENCE_INTEREST": { "type": "string" },
+        "BASELINE_CONTEXT_OR_EMPTY": { "type": "string" },
+        "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": { "type": "string" },
+        "CAST": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          }
+        },
+        "NOTES": { "type": "string" },
+        "SOURCE_MARKDOWN_PATHS": { "type": "string", "minLength": 1 },
+        "SOURCE_EXCLUDE_PATHS": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "SOURCE_LANGUAGE_HINT": {
+          "type": "string",
+          "enum": ["en", "ja", "mixed"]
+        }
       }
     },
-    "NOTES": {
-      "type": "string"
-    },
-    "REPO_ROOT_PATH": {
-      "type": "string"
-    },
-    "DEEP_DIVE_FOCUS": {
-      "type": "string"
+    "ossDiveConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "GENRE_ID",
+        "PROJECT_ID",
+        "STYLE_ID",
+        "CAST",
+        "REPO_ROOT_PATH",
+        "DEEP_DIVE_FOCUS"
+      ],
+      "properties": {
+        "GENRE_ID": { "type": "string", "const": "oss-dive" },
+        "PROJECT_ID": { "type": "string", "minLength": 1 },
+        "STYLE_ID": { "type": "string", "minLength": 1 },
+        "PROJECT_TITLE": { "type": "string" },
+        "AUDIENCE_BACKGROUND": { "type": "string" },
+        "AUDIENCE_LEVEL": { "type": "string" },
+        "AUDIENCE_INTEREST": { "type": "string" },
+        "BASELINE_CONTEXT_OR_EMPTY": { "type": "string" },
+        "EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY": { "type": "string" },
+        "CAST": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          }
+        },
+        "NOTES": { "type": "string" },
+        "REPO_ROOT_PATH": { "type": "string", "minLength": 1 },
+        "DEEP_DIVE_FOCUS": { "type": "string", "minLength": 1 },
+        "SOURCE_EXCLUDE_PATHS": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "SOURCE_LANGUAGE_HINT": {
+          "type": "string",
+          "enum": ["en", "ja", "mixed"]
+        }
+      }
     }
-  },
-  "additionalProperties": false
+  }
 }

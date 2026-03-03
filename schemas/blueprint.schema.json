@@ -190,13 +190,6 @@
               "with_baseline",
               "standalone"
             ]
-          },
-          "prerequisite_episodes": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^E[0-9]{2}$"
-            }
           }
         }
       }

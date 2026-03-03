@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://narrative-vox/schemas/source-index.schema.json",
+  "title": "Source Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "meta", "sections"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "genre_id",
+        "generated_at",
+        "section_count",
+        "token_estimate_total"
+      ],
+      "properties": {
+        "project_id": { "type": "string", "minLength": 1 },
+        "genre_id": {
+          "type": "string",
+          "enum": ["tech-explainer", "oss-dive"]
+        },
+        "generated_at": { "type": "string" },
+        "section_count": { "type": "integer", "minimum": 0 },
+        "token_estimate_total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/markdownSection" },
+          { "$ref": "#/$defs/repoFileSection" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "markdownSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "section_id",
+        "ordinal",
+        "source_type",
+        "display_title",
+        "preview_text",
+        "char_count",
+        "token_estimate",
+        "is_auxiliary",
+        "path",
+        "heading_path",
+        "body_markdown"
+      ],
+      "properties": {
+        "section_id": { "type": "string", "pattern": "^SRC[0-9]{4}$" },
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "source_type": { "type": "string", "const": "markdown_section" },
+        "display_title": { "type": "string" },
+        "preview_text": { "type": "string" },
+        "char_count": { "type": "integer", "minimum": 0 },
+        "token_estimate": { "type": "integer", "minimum": 0 },
+        "is_auxiliary": { "type": "boolean" },
+        "path": { "type": "string", "minLength": 1 },
+        "heading_path": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "body_markdown": { "type": "string" }
+      }
+    },
+    "repoFileSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "section_id",
+        "ordinal",
+        "source_type",
+        "display_title",
+        "preview_text",
+        "char_count",
+        "token_estimate",
+        "is_auxiliary",
+        "repo_relative_path",
+        "language",
+        "body_text"
+      ],
+      "properties": {
+        "section_id": { "type": "string", "pattern": "^SRC[0-9]{4}$" },
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "source_type": { "type": "string", "const": "repo_file" },
+        "display_title": { "type": "string" },
+        "preview_text": { "type": "string" },
+        "char_count": { "type": "integer", "minimum": 0 },
+        "token_estimate": { "type": "integer", "minimum": 0 },
+        "is_auxiliary": { "type": "boolean" },
+        "repo_relative_path": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "body_text": { "type": "string" },
+        "symbol_outline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "name", "line"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["function", "class", "interface", "type"]
+              },
+              "name": { "type": "string" },
+              "line": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
