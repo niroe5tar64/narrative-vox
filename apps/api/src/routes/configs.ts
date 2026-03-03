@@ -1,6 +1,7 @@
 import { readdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono } from "hono";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { config } from "../config.ts";
 import { auditApiEvent } from "../lib/audit-log.ts";
 import {
@@ -27,7 +28,7 @@ function isValidKey(key: string): boolean {
   return KEY_PATTERN.test(key);
 }
 
-async function listJsonFiles(
+async function listYamlFiles(
   dirRelPath: string,
   exclude?: (f: string) => boolean,
 ): Promise<unknown[]> {
@@ -35,11 +36,25 @@ async function listJsonFiles(
   const files = await readdir(dirPath);
   const items = await Promise.all(
     files
-      .filter((f) => f.endsWith(".json") && !f.startsWith(".") && !exclude?.(f))
+      .filter((f) => f.endsWith(".yaml") && !f.startsWith(".") && !exclude?.(f))
       .sort()
-      .map(async (f) => Bun.file(join(dirPath, f)).json()),
+      .map(async (f) => parseYaml(await Bun.file(join(dirPath, f)).text())),
   );
   return items;
+}
+
+async function readYamlFile(
+  relPath: string,
+): Promise<{ data: unknown; absPath: string } | null> {
+  const absPath = await safeResolve(relPath);
+  const file = Bun.file(absPath);
+  if (!(await file.exists())) return null;
+  return { data: parseYaml(await file.text()), absPath };
+}
+
+async function writeYamlFile(relPath: string, data: unknown): Promise<void> {
+  const absPath = await safeResolve(relPath);
+  await Bun.write(absPath, stringifyYaml(data));
 }
 
 async function readJsonFile(
@@ -103,7 +118,7 @@ async function runValidation(
 
 configsRouter.get("/characters", async (c) => {
   try {
-    const items = await listJsonFiles("configs/content/characters");
+    const items = await listYamlFiles("configs/content/characters");
     return c.json({ items });
   } catch {
     return problem(c, {
@@ -123,7 +138,7 @@ configsRouter.get("/characters/:key", async (c) => {
     });
   }
   try {
-    const result = await readJsonFile(`configs/content/characters/${key}.json`);
+    const result = await readYamlFile(`configs/content/characters/${key}.yaml`);
     if (!result)
       return problem(c, { title: "Character not found", status: STATUS_404 });
     return c.json(result.data);
@@ -146,8 +161,8 @@ configsRouter.post("/characters", async (c) => {
 
   const key = (parsed.body as { key: string }).key;
   try {
-    const relPath = `configs/content/characters/${key}.json`;
-    const existing = await readJsonFile(relPath);
+    const relPath = `configs/content/characters/${key}.yaml`;
+    const existing = await readYamlFile(relPath);
     if (existing) {
       return problem(c, {
         title: "Character already exists",
@@ -155,7 +170,7 @@ configsRouter.post("/characters", async (c) => {
         detail: `Character "${key}" already exists. Use PUT to update.`,
       });
     }
-    await writeJsonFile(relPath, parsed.body);
+    await writeYamlFile(relPath, parsed.body);
     await auditApiEvent(c, {
       action: "config.create",
       status: 201,
@@ -198,11 +213,11 @@ configsRouter.put("/characters/:key", async (c) => {
   if (!validation.ok) return validation.res;
 
   try {
-    const relPath = `configs/content/characters/${key}.json`;
-    const existing = await readJsonFile(relPath);
+    const relPath = `configs/content/characters/${key}.yaml`;
+    const existing = await readYamlFile(relPath);
     if (!existing)
       return problem(c, { title: "Character not found", status: STATUS_404 });
-    await writeJsonFile(relPath, parsed.body);
+    await writeYamlFile(relPath, parsed.body);
     await auditApiEvent(c, {
       action: "config.update",
       status: 200,
@@ -225,8 +240,8 @@ configsRouter.delete("/characters/:key", async (c) => {
     return problem(c, { title: "Invalid key", status: STATUS_400 });
   }
   try {
-    const relPath = `configs/content/characters/${key}.json`;
-    const result = await readJsonFile(relPath);
+    const relPath = `configs/content/characters/${key}.yaml`;
+    const result = await readYamlFile(relPath);
     if (!result)
       return problem(c, { title: "Character not found", status: STATUS_404 });
     await unlink(result.absPath);
@@ -250,8 +265,8 @@ configsRouter.delete("/characters/:key", async (c) => {
 
 configsRouter.get("/projects", async (c) => {
   try {
-    const items = await listJsonFiles("configs/pipeline/projects", (f) =>
-      f.endsWith(".example.json"),
+    const items = await listYamlFiles("configs/pipeline/projects", (f) =>
+      f.endsWith(".example.yaml"),
     );
     return c.json({ items });
   } catch {
@@ -269,7 +284,7 @@ configsRouter.get("/projects/:id", async (c) => {
     });
   }
   try {
-    const result = await readJsonFile(`configs/pipeline/projects/${id}.json`);
+    const result = await readYamlFile(`configs/pipeline/projects/${id}.yaml`);
     if (!result)
       return problem(c, { title: "Project not found", status: STATUS_404 });
     return c.json(result.data);
@@ -297,8 +312,8 @@ configsRouter.post("/projects", async (c) => {
   }
 
   try {
-    const relPath = `configs/pipeline/projects/${id}.json`;
-    const existing = await readJsonFile(relPath);
+    const relPath = `configs/pipeline/projects/${id}.yaml`;
+    const existing = await readYamlFile(relPath);
     if (existing) {
       return problem(c, {
         title: "Project already exists",
@@ -306,7 +321,7 @@ configsRouter.post("/projects", async (c) => {
         detail: `Project "${id}" already exists. Use PUT to update.`,
       });
     }
-    await writeJsonFile(relPath, parsed.body);
+    await writeYamlFile(relPath, parsed.body);
     await auditApiEvent(c, {
       action: "config.create",
       status: 201,
@@ -346,11 +361,11 @@ configsRouter.put("/projects/:id", async (c) => {
   if (!validation.ok) return validation.res;
 
   try {
-    const relPath = `configs/pipeline/projects/${id}.json`;
-    const existing = await readJsonFile(relPath);
+    const relPath = `configs/pipeline/projects/${id}.yaml`;
+    const existing = await readYamlFile(relPath);
     if (!existing)
       return problem(c, { title: "Project not found", status: STATUS_404 });
-    await writeJsonFile(relPath, parsed.body);
+    await writeYamlFile(relPath, parsed.body);
     await auditApiEvent(c, {
       action: "config.update",
       status: 200,
@@ -374,8 +389,8 @@ configsRouter.delete("/projects/:id", async (c) => {
     return problem(c, { title: "Invalid project id", status: STATUS_400 });
   }
   try {
-    const relPath = `configs/pipeline/projects/${id}.json`;
-    const result = await readJsonFile(relPath);
+    const relPath = `configs/pipeline/projects/${id}.yaml`;
+    const result = await readYamlFile(relPath);
     if (!result)
       return problem(c, { title: "Project not found", status: STATUS_404 });
     await unlink(result.absPath);
@@ -400,7 +415,7 @@ configsRouter.delete("/projects/:id", async (c) => {
 
 configsRouter.get("/styles", async (c) => {
   try {
-    const items = await listJsonFiles("configs/content/styles");
+    const items = await listYamlFiles("configs/content/styles");
     return c.json({ items });
   } catch {
     return problem(c, { title: "Failed to list styles", status: STATUS_500 });
@@ -413,7 +428,7 @@ configsRouter.get("/styles/:id", async (c) => {
     return problem(c, { title: "Invalid style id", status: STATUS_400 });
   }
   try {
-    const result = await readJsonFile(`configs/content/styles/${id}.json`);
+    const result = await readYamlFile(`configs/content/styles/${id}.yaml`);
     if (!result)
       return problem(c, { title: "Style not found", status: STATUS_404 });
     return c.json(result.data);
@@ -428,7 +443,7 @@ configsRouter.get("/styles/:id", async (c) => {
 
 configsRouter.get("/genres", async (c) => {
   try {
-    const items = await listJsonFiles("configs/content/genres");
+    const items = await listYamlFiles("configs/content/genres");
     return c.json({ items });
   } catch {
     return problem(c, { title: "Failed to list genres", status: STATUS_500 });

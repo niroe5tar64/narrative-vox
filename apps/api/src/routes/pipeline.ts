@@ -21,19 +21,20 @@ import type { AppVariables } from "../types.ts";
 // ---------------------------------------------------------------------------
 
 const ALLOWED_COMMANDS = [
-  // Layer 1
+  // Authoring Pipeline
+  "gen-source-index",
   "gen-blueprint",
-  "gen-material",
+  "gen-episode-pack",
   "gen-script",
-  "gen-digest",
-  // Layer 2 (既存)
+  "update-series-context",
+  // Synthesis Pipeline
   "build-text",
   "patch-voicevox-text",
   "build-project",
   "build-audio",
   "build-all",
+  // ユーティリティ
   "check-run",
-  "prepare-run",
   "dict-sync",
 ] as const;
 
@@ -108,13 +109,20 @@ function isIntegerValue(value: string): boolean {
 }
 
 const COMMAND_ARG_SPECS: Record<AllowedCommand, CommandArgSpec> = {
-  "gen-blueprint": {
+  "gen-source-index": {
     "project-id": {
       expectsValue: true,
       validate: (v) => PROJECT_ID_PATTERN.test(v),
     },
   },
-  "gen-material": {
+  "gen-blueprint": {
+    "project-id": {
+      expectsValue: true,
+      validate: (v) => PROJECT_ID_PATTERN.test(v),
+    },
+    "run-dir": { expectsValue: true, validate: isSafeRunDir },
+  },
+  "gen-episode-pack": {
     "project-id": {
       expectsValue: true,
       validate: (v) => PROJECT_ID_PATTERN.test(v),
@@ -136,7 +144,7 @@ const COMMAND_ARG_SPECS: Record<AllowedCommand, CommandArgSpec> = {
     },
     "run-dir": { expectsValue: true, validate: isSafeRunDir },
   },
-  "gen-digest": {
+  "update-series-context": {
     "project-id": {
       expectsValue: true,
       validate: (v) => PROJECT_ID_PATTERN.test(v),
@@ -233,31 +241,6 @@ const COMMAND_ARG_SPECS: Record<AllowedCommand, CommandArgSpec> = {
   },
   "check-run": {
     "run-dir": { expectsValue: true, validate: isSafeRunDir },
-    "synthesis-defaults": { expectsValue: true, validate: isSafeConfigPath },
-    "character-map": { expectsValue: true, validate: isSafeConfigPath },
-    "character-key": {
-      expectsValue: true,
-      validate: (v) => SAFE_TEXT_PATTERN.test(v),
-    },
-    "engine-id": {
-      expectsValue: true,
-      validate: (v) => SAFE_TEXT_PATTERN.test(v),
-    },
-    "speaker-id": {
-      expectsValue: true,
-      validate: (v) => SAFE_TEXT_PATTERN.test(v),
-    },
-    "style-id": { expectsValue: true, validate: isIntegerValue },
-    emotion: { expectsValue: true, validate: (v) => SAFE_TEXT_PATTERN.test(v) },
-    "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },
-    "speed-preset": {
-      expectsValue: true,
-      validate: (v) => ["slow", "normal", "fast"].includes(v),
-    },
-    "speed-profiles": { expectsValue: true, validate: isSafeConfigPath },
-  },
-  "prepare-run": {
-    "source-run-dir": { expectsValue: true, validate: isSafeRunDir },
   },
   "dict-sync": {
     "voicevox-url": { expectsValue: true, validate: isSafeVoicevoxUrl },

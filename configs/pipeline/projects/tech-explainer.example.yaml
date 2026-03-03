@@ -1,0 +1,16 @@
+GENRE_ID: tech-explainer
+PROJECT_ID: example-tech-explainer
+PROJECT_TITLE: "Tech Explainer: Example Tech Explainer"
+SOURCE_MARKDOWN_PATHS: data/inputs/books/introducing-rescript/source/*.md
+AUDIENCE_BACKGROUND: TypeScript/JavaScriptでWeb開発をしているエンジニア
+AUDIENCE_LEVEL: ReScript初学者〜中級手前
+AUDIENCE_INTEREST: 型安全、設計の見通し、保守性、実務での採用判断
+BASELINE_CONTEXT_OR_EMPTY: TypeScriptでの実装・設計パターン
+EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: ""
+PROJECT_BLUEPRINT_JSON_PATH: data/projects/introducing-rescript/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json
+EPISODE_ID: E01
+STYLE_ID: radio-talk
+CAST:
+  lead: teacher
+  questioner: student
+NOTES: Episode Materialで回ごとにEPISODE_IDを切り替える。任意項目を使わない場合は空文字を指定する。

@@ -1,0 +1,15 @@
+PROJECT_ID: introducing-rescript
+PROJECT_TITLE: "Introducing ReScript: Functional Programming for Web Applications"
+GENRE_ID: tech-explainer
+STYLE_ID: radio-talk
+SOURCE_MARKDOWN_PATHS: data/inputs/tech-explainer/introducing-rescript/*.md
+SOURCE_LANGUAGE_HINT: en
+AUDIENCE_BACKGROUND: TypeScript/JavaScriptでWeb開発をしているエンジニア
+AUDIENCE_LEVEL: ReScript初学者〜中級手前
+AUDIENCE_INTEREST: 型安全、設計の見通し、保守性、実務での採用判断
+BASELINE_CONTEXT_OR_EMPTY: TypeScriptでの実装・設計パターン
+EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: data/projects/introducing-rescript/run-20260214-1020/stage3
+CAST:
+  lead: metan
+  questioner: zundamon
+NOTES: Authoring Pipeline再設計用の tech-explainer サンプル
