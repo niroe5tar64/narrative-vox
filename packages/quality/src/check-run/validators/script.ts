@@ -6,7 +6,6 @@ import {
   parseSpeakerTag,
 } from "@narrative-vox/domain/speaker-tag.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
-import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import {
   type ContentStyleForCheckRun,
   collectEpisodeIds,
@@ -175,10 +174,7 @@ export async function validateDigestsIfPresent(params: {
     .sort();
   for (const fileName of contextFiles) {
     const filePath = path.join(contextDir, fileName);
-    const digest = await loadJson<{ episode_id?: string }>(
-      filePath,
-      SchemaPaths.episodeDigest,
-    );
+    const digest = await loadJson<{ episode_id?: string }>(filePath);
     const match = fileName.match(DIGEST_FILE_RE);
     const fileEpisodeId = match?.[1];
     if (

@@ -4,8 +4,6 @@ const SCHEMAS_DIR = path.resolve(process.cwd(), "schemas");
 
 export const SchemaPaths = {
   blueprint: path.join(SCHEMAS_DIR, "blueprint.schema.json"),
-  episodeMaterial: path.join(SCHEMAS_DIR, "episode-material.schema.json"),
-  episodeDigest: path.join(SCHEMAS_DIR, "episode-digest.schema.json"),
   contentStyle: path.join(SCHEMAS_DIR, "content-style.schema.json"),
   character: path.join(SCHEMAS_DIR, "character.schema.json"),
   characterMap: path.join(SCHEMAS_DIR, "character-map.schema.json"),

@@ -24,3 +24,13 @@ export interface PipelineRunRequest {
   command: string;
   args: string[];
 }
+
+export const AUTHORING_STEPS = [
+  "gen-source-index",
+  "gen-blueprint",
+  "gen-episode-pack",
+  "gen-script",
+  "update-series-context",
+] as const;
+
+export type AuthoringStep = (typeof AUTHORING_STEPS)[number];

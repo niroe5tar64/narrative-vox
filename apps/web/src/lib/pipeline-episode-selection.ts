@@ -1,4 +1,4 @@
-import type { RunStatus, StageInfo } from "@narrative-vox/api-types";
+import type { PerEpisodeStageInfo, RunStatus } from "@narrative-vox/api-types";
 
 const FALLBACK_EPISODE_ID = "E01";
 
@@ -10,9 +10,9 @@ type EpisodeSelectionInput = {
 };
 
 const STAGE_KEYS = [
-  "material",
+  "episode_pack",
   "script",
-  "context",
+  "series_context",
   "voicevox_text",
   "voicevox_project",
   "audio",
@@ -22,7 +22,7 @@ function unique(values: string[]): string[] {
   return [...new Set(values.filter((value) => value.length > 0))];
 }
 
-function stageEpisodeIds(stage: StageInfo): string[] {
+function stageEpisodeIds(stage: PerEpisodeStageInfo): string[] {
   return "episodeIds" in stage ? stage.episodeIds : [];
 }
 

@@ -4,25 +4,28 @@ export type RunItem = {
   createdAt: string;
 };
 
-export type StageStatus = "completed" | "partial" | "idle";
+export type SingletonStageInfo = {
+  status: "completed" | "idle";
+};
 
-export type StageInfo =
+export type PerEpisodeStageInfo =
   | { status: "completed" }
   | { status: "partial" | "idle"; episodeIds: string[] };
 
 export type RunStatus = {
   projectId: string;
   runId: string;
-  stages: {
-    blueprint: { status: StageStatus };
-    material: StageInfo;
-    script: StageInfo;
-    context: StageInfo;
-    voicevox_text: StageInfo;
-    voicevox_project: StageInfo;
-    audio: StageInfo;
-  };
   plannedEpisodeIds: string[];
+  stages: {
+    source_index: SingletonStageInfo;
+    blueprint: SingletonStageInfo;
+    episode_pack: PerEpisodeStageInfo;
+    script: PerEpisodeStageInfo;
+    series_context: PerEpisodeStageInfo;
+    voicevox_text: PerEpisodeStageInfo;
+    voicevox_project: PerEpisodeStageInfo;
+    audio: PerEpisodeStageInfo;
+  };
 };
 
 export type RunListResult = {

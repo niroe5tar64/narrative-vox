@@ -1,7 +1,9 @@
 import { readdir, readFile, rename, stat } from "node:fs/promises";
 import { join } from "node:path";
 import type {
+  PerEpisodeStageInfo,
   RunStatus,
+  SingletonStageInfo,
   TreeNode,
   UtteranceUpdate,
 } from "@narrative-vox/api-types";
@@ -87,6 +89,7 @@ async function buildTree(
 // ===== Run Status =====
 
 const EPISODE_ID_RE = /^(E\d{2})(?:_|\.|$)/;
+const PLANNED_EPISODE_ID_RE = /^E\d{2}$/;
 
 /** ディレクトリ内のファイル名からエピソードIDを抽出（存在しない場合は空配列） */
 async function globEpisodeIds(dir: string, suffix: string): Promise<string[]> {
@@ -105,20 +108,47 @@ async function globEpisodeIds(dir: string, suffix: string): Promise<string[]> {
   return ids.sort();
 }
 
-function toStageInfo(
+/** voicevox_project: .vvproj と _project_meta.json の両方が存在する episode のみ present */
+async function globVoicevoxProjectIds(dir: string): Promise<string[]> {
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return [];
+  }
+  const vvprojIds = new Set<string>();
+  const metaIds = new Set<string>();
+  for (const name of entries) {
+    if (name.endsWith(".vvproj")) {
+      const m = EPISODE_ID_RE.exec(name);
+      if (m) vvprojIds.add(m[1]);
+    } else if (name.endsWith("_project_meta.json")) {
+      const m = EPISODE_ID_RE.exec(name);
+      if (m) metaIds.add(m[1]);
+    }
+  }
+  return [...vvprojIds].filter((id) => metaIds.has(id)).sort();
+}
+
+function toPerEpisodeStageInfo(
   episodeIds: string[],
   planned: string[],
-): RunStatus["stages"]["material"] {
-  if (
-    planned.length > 0 &&
-    planned.every((plannedId) => episodeIds.includes(plannedId))
-  ) {
-    return { status: "completed" };
-  }
-  if (episodeIds.length > 0) {
+): PerEpisodeStageInfo {
+  if (episodeIds.length === 0) return { status: "idle", episodeIds: [] };
+  if (planned.length > 0) {
+    const presentSet = new Set(episodeIds);
+    const isExact =
+      presentSet.size === planned.length &&
+      planned.every((id) => presentSet.has(id));
+    if (isExact) return { status: "completed" };
     return { status: "partial", episodeIds };
   }
-  return { status: "idle", episodeIds: [] };
+  // planned は空だが present がある → partial
+  return { status: "partial", episodeIds };
+}
+
+function toSingletonStageInfo(exists: boolean): SingletonStageInfo {
+  return { status: exists ? "completed" : "idle" };
 }
 
 async function deriveRunStatus(
@@ -126,7 +156,17 @@ async function deriveRunStatus(
   projectId: string,
   runId: string,
 ): Promise<RunStatus> {
-  // blueprint
+  // source_index
+  const sourceIndexFile = join(runDir, "source_index", "source_index.json");
+  let sourceIndexExists = false;
+  try {
+    await stat(sourceIndexFile);
+    sourceIndexExists = true;
+  } catch {
+    // not yet created
+  }
+
+  // blueprint + plannedEpisodeIds
   const blueprintFile = join(runDir, "blueprint", "project_blueprint.json");
   let blueprintExists = false;
   const plannedEpisodeIds: string[] = [];
@@ -135,50 +175,57 @@ async function deriveRunStatus(
     blueprintExists = true;
     const raw = await readFile(blueprintFile, "utf-8");
     const data = JSON.parse(raw) as {
-      episode_plan?: { episode_id?: string }[];
+      episode_plan?: { episode_id?: unknown }[];
     };
     if (Array.isArray(data.episode_plan)) {
+      const seen = new Set<string>();
       for (const ep of data.episode_plan) {
-        if (typeof ep.episode_id === "string") {
-          plannedEpisodeIds.push(ep.episode_id);
+        const id = ep.episode_id;
+        if (typeof id === "string" && PLANNED_EPISODE_ID_RE.test(id) && !seen.has(id)) {
+          seen.add(id);
+          plannedEpisodeIds.push(id);
         }
       }
+      plannedEpisodeIds.sort((a, b) => {
+        const na = Number.parseInt(a.slice(1), 10);
+        const nb = Number.parseInt(b.slice(1), 10);
+        return na - nb;
+      });
     }
   } catch {
-    // blueprint not yet created
+    // blueprint not yet created or unparseable
   }
 
   const [
-    materialIds,
+    episodePackIds,
     scriptIds,
-    contextIds,
+    seriesContextIds,
     voicevoxTextIds,
     vvprojIds,
     audioIds,
   ] = await Promise.all([
-    globEpisodeIds(join(runDir, "material"), "_material.json"),
+    globEpisodeIds(join(runDir, "episode_pack"), "_episode_pack.json"),
     globEpisodeIds(join(runDir, "script"), "_script.md"),
-    globEpisodeIds(join(runDir, "context"), "_episode_digest.json"),
+    globEpisodeIds(join(runDir, "series_context"), "_series_context.json"),
     globEpisodeIds(join(runDir, "voicevox_text"), "_voicevox_text.json"),
-    globEpisodeIds(join(runDir, "voicevox_project"), ".vvproj"),
-    globEpisodeIds(join(runDir, "audio"), ".wav"),
+    globVoicevoxProjectIds(join(runDir, "voicevox_project")),
+    globEpisodeIds(join(runDir, "audio"), "_merged.wav"),
   ]);
-
-  // voicevox_text: patched ファイルは除外（_voicevox_text.patched.json は suffix が違うので自然に除外）
 
   return {
     projectId,
     runId,
-    stages: {
-      blueprint: { status: blueprintExists ? "completed" : "idle" },
-      material: toStageInfo(materialIds, plannedEpisodeIds),
-      script: toStageInfo(scriptIds, plannedEpisodeIds),
-      context: toStageInfo(contextIds, plannedEpisodeIds),
-      voicevox_text: toStageInfo(voicevoxTextIds, plannedEpisodeIds),
-      voicevox_project: toStageInfo(vvprojIds, plannedEpisodeIds),
-      audio: toStageInfo(audioIds, plannedEpisodeIds),
-    },
     plannedEpisodeIds,
+    stages: {
+      source_index: toSingletonStageInfo(sourceIndexExists),
+      blueprint: toSingletonStageInfo(blueprintExists),
+      episode_pack: toPerEpisodeStageInfo(episodePackIds, plannedEpisodeIds),
+      script: toPerEpisodeStageInfo(scriptIds, plannedEpisodeIds),
+      series_context: toPerEpisodeStageInfo(seriesContextIds, plannedEpisodeIds),
+      voicevox_text: toPerEpisodeStageInfo(voicevoxTextIds, plannedEpisodeIds),
+      voicevox_project: toPerEpisodeStageInfo(vvprojIds, plannedEpisodeIds),
+      audio: toPerEpisodeStageInfo(audioIds, plannedEpisodeIds),
+    },
   };
 }
 

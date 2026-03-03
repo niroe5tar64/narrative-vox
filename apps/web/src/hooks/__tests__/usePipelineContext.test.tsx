@@ -41,10 +41,11 @@ function makeRunStatus(plannedEpisodeIds: string[]): RunStatus {
     runId: "run-20260228-1200",
     plannedEpisodeIds,
     stages: {
+      source_index: { status: "idle" },
       blueprint: { status: "completed" },
-      material: { status: "idle", episodeIds: [] },
+      episode_pack: { status: "idle", episodeIds: [] },
       script: { status: "idle", episodeIds: [] },
-      context: { status: "idle", episodeIds: [] },
+      series_context: { status: "idle", episodeIds: [] },
       voicevox_text: { status: "idle", episodeIds: [] },
       voicevox_project: { status: "idle", episodeIds: [] },
       audio: { status: "idle", episodeIds: [] },

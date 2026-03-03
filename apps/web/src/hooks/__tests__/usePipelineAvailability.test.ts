@@ -11,10 +11,11 @@ function createRunStatus(): RunStatus {
     runId: "run-20260227-1200",
     plannedEpisodeIds: ["E01"],
     stages: {
+      source_index: { status: "idle" },
       blueprint: { status: "completed" },
-      material: { status: "partial", episodeIds: ["E01"] },
+      episode_pack: { status: "partial", episodeIds: ["E01"] },
       script: { status: "partial", episodeIds: ["E01"] },
-      context: { status: "idle", episodeIds: [] },
+      series_context: { status: "idle", episodeIds: [] },
       voicevox_text: { status: "idle", episodeIds: [] },
       voicevox_project: { status: "idle", episodeIds: [] },
       audio: { status: "idle", episodeIds: [] },

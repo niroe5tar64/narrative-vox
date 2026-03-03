@@ -93,10 +93,10 @@ test("run tree: fixture run の主要ディレクトリとファイルを返す"
   const voicevoxTextDir = findChildDir(body.tree, "voicevox_text");
   const voicevoxProjectDir = findChildDir(body.tree, "voicevox_project");
   const blueprintDir = findChildDir(body.tree, "blueprint");
-  const materialDir = findChildDir(body.tree, "material");
+  const episodePackDir = findChildDir(body.tree, "episode_pack");
 
   assert.ok(blueprintDir, "blueprint directory should exist");
-  assert.ok(materialDir, "material directory should exist");
+  assert.ok(episodePackDir, "episode_pack directory should exist");
   assert.ok(scriptDir, "script directory should exist");
   assert.ok(voicevoxTextDir, "voicevox_text directory should exist");
   assert.ok(voicevoxProjectDir, "voicevox_project directory should exist");
@@ -125,12 +125,13 @@ test("run status: fixture run の stage 状態を返す", async () => {
   assert.equal(body.plannedEpisodeIds[0], "E01");
   assert.equal(body.plannedEpisodeIds.at(-1), "E12");
   assert.equal(body.plannedEpisodeIds.length, 12);
+  assert.equal(body.stages.source_index.status, "idle");
   assert.equal(body.stages.blueprint.status, "completed");
-  assert.equal(body.stages.material.status, "partial");
+  assert.equal(body.stages.episode_pack.status, "partial");
   assert.equal(body.stages.script.status, "partial");
+  assert.equal(body.stages.series_context.status, "idle");
   assert.equal(body.stages.voicevox_text.status, "partial");
   assert.equal(body.stages.voicevox_project.status, "partial");
-  assert.equal(body.stages.context.status, "idle");
   assert.equal(body.stages.audio.status, "idle");
 });
 

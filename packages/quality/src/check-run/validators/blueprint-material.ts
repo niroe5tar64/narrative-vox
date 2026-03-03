@@ -178,10 +178,7 @@ export async function validateBlueprintAndMaterial(params: {
   for (const fileName of materialFiles) {
     const filePath = path.join(materialDir, fileName);
     const episodeId = fileName.replace("_material.json", "");
-    const material = await loadJson<EpisodeMaterialForCheckRun>(
-      filePath,
-      SchemaPaths.episodeMaterial,
-    );
+    const material = await loadJson<EpisodeMaterialForCheckRun>(filePath);
     const materialRef = `material/${fileName}`;
     materialPathByEpisodeId.set(episodeId, materialRef);
     technicalTermsByEpisodeId.set(

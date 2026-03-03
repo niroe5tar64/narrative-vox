@@ -43,7 +43,7 @@ export function usePipelineAvailability({
           ? "done"
           : "idle";
       case "gen-material":
-        return episodeInStage(runStatus.stages.material, episodeId)
+        return episodeInStage(runStatus.stages.episode_pack, episodeId)
           ? "done"
           : "idle";
       case "gen-script":
@@ -51,7 +51,7 @@ export function usePipelineAvailability({
           ? "done"
           : "idle";
       case "gen-digest":
-        return episodeInStage(runStatus.stages.context, episodeId)
+        return episodeInStage(runStatus.stages.series_context, episodeId)
           ? "done"
           : "idle";
     }
@@ -91,7 +91,7 @@ export function usePipelineAvailability({
         return (
           !!runStatus &&
           !!episodeId &&
-          episodeInStage(runStatus.stages.material, episodeId)
+          episodeInStage(runStatus.stages.episode_pack, episodeId)
         );
       case "gen-digest":
         return (

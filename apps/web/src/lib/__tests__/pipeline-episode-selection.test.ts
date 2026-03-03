@@ -12,10 +12,11 @@ function makeRunStatus(overrides?: Partial<RunStatus>): RunStatus {
     runId: "run-20260228-1200",
     plannedEpisodeIds: [],
     stages: {
+      source_index: { status: "idle" },
       blueprint: { status: "completed" },
-      material: { status: "idle", episodeIds: [] },
+      episode_pack: { status: "idle", episodeIds: [] },
       script: { status: "idle", episodeIds: [] },
-      context: { status: "idle", episodeIds: [] },
+      series_context: { status: "idle", episodeIds: [] },
       voicevox_text: { status: "idle", episodeIds: [] },
       voicevox_project: { status: "idle", episodeIds: [] },
       audio: { status: "idle", episodeIds: [] },
@@ -101,10 +102,11 @@ describe("pipeline episode selection", () => {
   test("falls back to stage episode ids when planned ids are unavailable", () => {
     const runStatus = makeRunStatus({
       stages: {
+        source_index: { status: "idle" },
         blueprint: { status: "completed" },
-        material: { status: "partial", episodeIds: ["E07", "E08"] },
+        episode_pack: { status: "partial", episodeIds: ["E07", "E08"] },
         script: { status: "partial", episodeIds: ["E08", "E09"] },
-        context: { status: "idle", episodeIds: [] },
+        series_context: { status: "idle", episodeIds: [] },
         voicevox_text: { status: "idle", episodeIds: [] },
         voicevox_project: { status: "idle", episodeIds: [] },
         audio: { status: "idle", episodeIds: [] },
