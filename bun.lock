@@ -60,6 +60,9 @@
     "packages/application": {
       "name": "@narrative-vox/application",
     },
+    "packages/authoring": {
+      "name": "@narrative-vox/authoring",
+    },
     "packages/domain": {
       "name": "@narrative-vox/domain",
     },
@@ -228,6 +231,8 @@
     "@narrative-vox/api-types": ["@narrative-vox/api-types@workspace:packages/api-types"],
 
     "@narrative-vox/application": ["@narrative-vox/application@workspace:packages/application"],
+
+    "@narrative-vox/authoring": ["@narrative-vox/authoring@workspace:packages/authoring"],
 
     "@narrative-vox/cli": ["@narrative-vox/cli@workspace:apps/cli"],
 

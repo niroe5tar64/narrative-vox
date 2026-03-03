@@ -23,7 +23,9 @@
       "@narrative-vox/infrastructure": ["packages/infrastructure/src/index.ts"],
       "@narrative-vox/infrastructure/*": ["packages/infrastructure/src/*"],
       "@narrative-vox/quality": ["packages/quality/src/index.ts"],
-      "@narrative-vox/quality/*": ["packages/quality/src/*"]
+      "@narrative-vox/quality/*": ["packages/quality/src/*"],
+      "@narrative-vox/authoring": ["packages/authoring/src/index.ts"],
+      "@narrative-vox/authoring/*": ["packages/authoring/src/*"]
     }
   }
 }

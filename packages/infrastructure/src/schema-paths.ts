@@ -21,4 +21,7 @@ export const SchemaPaths = {
     "voicevox-text-patch-config.schema.json",
   ),
   runContract: path.join(SCHEMAS_DIR, "run-contract.schema.json"),
+  sourceIndex: path.join(SCHEMAS_DIR, "source-index.schema.json"),
+  episodePack: path.join(SCHEMAS_DIR, "episode-pack.schema.json"),
+  seriesContext: path.join(SCHEMAS_DIR, "series-context.schema.json"),
 } as const;
