@@ -28,7 +28,7 @@ coverage/
 data/**
 !data/**/
 !data/**/README.md
-data/inputs/repos/
+data/inputs/oss-dive/
 
 # optional local output buckets
 outputs/
@@ -53,7 +53,7 @@ configs/voice/voicevox/synthesis-defaults.json
 !configs/**/*.example.json
 
 # project/content specific configs (keep local by default)
-configs/pipeline/projects/*.json
-configs/content/novels/*.json
-!configs/pipeline/projects/*.example.json
-!configs/content/novels/*.example.json
+configs/pipeline/projects/*.yaml
+configs/content/novels/*.yaml
+!configs/pipeline/projects/*.example.yaml
+!configs/content/novels/*.example.yaml

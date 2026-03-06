@@ -1,16 +1,13 @@
 GENRE_ID: oss-dive
 PROJECT_ID: example-oss-project
 PROJECT_TITLE: "Deep Dive: Example OSS Project"
-REPO_ROOT_PATH: data/inputs/repos/example-oss-project
+REPO_ROOT_PATH: data/inputs/oss-dive/example-oss-project
 DEEP_DIVE_FOCUS: アーキテクチャと設計思想
-SOURCE_MARKDOWN_PATHS: ""
 AUDIENCE_BACKGROUND: Web開発経験のあるエンジニア
 AUDIENCE_LEVEL: 中級（日常的にOSSを利用しているが内部実装は未読）
 AUDIENCE_INTEREST: 設計思想、アーキテクチャパターン、実務での活用判断
 BASELINE_CONTEXT_OR_EMPTY: ""
 EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: ""
-PROJECT_BLUEPRINT_JSON_PATH: data/projects/example-oss-project/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json
-EPISODE_ID: E01
 STYLE_ID: radio-talk
 CAST:
   lead: teacher

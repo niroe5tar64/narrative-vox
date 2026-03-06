@@ -159,7 +159,7 @@ export function ProjectEditorPane({
           hint={
             <>
               glob パターンで対象 Markdown を指定（例:
-              data/inputs/books/my-book/*.md）
+              data/inputs/tech-explainer/my-book/*.md）
               <br />
               ※oss-dive ジャンルでは空欄で可
             </>
@@ -200,12 +200,12 @@ export function ProjectEditorPane({
             <FormField
               label="REPO_ROOT_PATH"
               required
-              hint="分析するOSSリポジトリの git clone 先ルートパスを指定（例: data/inputs/repos/my-project）。"
+              hint="分析するOSSリポジトリの git clone 先ルートパスを指定（例: data/inputs/oss-dive/my-project）。"
             >
               <Input
                 value={form.REPO_ROOT_PATH}
                 onChange={(e) => onPatch({ REPO_ROOT_PATH: e.target.value })}
-                placeholder="data/inputs/repos/my-project"
+                placeholder="data/inputs/oss-dive/my-project"
               />
             </FormField>
 
