@@ -2,100 +2,124 @@
   "schema_version": "1.0",
   "meta": {
     "project_id": "introducing-rescript",
+    "run_id": "run-20260101-0000",
     "episode_id": "E01",
     "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
-    "genre": "tech_explainer",
-    "audience": {
-      "background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
-      "level": "ReScript初学者〜中級手前",
-      "interest": "型安全、設計の見通し、保守性、実務での採用判断"
-    },
-    "source_refs": [
-      "data/inputs/books/introducing-rescript/source/00_Introduction.md",
-      "data/inputs/books/introducing-rescript/source/01_Chapter-1.md"
-    ],
-    "comparison_mode": "with_baseline",
-    "baseline_context": "TypeScriptでの実装・設計パターン"
+    "genre_id": "tech-explainer",
+    "generated_at": "2026-01-01T00:00:00.000Z",
+    "source_blueprint_path": "blueprint/project_blueprint.json",
+    "source_index_path": "source_index/source_index.json"
   },
-  "sections": [
+  "learning_goal": "ReScriptの式中心モデルと静的型検査の価値を、TypeScriptとの違いで説明できる。",
+  "scope_guardrails": [
+    "実装演習や環境構築手順の詳細には入らない",
+    "Chapter 2以降の高度な関数合成は扱わない"
+  ],
+  "comparison_mode": "with_baseline",
+  "target_theme_ids": ["T01"],
+  "source_section_ids": ["SRC0001", "SRC0002"],
+  "source_sections": [
     {
-      "section_id": "S01",
-      "section": "式中心モデルの基礎",
-      "goal": "ReScriptの式中心評価モデルとTypeScriptの文中心モデルの根本的な違いを理解させる",
-      "elements": [
-        {
-          "element_id": "EL001",
-          "type": "theme_introduction",
-          "content": "ReScriptの式中心モデルと静的型検査がTypeScript開発者にもたらす価値。",
-          "importance": "must",
-          "source_ref": "Ch.0 Introduction"
-        },
-        {
-          "element_id": "EL002",
-          "type": "prerequisite",
-          "content": "TypeScript/JavaScriptでの基本的な型、関数、条件分岐の理解。",
-          "importance": "must"
-        },
-        {
-          "element_id": "EL003",
-          "type": "baseline_pattern",
-          "content": "JavaScript/TypeScriptでは式と文が混在する。",
-          "importance": "must",
-          "depends_on": ["EL002"],
-          "technical_terms": ["truthy", "falsy"]
-        }
-      ]
+      "section_id": "SRC0001",
+      "display_title": "Introduction",
+      "token_estimate": 500,
+      "body": "# Introduction\n\nReScript basics overview."
     },
     {
-      "section_id": "S02",
-      "section": "型システムと推論",
-      "goal": "ReScriptの型推論と厳格な型区別がコンパイル時安全性をどう保証するか理解させる",
-      "elements": [
-        {
-          "element_id": "EL004",
-          "type": "core_thesis",
-          "content": "式中心モデルと静的型検査を前提に、型推論を活用する。",
-          "importance": "must",
-          "depends_on": ["EL003"]
-        },
-        {
-          "element_id": "EL005",
-          "type": "concept",
-          "content": "値評価、型整合性、数値演算と条件分岐の安全な基礎ルール。",
-          "importance": "must",
-          "depends_on": ["EL004"],
-          "technical_terms": ["型推論", "type inference"]
-        }
-      ]
-    },
-    {
-      "section_id": "S03",
-      "section": "構造比較と実務適用",
-      "goal": "TypeScriptとReScriptの設計思想の対比から実務での採用判断材料を提供する",
-      "elements": [
-        {
-          "element_id": "EL006",
-          "type": "structural_comparison",
-          "content": "TypeScript/JavaScriptの柔軟だが実行時依存のモデルとReScriptの式中心・厳格型モデルの対比。",
-          "importance": "must",
-          "depends_on": ["EL003", "EL004"]
-        },
-        {
-          "element_id": "EL007",
-          "type": "takeaway",
-          "content": "具体的な関数型設計テクニックと実務移行手順の詳細は次回以降で扱う。",
-          "importance": "must"
-        }
-      ]
+      "section_id": "SRC0002",
+      "display_title": "Chapter 1",
+      "token_estimate": 500,
+      "body": "# Expressions\n\nReScript expressions overview."
     }
   ],
-  "quality_checks": {
-    "source_coverage": "OK",
-    "element_dependency_valid": "OK",
-    "importance_distribution": {
-      "must": 7,
-      "should": 0,
-      "optional": 0
+  "narrative_outline": [
+    {
+      "outline_id": "S01",
+      "title": "式中心モデルの基礎",
+      "goal": "ReScriptの式中心評価モデルとTypeScriptの文中心モデルの根本的な違いを理解させる",
+      "required_fact_ids": ["F001", "F002"]
+    },
+    {
+      "outline_id": "S02",
+      "title": "型システムと推論",
+      "goal": "ReScriptの型推論と厳格な型区別がコンパイル時安全性をどう保証するか理解させる",
+      "required_fact_ids": ["F003"]
+    },
+    {
+      "outline_id": "S03",
+      "title": "構造比較と実務適用",
+      "goal": "TypeScriptとReScriptの設計思想の対比から実務での採用判断材料を提供する",
+      "required_fact_ids": ["F004"]
     }
+  ],
+  "facts": [
+    {
+      "fact_id": "F001",
+      "kind": "theme_intro",
+      "statement": "ReScriptの式中心モデルと静的型検査がTypeScript開発者にもたらす価値。",
+      "source_section_ids": ["SRC0001"],
+      "target_theme_ids": ["T01"],
+      "depends_on": [],
+      "importance": "must"
+    },
+    {
+      "fact_id": "F002",
+      "kind": "definition",
+      "statement": "JavaScript/TypeScriptでは式と文が混在する。",
+      "source_section_ids": ["SRC0002"],
+      "target_theme_ids": ["T01"],
+      "depends_on": ["F001"],
+      "importance": "must"
+    },
+    {
+      "fact_id": "F003",
+      "kind": "mechanism",
+      "statement": "式中心モデルと静的型検査を前提に、型推論を活用する。",
+      "source_section_ids": ["SRC0002"],
+      "target_theme_ids": ["T01"],
+      "depends_on": ["F002"],
+      "importance": "must"
+    },
+    {
+      "fact_id": "F004",
+      "kind": "comparison",
+      "statement": "TypeScript/JavaScriptの柔軟だが実行時依存のモデルとReScriptの式中心・厳格型モデルの対比。",
+      "source_section_ids": ["SRC0001", "SRC0002"],
+      "target_theme_ids": ["T01"],
+      "depends_on": ["F002", "F003"],
+      "importance": "must"
+    }
+  ],
+  "technical_terms": [
+    {
+      "term": "truthy",
+      "source_section_ids": ["SRC0002"],
+      "priority": "high"
+    },
+    {
+      "term": "falsy",
+      "source_section_ids": ["SRC0002"],
+      "priority": "high"
+    },
+    {
+      "term": "型推論",
+      "source_section_ids": ["SRC0002"],
+      "priority": "normal"
+    },
+    {
+      "term": "type inference",
+      "source_section_ids": ["SRC0002"],
+      "priority": "normal"
+    }
+  ],
+  "continuity_hooks": {
+    "listener_state_additions": [
+      "ReScriptの式中心モデルの基本概念を理解"
+    ],
+    "open_loops_opened": [],
+    "open_loops_resolved": [],
+    "next_episode_handoff": [
+      "具体的な関数型設計テクニックと実務移行手順の詳細は次回以降"
+    ]
   }
 }

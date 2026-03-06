@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "project_id": "introducing-rescript",
+    "genre_id": "tech-explainer",
+    "generated_at": "2026-01-01T00:00:00.000Z",
+    "section_count": 2,
+    "token_estimate_total": 1000
+  },
+  "sections": [
+    {
+      "section_id": "SRC0001",
+      "ordinal": 1,
+      "source_type": "markdown_section",
+      "display_title": "Introduction",
+      "preview_text": "ReScript basics",
+      "char_count": 500,
+      "token_estimate": 500,
+      "is_auxiliary": false,
+      "path": "00_Introduction.md",
+      "heading_path": ["Introduction"],
+      "body_markdown": "# Introduction\n\nReScript basics overview."
+    },
+    {
+      "section_id": "SRC0002",
+      "ordinal": 2,
+      "source_type": "markdown_section",
+      "display_title": "Chapter 1",
+      "preview_text": "Expressions and values",
+      "char_count": 500,
+      "token_estimate": 500,
+      "is_auxiliary": false,
+      "path": "01_Chapter-1.md",
+      "heading_path": ["Chapter 1", "Expressions"],
+      "body_markdown": "# Expressions\n\nReScript expressions overview."
+    }
+  ]
+}

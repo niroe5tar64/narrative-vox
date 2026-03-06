@@ -6,7 +6,7 @@ import { checkRun } from "@narrative-vox/quality/check-run.ts";
 import {
   createMockMorphTokenizer,
   prepareMinimalRun,
-  updateMaterialFiles,
+  updateEpisodePackFiles,
 } from "../../helpers/check-run-test-helpers.ts";
 
 type EvalCategory = "ascii" | "mixed" | "non_ascii";
@@ -120,9 +120,16 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     const runDir = await prepareMinimalRun(["E01"], {
       E01: evalCase.script_text,
     });
-    await updateMaterialFiles(runDir, (data) => ({
+    await updateEpisodePackFiles(runDir, (data) => ({
       ...data,
-      technical_terms: [{ term: evalCase.term, note: `eval:${evalCase.id}` }],
+      technical_terms: [
+        {
+          term: evalCase.term,
+          note: `eval:${evalCase.id}`,
+          source_section_ids: ["SRC0001"],
+          priority: "normal",
+        },
+      ],
     }));
 
     const morphTokenizerOverride =
@@ -146,7 +153,8 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     await checkRun({ runDir, morphTokenizerOverride });
     const reportPath = path.join(
       runDir,
-      "context",
+      "reports",
+      "technical_terms",
       "E01_technical_terms_audit.json",
     );
     const report = JSON.parse(

@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "project_id": "introducing-rescript",
+    "run_id": "run-20260101-0000",
+    "through_episode_id": "E01",
+    "generated_at": "2026-01-01T00:00:00.000Z",
+    "source_episode_pack_path": "episode_pack/E01_episode_pack.json",
+    "source_script_path": "script/E01_script.md"
+  },
+  "completed_episode_ids": ["E01"],
+  "covered_theme_ids": ["T01"],
+  "covered_source_section_ids": ["SRC0001", "SRC0002"],
+  "introduced_technical_terms": ["truthy", "falsy", "型推論", "type inference"],
+  "listener_state": [
+    "ReScriptの式中心モデルの基本概念を理解"
+  ],
+  "open_loops": [],
+  "resolved_loop_ids": [],
+  "latest_episode": {
+    "episode_id": "E01",
+    "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
+    "handoff_to_next_episode": [
+      "具体的な関数型設計テクニックと実務移行手順の詳細は次回以降"
+    ],
+    "section_count": 8,
+    "utterance_count": 20,
+    "speaker_turns": [
+      { "speaker_key": "teacher", "utterance_count": 10 },
+      { "speaker_key": "student", "utterance_count": 10 }
+    ]
+  }
+}

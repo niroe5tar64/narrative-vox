@@ -1,63 +1,69 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import {
-  validateDigestsIfPresent,
-  validateEpisodeParity,
-} from "../../../packages/quality/src/check-run/validators/script.ts";
+  ensureMinimalScriptStructure,
+  validateScriptSpeakerStructure,
+} from "../../../packages/quality/src/check-run/validators/script-structure.ts";
 
-test("validateEpisodeParity rejects extra script episodes", () => {
+test("ensureMinimalScriptStructure rejects empty script", () => {
   assert.throws(
-    () => validateEpisodeParity(["E01"], ["E01", "E02"]),
-    /script has episodes not in material: E02/,
+    () => ensureMinimalScriptStructure("", "/tmp/test.md", "E01"),
+    /is empty/,
   );
 });
 
-test("validateDigestsIfPresent rejects filename / episode_id mismatch", async () => {
-  const runDir = await mkdtemp(path.join(tmpdir(), "nv-check-run-script-"));
-  const contextDir = path.join(runDir, "context");
-  await mkdir(contextDir, { recursive: true });
-  await writeFile(
-    path.join(contextDir, "E02_episode_digest.json"),
-    JSON.stringify(
-      {
-        schema_version: "1.0",
-        episode_id: "E01",
-        episode_title: "Episode 2",
-        content_summary: {
-          core_topics_covered: ["A", "B", "C"],
-          key_conclusions: ["Conclusion"],
-          terms_introduced: [],
-        },
-        character_behavior: [
-          {
-            character_key: "teacher",
-            utterance_count: 1,
-          },
-        ],
-        continuity: {
-          narrative_position: "early",
-          open_threads: [],
-        },
-      },
-      null,
-      2,
+test("ensureMinimalScriptStructure rejects script without section headings", () => {
+  assert.throws(
+    () =>
+      ensureMinimalScriptStructure(
+        "[speaker:teacher] テストです。",
+        "/tmp/test.md",
+        "E01",
+      ),
+    /no section headings/,
+  );
+});
+
+test("ensureMinimalScriptStructure accepts script with section heading", () => {
+  assert.doesNotThrow(() =>
+    ensureMinimalScriptStructure(
+      "## 1. テスト\n[speaker:teacher] テストです。",
+      "/tmp/test.md",
+      "E01",
     ),
   );
+});
 
-  try {
-    await assert.rejects(
-      () =>
-        validateDigestsIfPresent({
-          resolvedRunDir: runDir,
-          materialEpisodeIds: ["E02"],
-          warnings: [],
-        }),
-      /episode_id "E01" does not match filename "E02"/,
-    );
-  } finally {
-    await rm(runDir, { recursive: true, force: true });
-  }
+test("validateScriptSpeakerStructure rejects line without speaker tag", () => {
+  const contentStyle = {
+    style_id: "test",
+    format: { speaker_mode: "dialogue" as const, speaker_count: 2 },
+  };
+  assert.throws(
+    () =>
+      validateScriptSpeakerStructure(
+        "## 1. テスト\nタグなしです。",
+        "/tmp/test.md",
+        "E01",
+        contentStyle,
+      ),
+    /requires \[speaker:<key>\]/,
+  );
+});
+
+test("validateScriptSpeakerStructure rejects wrong speaker count for dialogue", () => {
+  const contentStyle = {
+    style_id: "test",
+    format: { speaker_mode: "dialogue" as const, speaker_count: 2 },
+  };
+  assert.throws(
+    () =>
+      validateScriptSpeakerStructure(
+        "## 1. テスト\n[speaker:solo] テストです。",
+        "/tmp/test.md",
+        "E01",
+        contentStyle,
+      ),
+    /speaker_count=2/,
+  );
 });
