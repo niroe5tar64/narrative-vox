@@ -28,7 +28,7 @@
 2. 書籍内テーマを分解し、`theme_id` を振る。  
 3. 各テーマに対応する章・節を `chapter_refs` として紐づける。  
 4. テーマ依存関係（前提テーマ）を作る。  
-5. 10〜12分単位で `episode_plan` を作る。前提エピソードがある場合は `prerequisite_episodes` に E## 形式で設定する（任意）。
+5. 10〜12分単位で `episode_plan` を作る。
 6. 章とテーマがどのエピソードでカバーされるかを `coverage_matrix` に整理する。  
 7. `{{EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY}}` が指定されている場合、既存台本を見て再利用可能回と重複リスクを判定する。  
 8. 網羅性と重複最小化の観点で品質チェックを出す。  
@@ -81,8 +81,7 @@
       "scope_guardrails": [
         "この回で扱わないこと"
       ],
-      "comparison_mode_default": "with_baseline | standalone",
-      "prerequisite_episodes": ["E01"]
+      "comparison_mode_default": "with_baseline | standalone"
     }
   ],
   "coverage_matrix": {
