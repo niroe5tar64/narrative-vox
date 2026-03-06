@@ -72,9 +72,9 @@ CI: `bun install --frozen-lockfile` → `bun run typecheck` → `bun test`
 
 ### 設定ファイル
 
-- `configs/content/characters/*.json` — キャラクター定義（音声設定含む）
+- `configs/content/characters/*.yaml` — キャラクター定義（音声設定含む）
 - `configs/voice/voicevox/` — 音声プロファイル、キャラクターマップ、build-text設定（ポーズ・読み上げ適性閾値）、速度プロファイル、読み辞書
-- `configs/pipeline/projects/*.json` — プロジェクト設定（ソースパス、エピソード数）
+- `configs/pipeline/projects/*.yaml` — プロジェクト設定（ソースパス、エピソード数）
 
 ## 開発方針
 

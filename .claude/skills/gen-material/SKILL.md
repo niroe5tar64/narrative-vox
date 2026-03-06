@@ -20,7 +20,7 @@ Blueprint JSON と project config を入力として、指定エピソードの�
 
 ### Step 1: project config 読み込み
 
-1. `configs/projects/$0.json` を読み込む。
+1. `configs/projects/$0.yaml` を読み込む。
 2. `GENRE_ID` フィールドを確認する（例: `tech-explainer`）。
 3. `EPISODE_ID` を `$1` で上書きする。
 4. `STYLE_ID` と `CAST` フィールドは素材層では使用しない（演出層の責務）。

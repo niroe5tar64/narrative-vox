@@ -20,7 +20,7 @@ Episode Material JSON、コンテンツスタイル、キャスト、キャラ�
 
 ### Step 1: project config 読み込み
 
-1. `configs/pipeline/projects/$0.json` を読み込む。
+1. `configs/pipeline/projects/$0.yaml` を読み込む。
 2. `GENRE_ID`, `STYLE_ID`, `CAST` フィールドを取得する。
 3. `EPISODE_ID` を `$1` で上書きする。
 
@@ -32,13 +32,13 @@ Episode Material JSON、コンテンツスタイル、キャスト、キャラ�
 
 ### Step 3: スタイル読み込み
 
-1. `configs/content/styles/{STYLE_ID}.json` を読み込む。
+1. `configs/content/styles/{STYLE_ID}.yaml` を読み込む。
 2. `format.speaker_roles` と `CAST` のキーが一致することを検証する。
 3. 不一致があればエラー報告して終了する。
 
 ### Step 4: キャラクター読み込み
 
-1. `CAST` の各 character_key に対して `configs/content/characters/{key}.json` を読み込む。
+1. `CAST` の各 character_key に対して `configs/content/characters/{key}.yaml` を読み込む。
 2. ファイルが存在しなければエラー報告して終了する。
 3. 各キャラクターの `profile` フィールドを取得する。
 

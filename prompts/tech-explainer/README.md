@@ -9,13 +9,13 @@
 - `prompts/tech-explainer/script-common-frame.md`
 - `prompts/tech-explainer/build-text.md`
 - `prompts/tech-explainer/build-project.md`
-- `configs/pipeline/projects/<project-id>.json`
-- `configs/pipeline/projects/<project-id>.example.json`
+- `configs/pipeline/projects/<project-id>.yaml`
+- `configs/pipeline/projects/<project-id>.example.yaml`
 
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.json`
+- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.yaml`
 - 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
 2. Episode Material
@@ -67,7 +67,7 @@ Episode Materialで回を切り替える場合は以下を追加します。
 - `PROJECT_BLUEPRINT_JSON_PATH`
 - `EPISODE_ID`
 
-推奨: 初期作成は `configs/pipeline/projects/<project-id>.example.json` をコピーして `configs/pipeline/projects/<project-id>.json` を作る。
+推奨: 初期作成は `configs/pipeline/projects/<project-id>.example.yaml` をコピーして `configs/pipeline/projects/<project-id>.yaml` を作る。
 
 ## CLI 実行例（Build Text/Project）
 
@@ -76,7 +76,7 @@ Episode Materialで回を切り替える場合は以下を追加します。
 bun apps/cli/src/main.ts render-prompt -- \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/pipeline/projects/tech-explainer.example.json
+  --project-config configs/pipeline/projects/tech-explainer.example.yaml
 
 # Build Text + Build Project
 bun run build-all -- \

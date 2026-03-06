@@ -73,7 +73,7 @@
 
 ## サンプルデータ
 
-- 入力ソース: `data/inputs/books/introducing-rescript/source/`
+- 入力ソース: `data/inputs/tech-explainer/introducing-rescript/source/`
 - 参照 run（2026-02-11）:
   - `data/projects/introducing-rescript/run-20260211-0000/blueprint/`
   - `data/projects/introducing-rescript/run-20260211-0000/material/`
@@ -141,7 +141,7 @@ bun run build-all -- \
 bun apps/cli/src/main.ts render-prompt \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/pipeline/projects/tech-explainer.example.json
+  --project-config configs/pipeline/projects/tech-explainer.example.yaml
 ```
 
 ## Frontend 開発（T01）
@@ -185,13 +185,13 @@ Phase 1（Blueprint / Material / Script / Digest）は次のどちらかで実�
 bun apps/cli/src/main.ts render-prompt \
   --genre tech_explainer \
   --step blueprint \
-  --project-config configs/pipeline/projects/tech-explainer.example.json
+  --project-config configs/pipeline/projects/tech-explainer.example.yaml
 
 # Material Promptを解決（EPISODE_IDを上書き）
 bun apps/cli/src/main.ts render-prompt \
   --genre tech_explainer \
   --step material \
-  --project-config configs/pipeline/projects/tech-explainer.example.json \
+  --project-config configs/pipeline/projects/tech-explainer.example.yaml \
   --episode-id E01
 ```
 
@@ -200,7 +200,7 @@ bun apps/cli/src/main.ts render-prompt \
 - `--run-dir` から判定できない場合は、CLI が `run-YYYYMMDD-HHMM` を自動生成します。
 - `build-text` / `build-all` で `--episode-id` 未指定時は、`--script` のファイル名が **厳密に** `E##_script.md`（例: `E01_script.md`）である必要があります。非一致の場合は `--episode-id E##` を明示してください。
 - `--character-map` は `character_key -> voice(engineId/speakerId/styleId)` の JSON ファイルを指定します（例: `configs/voice/voicevox/default_character_map.json`）。
-- `--character-map` 未指定時は `configs/voice/voicevox/default_character_map.json` を優先し、未作成なら `configs/content/characters/*.json` から自動的に character map を構築します。
+- `--character-map` 未指定時は `configs/voice/voicevox/default_character_map.json` を優先し、未作成なら `configs/content/characters/*.yaml` から自動的に character map を構築します。
 - `--synthesis-defaults` 未指定時は `configs/voice/voicevox/synthesis-defaults.json` を読み込みます。存在しない場合はエラーになるため、作成するか `--synthesis-defaults configs/voice/voicevox/synthesis-defaults.example.json` などを明示指定してください。
 - `speaker_key`（`voicevox_text.json` の `utterances[*].speaker_key`）または `--character-key` を使う場合は character map が必要です（`--character-map` 指定、`configs/voice/voicevox/default_character_map.json`、または `configs/content/characters/*.json` からの自動構築）。
 - `speaker_key` / `--character-key` を使わない場合は `--engine-id` / `--speaker-id` / `--style-id` の3つを指定してください（synthesis defaults には voice 指定がないため自動適用されません）。

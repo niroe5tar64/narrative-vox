@@ -16,21 +16,21 @@ OSSリポジトリのソースコードを解析し、テーマを絞って深�
 - `prompts/oss-dive/blueprint.md`
 - `prompts/oss-dive/episode-material.md`
 - `prompts/oss-dive/script-common-frame.md`
-- `configs/pipeline/projects/<project-id>.json`
-- `configs/pipeline/projects/oss-dive.example.json`
+- `configs/pipeline/projects/<project-id>.yaml`
+- `configs/pipeline/projects/oss-dive.example.yaml`
 
 ## 準備
 
-1. 対象リポジトリを `data/inputs/repos/` に clone する:
+1. 対象リポジトリを `data/inputs/oss-dive/` に clone する:
 
 ```bash
-git clone https://github.com/owner/repo.git data/inputs/repos/repo-name
+git clone https://github.com/owner/repo.git data/inputs/oss-dive/repo-name
 ```
 
-2. `configs/pipeline/projects/oss-dive.example.json` をコピーして project config を作成:
+2. `configs/pipeline/projects/oss-dive.example.yaml` をコピーして project config を作成:
 
 ```bash
-cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-oss-project.json
+cp configs/pipeline/projects/oss-dive.example.yaml configs/pipeline/projects/my-oss-project.yaml
 ```
 
 3. config の `REPO_ROOT_PATH` / `DEEP_DIVE_FOCUS` / `PROJECT_ID` 等を編集する。
@@ -39,7 +39,7 @@ cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-
 ## 実行順
 
 1. Blueprint
-- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.json`
+- 入力: `blueprint.md` + `configs/pipeline/projects/<project-id>.yaml`
 - Claudeが `REPO_ROOT_PATH` を探索してリポジトリ全体像を把握
 - 出力: `data/projects/<project-id>/run-YYYYMMDD-HHMM/blueprint/project_blueprint.json`
 
@@ -60,7 +60,7 @@ cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-
 - `PROJECT_ID`
 - `GENRE_ID` — `"oss-dive"`
 - `PROJECT_TITLE`
-- `REPO_ROOT_PATH` — clone先パス（例: `data/inputs/repos/my-project`）
+- `REPO_ROOT_PATH` — clone先パス（例: `data/inputs/oss-dive/my-project`）
 - `DEEP_DIVE_FOCUS` — 深掘りの方向性
 - `AUDIENCE_BACKGROUND`
 - `AUDIENCE_LEVEL`
@@ -73,7 +73,7 @@ cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-
 ## スタイル運用方針
 
 - oss-dive のデフォルトスタイルは `radio-talk`。
-- `STYLE_ID` は将来拡張可能だが、`configs/content/styles/<style_id>.json` に実体がある値のみ使用する。
+- `STYLE_ID` は将来拡張可能だが、`configs/content/styles/<style_id>.yaml` に実体がある値のみ使用する。
 
 ## Skills 実行例
 
@@ -91,7 +91,7 @@ cp configs/pipeline/projects/oss-dive.example.json configs/pipeline/projects/my-
 bun apps/cli/src/main.ts render-prompt -- \
   --genre oss-dive \
   --step blueprint \
-  --project-config configs/pipeline/projects/my-oss-project.json
+  --project-config configs/pipeline/projects/my-oss-project.yaml
 
 # Build Text + Build Project
 bun run build-all -- \

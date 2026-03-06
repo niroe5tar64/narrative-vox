@@ -13,7 +13,7 @@ project config と参照ソースを入力として、書籍全体の設計図�
 
 ### Step 1: project config 読み込み
 
-1. `configs/pipeline/projects/$ARGUMENTS.json` を読み込む。
+1. `configs/pipeline/projects/$ARGUMENTS.yaml` を読み込む。
 2. `GENRE_ID` フィールドを確認する（例: `tech-explainer`）。
 
 ### Step 2: プロンプト解決

@@ -12,10 +12,10 @@
 ```mermaid
 flowchart TB
   subgraph PromptFlow["Layer 1: LLM駆動 (Blueprint / Material / Script / Digest)"]
-    S["入力ソース<br/>data/inputs/books/\*/source/\*.md"]
-    PCFG["project config<br/>configs/pipeline/projects/${project-id}.json"]
-    STY["content style<br/>configs/content/styles/${STYLE_ID}.json"]
-    CHR["characters<br/>configs/content/characters/*.json"]
+    S["入力ソース<br/>data/inputs/tech-explainer/\*/source/\*.md"]
+    PCFG["project config<br/>configs/pipeline/projects/${project-id}.yaml"]
+    STY["content style<br/>configs/content/styles/${STYLE_ID}.yaml"]
+    CHR["characters<br/>configs/content/characters/*.yaml"]
     P1["gen-blueprint"]
     O1["blueprint/project_blueprint.json"]
     P2["gen-material"]
@@ -91,9 +91,9 @@ flowchart TB
 | `prompts/tech-explainer/blueprint.md` | Blueprint | プロンプト入力前提 | 書籍全体Blueprintを生成 |
 | `prompts/tech-explainer/episode-material.md` | Episode Material | プロンプト入力前提 | エピソード素材JSONを生成 |
 | `prompts/tech-explainer/script-common-frame.md` | Script | プロンプト入力前提 | 台本を生成（セクション数は演出層が決定） |
-| `configs/pipeline/projects/<project-id>.json` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
-| `configs/content/styles/<style-id>.json` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
-| `configs/content/characters/*.json` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
+| `configs/pipeline/projects/<project-id>.yaml` | Blueprint / Material | プロンプト入力前提 | Promptのプレースホルダ値を供給（STYLE_ID, CAST 含む） |
+| `configs/content/styles/<style-id>.yaml` | Script | プロンプト入力前提 | 「どう語るか」のパラメータ（format, pacing, language 等） |
+| `configs/content/characters/*.yaml` | Script / Digest | プロンプト入力前提 | キャラクター定義（voice + profile） |
 | `configs/voice/voicevox/build-text-config.json` | `build-text` | CLI操作前提 | 読み上げやすさ評価とpause計算のしきい値 |
 | `configs/voice/voicevox/synthesis-defaults.json` | `build-project` | CLI操作前提 | `--synthesis-defaults` 未指定時に読み込む query/テンポ既定値 |
 | `configs/voice/voicevox/synthesis-defaults.example.json` | `build-project` | CLI操作前提 | テンプレート。利用時は `--synthesis-defaults` で明示指定 |

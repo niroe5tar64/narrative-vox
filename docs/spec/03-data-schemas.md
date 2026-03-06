@@ -266,7 +266,7 @@ build-project が生成する `.vvproj` ファイル（VOICEVOX プロジェク�
 
 ### character.schema.json
 
-`configs/content/characters/<key>.json` に格納される。
+`configs/content/characters/<key>.yaml` に格納される。
 
 **最小実例**
 ```json
@@ -280,7 +280,7 @@ build-project が生成する `.vvproj` ファイル（VOICEVOX プロジェク�
 }
 ```
 
-**完全実例**（`configs/content/characters/metan.json` 相当）
+**完全実例**（`configs/content/characters/metan.yaml` 相当）
 ```json
 {
   "key": "metan",
@@ -337,7 +337,7 @@ build-project が生成する `.vvproj` ファイル（VOICEVOX プロジェク�
 
 ### project-config.schema.json
 
-`configs/pipeline/projects/<project-id>.json` に格納される。
+`configs/pipeline/projects/<project-id>.yaml` に格納される。
 
 ```json
 {

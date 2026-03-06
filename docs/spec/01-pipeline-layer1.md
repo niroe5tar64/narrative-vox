@@ -18,7 +18,7 @@ Layer 1 は LLM（Claude API）を使って技術書・記事をナレーショ�
 
 ```mermaid
 flowchart LR
-    PC[project-config.json\nconfigs/pipeline/projects/]
+    PC[project-config.yaml\nconfigs/pipeline/projects/]
     MD[ソース Markdown\ndata/inputs/]
 
     PC --> B
@@ -42,7 +42,7 @@ flowchart LR
 ### 入力
 | ファイル | パス |
 |---|---|
-| プロジェクト設定 | `configs/pipeline/projects/<project-id>.json` |
+| プロジェクト設定 | `configs/pipeline/projects/<project-id>.yaml` |
 | ソース Markdown | `SOURCE_MARKDOWN_PATHS` で指定されたファイル群 |
 
 ### 出力
@@ -74,7 +74,7 @@ Blueprint の1エピソード分と、直前エピソードの Digest（あれ�
 | ファイル | パス |
 |---|---|
 | Blueprint | `<run-dir>/blueprint/project_blueprint.json` |
-| プロジェクト設定 | `configs/pipeline/projects/<project-id>.json` |
+| プロジェクト設定 | `configs/pipeline/projects/<project-id>.yaml` |
 | ソース Markdown | `SOURCE_MARKDOWN_PATHS` 指定ファイル |
 | 前エピソード Digest | `<run-dir>/context/E##_episode_digest.json`（任意） |
 
@@ -105,8 +105,8 @@ Episode Material と Style 設定（話者モード・ペース・言語設定�
 | ファイル | パス |
 |---|---|
 | Episode Material | `<run-dir>/material/E##_material.json` |
-| コンテンツスタイル | `configs/content/styles/<style-id>.json` |
-| キャラクター定義 | `configs/content/characters/*.json` |
+| コンテンツスタイル | `configs/content/styles/<style-id>.yaml` |
+| キャラクター定義 | `configs/content/characters/*.yaml` |
 | 前エピソード Digest 群 | `<run-dir>/context/` 以下（任意） |
 
 ### 出力
@@ -186,7 +186,7 @@ bun run gen-digest -- --project-id <id> --episode-id E01 --run-dir <path>
 
 ## 話者モード（speaker_mode）
 
-コンテンツスタイル（`configs/content/styles/<style-id>.json`）の `format.speaker_mode` で指定。
+コンテンツスタイル（`configs/content/styles/<style-id>.yaml`）の `format.speaker_mode` で指定。
 
 | モード | 説明 | 話者タグ |
 |---|---|---|
@@ -220,7 +220,7 @@ LLM に送信するプロンプトをファイルに書き出すデバッグ用�
 bun run render-prompt -- \
   --genre tech-explainer \
   --step blueprint \
-  --project-config configs/pipeline/projects/introducing-rescript.json \
+  --project-config configs/pipeline/projects/introducing-rescript.yaml \
   --episode-id E01
 ```
 
