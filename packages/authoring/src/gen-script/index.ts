@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   runClaudeWithPrompt,
-} from "@narrative-vox/cli/gen-layer1/runtime.ts";
+} from "@narrative-vox/infrastructure/claude-runtime.ts";
 import {
   buildScriptPrompt,
 } from "@narrative-vox/cli/gen-layer1/prompts.ts";

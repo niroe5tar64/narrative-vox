@@ -8,7 +8,7 @@ import { validateAgainstSchema } from "@narrative-vox/infrastructure/schema-vali
 import {
   extractJson,
   runClaudeWithPrompt,
-} from "@narrative-vox/cli/gen-layer1/runtime.ts";
+} from "@narrative-vox/infrastructure/claude-runtime.ts";
 import {
   buildBlueprintPrompt,
 } from "@narrative-vox/cli/gen-layer1/prompts.ts";
