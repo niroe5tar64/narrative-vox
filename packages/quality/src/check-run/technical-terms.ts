@@ -671,7 +671,7 @@ export function buildTechnicalTermsAuditReport(params: {
   episodeId: string;
   projectId: string;
   runId: string;
-  materialPath: string;
+  episodePackPath: string;
   scriptPath: string;
   voicevoxTextPath?: string;
   technicalTerms: string[];
@@ -844,13 +844,13 @@ export function buildTechnicalTermsAuditReport(params: {
   const evaluatedTerms = totalTerms - skippedNonAsciiTerms.length;
   const coverageRatio = evaluatedTerms > 0 ? coveredTerms / evaluatedTerms : 1;
   return {
-    schema_version: "1.1",
+    schema_version: "1.0",
     meta: {
       project_id: params.projectId,
       run_id: params.runId,
       episode_id: params.episodeId,
       generated_at: new Date().toISOString(),
-      source_material_path: params.materialPath,
+      source_episode_pack_path: params.episodePackPath,
       source_script_path: params.scriptPath,
       ...(params.voicevoxTextPath
         ? { source_voicevox_text_path: params.voicevoxTextPath }
@@ -881,13 +881,41 @@ export function buildTechnicalTermsAuditReport(params: {
   };
 }
 
+export function collectTechnicalTermsFromEpisodePack(
+  episodePack: {
+    technical_terms?: Array<{ term?: string; note?: string }>;
+  },
+  episodeId: string,
+  episodePackRef: string,
+  warnings: string[],
+): string[] {
+  const terms = episodePack.technical_terms;
+  if (!Array.isArray(terms)) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const entry of terms) {
+    const raw = entry?.term;
+    const term = typeof raw === "string" ? raw.trim() : "";
+    if (!term) {
+      warnings.push(
+        `${episodeId}: ${episodePackRef} has empty technical_terms entry; skipped`,
+      );
+      continue;
+    }
+    unique.add(term);
+  }
+  return [...unique].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 export async function writeTechnicalTermsAuditReports(params: {
   resolvedRunDir: string;
   projectId: string;
   runId: string;
-  materialEpisodeIds: string[];
+  plannedEpisodeIds: string[];
   technicalTermsByEpisodeId: Map<string, string[]>;
-  materialPathByEpisodeId: Map<string, string>;
+  episodePackPathByEpisodeId: Map<string, string>;
   scriptPathByEpisodeId: Map<string, string>;
   scriptTextByEpisodeId: Map<string, string>;
   dictionarySurfacesByEpisodeId: Map<string, string[]>;
@@ -896,9 +924,13 @@ export async function writeTechnicalTermsAuditReports(params: {
   validVoicevoxTextByEpisodeId: Set<string>;
   warnings: string[];
   morphTokenizerOverride?: MorphTokenizer | null;
-}): Promise<void> {
-  const contextDirForAudit = path.join(params.resolvedRunDir, "context");
-  await mkdir(contextDirForAudit, { recursive: true });
+}): Promise<string[]> {
+  const reportDir = path.join(
+    params.resolvedRunDir,
+    "reports",
+    "technical_terms",
+  );
+  await mkdir(reportDir, { recursive: true });
   const userDictPath = path.resolve(
     process.cwd(),
     "configs/voice/voicevox/user-dict.json",
@@ -931,7 +963,9 @@ export async function writeTechnicalTermsAuditReports(params: {
       ? await getJapaneseMorphTokenizer()
       : params.morphTokenizerOverride;
 
-  for (const episodeId of params.materialEpisodeIds) {
+  const reportPaths: string[] = [];
+
+  for (const episodeId of params.plannedEpisodeIds) {
     const technicalTerms =
       params.technicalTermsByEpisodeId.get(episodeId) ?? [];
     if (technicalTerms.length === 0) {
@@ -940,8 +974,8 @@ export async function writeTechnicalTermsAuditReports(params: {
 
     const scriptText = params.scriptTextByEpisodeId.get(episodeId) ?? "";
     const scriptPath = params.scriptPathByEpisodeId.get(episodeId);
-    const materialPath = params.materialPathByEpisodeId.get(episodeId);
-    if (!scriptPath || !materialPath) {
+    const episodePackPath = params.episodePackPathByEpisodeId.get(episodeId);
+    if (!scriptPath || !episodePackPath) {
       continue;
     }
 
@@ -961,7 +995,7 @@ export async function writeTechnicalTermsAuditReports(params: {
       episodeId,
       projectId: params.projectId,
       runId: params.runId,
-      materialPath,
+      episodePackPath,
       scriptPath,
       voicevoxTextPath,
       technicalTerms,
@@ -975,19 +1009,22 @@ export async function writeTechnicalTermsAuditReports(params: {
       morphTokenizer,
     });
     const reportFileName = `${episodeId}_technical_terms_audit.json`;
-    const reportPath = path.join(contextDirForAudit, reportFileName);
+    const reportPath = path.join(reportDir, reportFileName);
     await writeFile(
       reportPath,
       `${JSON.stringify(report, null, 2)}\n`,
       "utf-8",
     );
+    reportPaths.push(reportPath);
     if (report.warnings.length > 0) {
       for (const warning of report.warnings) {
         params.warnings.push(`${episodeId}: ${warning}`);
       }
       params.warnings.push(
-        `${episodeId}: technical_terms audit report written to context/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.evaluated_terms})`,
+        `${episodeId}: technical_terms audit report written to reports/technical_terms/${reportFileName} (coverage=${report.summary.covered_terms}/${report.summary.evaluated_terms})`,
       );
     }
   }
+
+  return reportPaths;
 }
