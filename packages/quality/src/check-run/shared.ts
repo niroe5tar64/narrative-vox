@@ -1,30 +1,14 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 
-export const MATERIAL_FILE_RE = /^(E[0-9]{2})_material\.json$/;
+export const EPISODE_PACK_FILE_RE = /^(E[0-9]{2})_episode_pack\.json$/;
 export const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
-export const DIGEST_FILE_RE = /^(E[0-9]{2})_episode_digest\.json$/;
+export const SERIES_CONTEXT_FILE_RE = /^(E[0-9]{2})_series_context\.json$/;
+export const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
+export const VVPROJ_META_RE = /^(E[0-9]{2})_voicevox_project_meta\.json$/;
+export const AUDIO_WAV_FILE_RE = /^(E[0-9]{2})_.*\.wav$/;
 
 export type SpeakerMode = "monologue" | "dialogue" | "panel";
-
-export interface BlueprintEpisodePlanItem {
-  episode_id: string;
-  prerequisite_episodes?: string[];
-}
-
-export interface BlueprintForCheckRun {
-  episode_plan: BlueprintEpisodePlanItem[];
-}
-
-export interface EpisodeMaterialForCheckRun {
-  meta: {
-    project_id: string;
-  };
-  technical_terms?: Array<{
-    term?: string;
-    note?: string;
-  }>;
-}
 
 export interface ProjectConfigForCheckRun {
   STYLE_ID: string;
@@ -58,13 +42,13 @@ export interface TechnicalTermsAuditDetail {
 }
 
 export interface TechnicalTermsAuditReport {
-  schema_version: "1.1";
+  schema_version: "1.0";
   meta: {
     project_id: string;
     run_id: string;
     episode_id: string;
     generated_at: string;
-    source_material_path: string;
+    source_episode_pack_path: string;
     source_script_path: string;
     source_voicevox_text_path?: string;
   };
@@ -119,9 +103,9 @@ export function diffEpisodes(
   return baseIds.filter((id) => !compareSet.has(id));
 }
 
-export async function dirExists(dirPath: string): Promise<boolean> {
+export async function pathExists(targetPath: string): Promise<boolean> {
   try {
-    await access(dirPath);
+    await access(targetPath);
     return true;
   } catch {
     return false;
