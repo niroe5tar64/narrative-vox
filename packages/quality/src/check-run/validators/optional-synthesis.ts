@@ -2,13 +2,10 @@ import { loadJson } from "@narrative-vox/infrastructure/json.ts";
 import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import type { CollectedArtifacts } from "../artifact-collection.ts";
 import type { CheckRunIssue } from "../issues.ts";
-import { type VoicevoxTextForCheckRun, diffEpisodes } from "../shared.ts";
+import { diffEpisodes } from "../shared.ts";
 
 export interface OptionalSynthesisResult {
-  dictionarySurfacesByEpisodeId: Map<string, string[]>;
-  highPriorityDictionarySurfacesByEpisodeId: Map<string, string[]>;
-  candidatesWithoutReadingByEpisodeId: Map<string, string[]>;
-  validVoicevoxTextByEpisodeId: Set<string>;
+  validVoicevoxTextEpisodeIds: Set<string>;
 }
 
 export async function validateOptionalSynthesis(
@@ -18,15 +15,9 @@ export async function validateOptionalSynthesis(
   const issues: CheckRunIssue[] = [];
   const stage = "optional-synthesis" as const;
 
-  const dictionarySurfacesByEpisodeId = new Map<string, string[]>();
-  const highPriorityDictionarySurfacesByEpisodeId = new Map<
-    string,
-    string[]
-  >();
-  const candidatesWithoutReadingByEpisodeId = new Map<string, string[]>();
-  const validVoicevoxTextByEpisodeId = new Set<string>();
+  const validVoicevoxTextEpisodeIds = new Set<string>();
 
-  // Stage order: voicevox_text episodes ⊆ planned episodes
+  // voicevox_text episodes ⊆ planned episodes
   const voicevoxTextEpisodeIds = [...artifacts.voicevoxTextPaths.keys()].sort();
   const extraVoicevoxText = diffEpisodes(
     voicevoxTextEpisodeIds,
@@ -39,55 +30,11 @@ export async function validateOptionalSynthesis(
     });
   }
 
+  // Validate voicevox_text schema
   for (const [episodeId, filePath] of artifacts.voicevoxTextPaths) {
     try {
-      const voicevoxText = await loadJson<VoicevoxTextForCheckRun>(
-        filePath,
-        SchemaPaths.voicevoxText,
-      );
-      const surfaces = Array.isArray(voicevoxText.dictionary_candidates)
-        ? voicevoxText.dictionary_candidates
-            .map((candidate) => candidate.surface)
-            .filter(
-              (surface): surface is string => typeof surface === "string",
-            )
-        : [];
-      const highPrioritySurfaces = Array.isArray(
-        voicevoxText.dictionary_candidates,
-      )
-        ? voicevoxText.dictionary_candidates
-            .filter((candidate) => candidate.priority === "HIGH")
-            .map((candidate) => candidate.surface)
-            .filter(
-              (surface): surface is string => typeof surface === "string",
-            )
-        : [];
-      const highOrMediumWithoutReadingSurfaces = Array.isArray(
-        voicevoxText.dictionary_candidates,
-      )
-        ? voicevoxText.dictionary_candidates
-            .filter(
-              (candidate) =>
-                (candidate.priority === "HIGH" ||
-                  candidate.priority === "MEDIUM") &&
-                typeof candidate.surface === "string" &&
-                String(candidate.reading_or_empty ?? "").trim().length === 0,
-            )
-            .map((candidate) => candidate.surface)
-            .filter(
-              (surface): surface is string => typeof surface === "string",
-            )
-        : [];
-      dictionarySurfacesByEpisodeId.set(episodeId, surfaces);
-      highPriorityDictionarySurfacesByEpisodeId.set(
-        episodeId,
-        highPrioritySurfaces,
-      );
-      candidatesWithoutReadingByEpisodeId.set(
-        episodeId,
-        highOrMediumWithoutReadingSurfaces,
-      );
-      validVoicevoxTextByEpisodeId.add(episodeId);
+      await loadJson(filePath, SchemaPaths.voicevoxText);
+      validVoicevoxTextEpisodeIds.add(episodeId);
     } catch (error) {
       issues.push({
         stage,
@@ -97,16 +44,43 @@ export async function validateOptionalSynthesis(
     }
   }
 
-  // voicevox_project_meta episodes ⊆ voicevox_text episodes
-  const metaEpisodeIds = [...artifacts.voicevoxProjectMetaPaths.keys()].sort();
-  const extraMeta = diffEpisodes(metaEpisodeIds, voicevoxTextEpisodeIds);
-  if (extraMeta.length > 0) {
-    issues.push({
-      stage,
-      message: `voicevox_project_meta has episodes without voicevox_text: ${extraMeta.join(", ")}`,
-    });
+  // Validate voicevox_import schema
+  for (const [episodeId, filePath] of artifacts.voicevoxImportPaths) {
+    try {
+      await loadJson(filePath, SchemaPaths.voicevoxProjectImport);
+    } catch (error) {
+      issues.push({
+        stage,
+        episodeId,
+        message: `voicevox_import schema validation failed: ${(error as Error).message}`,
+      });
+    }
   }
 
+  // voicevox_project presence rule: .vvproj and project_meta must both exist
+  const vvprojEpisodeIds = new Set(artifacts.voicevoxProjectPaths.keys());
+  const metaEpisodeIds = new Set(artifacts.voicevoxProjectMetaPaths.keys());
+  const allProjectEpisodes = new Set([...vvprojEpisodeIds, ...metaEpisodeIds]);
+  for (const episodeId of allProjectEpisodes) {
+    const hasVvproj = vvprojEpisodeIds.has(episodeId);
+    const hasMeta = metaEpisodeIds.has(episodeId);
+    if (hasVvproj && !hasMeta) {
+      issues.push({
+        stage,
+        episodeId,
+        message: "voicevox_project has .vvproj but missing project_meta",
+      });
+    }
+    if (!hasVvproj && hasMeta) {
+      issues.push({
+        stage,
+        episodeId,
+        message: "voicevox_project has project_meta but missing .vvproj",
+      });
+    }
+  }
+
+  // Validate voicevox_project_meta schema
   for (const [episodeId, filePath] of artifacts.voicevoxProjectMetaPaths) {
     try {
       await loadJson(filePath, SchemaPaths.voicevoxProjectMeta);
@@ -119,12 +93,47 @@ export async function validateOptionalSynthesis(
     }
   }
 
+  // Stage order dependencies: script → voicevox_text → voicevox_project → audio
+  const scriptEpisodeIds = new Set(artifacts.scriptPaths.keys());
+  const vvTextEpisodeIds = new Set(artifacts.voicevoxTextPaths.keys());
+
+  // voicevox_text requires script
+  for (const episodeId of vvTextEpisodeIds) {
+    if (!scriptEpisodeIds.has(episodeId)) {
+      issues.push({
+        stage,
+        episodeId,
+        message: "voicevox_text exists without script (stage order violation)",
+      });
+    }
+  }
+
+  // voicevox_project requires voicevox_text
+  for (const episodeId of allProjectEpisodes) {
+    if (!vvTextEpisodeIds.has(episodeId)) {
+      issues.push({
+        stage,
+        episodeId,
+        message: "voicevox_project exists without voicevox_text (stage order violation)",
+      });
+    }
+  }
+
+  // audio requires voicevox_project
+  const audioEpisodeIds = new Set(artifacts.audioWavPaths.keys());
+  for (const episodeId of audioEpisodeIds) {
+    if (!vvprojEpisodeIds.has(episodeId)) {
+      issues.push({
+        stage,
+        episodeId,
+        message: "audio exists without voicevox_project (stage order violation)",
+      });
+    }
+  }
+
   return {
     result: {
-      dictionarySurfacesByEpisodeId,
-      highPriorityDictionarySurfacesByEpisodeId,
-      candidatesWithoutReadingByEpisodeId,
-      validVoicevoxTextByEpisodeId,
+      validVoicevoxTextEpisodeIds,
     },
     issues,
   };

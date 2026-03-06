@@ -5,10 +5,12 @@ import {
   type MorphTokenizer,
 } from "@narrative-vox/infrastructure/japanese-morph-tokenizer.ts";
 import { loadJson } from "@narrative-vox/infrastructure/json.ts";
+import { SchemaPaths } from "@narrative-vox/infrastructure/schema-paths.ts";
 import type {
   TechnicalTermsAuditDetail,
   TechnicalTermsAuditReport,
   UserDictForCheckRun,
+  VoicevoxTextForCheckRun,
 } from "./shared.ts";
 
 // For token-level matching and dictionary surface comparison.
@@ -918,10 +920,7 @@ export async function writeTechnicalTermsAuditReports(params: {
   episodePackPathByEpisodeId: Map<string, string>;
   scriptPathByEpisodeId: Map<string, string>;
   scriptTextByEpisodeId: Map<string, string>;
-  dictionarySurfacesByEpisodeId: Map<string, string[]>;
-  highPriorityDictionarySurfacesByEpisodeId: Map<string, string[]>;
-  candidatesWithoutReadingByEpisodeId: Map<string, string[]>;
-  validVoicevoxTextByEpisodeId: Set<string>;
+  voicevoxTextPathByEpisodeId: Map<string, string>;
   warnings: string[];
   morphTokenizerOverride?: MorphTokenizer | null;
 }): Promise<string[]> {
@@ -968,9 +967,6 @@ export async function writeTechnicalTermsAuditReports(params: {
   for (const episodeId of params.plannedEpisodeIds) {
     const technicalTerms =
       params.technicalTermsByEpisodeId.get(episodeId) ?? [];
-    if (technicalTerms.length === 0) {
-      continue;
-    }
 
     const scriptText = params.scriptTextByEpisodeId.get(episodeId) ?? "";
     const scriptPath = params.scriptPathByEpisodeId.get(episodeId);
@@ -979,17 +975,46 @@ export async function writeTechnicalTermsAuditReports(params: {
       continue;
     }
 
-    const dictionarySurfaces =
-      params.dictionarySurfacesByEpisodeId.get(episodeId) ?? [];
-    const highPriorityDictionarySurfaces =
-      params.highPriorityDictionarySurfacesByEpisodeId.get(episodeId) ?? [];
-    const candidatesWithoutReading =
-      params.candidatesWithoutReadingByEpisodeId.get(episodeId) ?? [];
-    const hasValidVoicevoxText =
-      params.validVoicevoxTextByEpisodeId.has(episodeId);
-    const voicevoxTextPath = hasValidVoicevoxText
-      ? `voicevox_text/${episodeId}_voicevox_text.json`
-      : undefined;
+    // Load voicevox_text directly for dictionary data
+    let dictionarySurfaces: string[] = [];
+    let highPriorityDictionarySurfaces: string[] = [];
+    let candidatesWithoutReading: string[] = [];
+    let dictionaryCoverageSkipped = true;
+    let voicevoxTextPath: string | undefined;
+
+    const vvTextFilePath = params.voicevoxTextPathByEpisodeId.get(episodeId);
+    if (vvTextFilePath) {
+      try {
+        const voicevoxText = await loadJson<VoicevoxTextForCheckRun>(
+          vvTextFilePath,
+          SchemaPaths.voicevoxText,
+        );
+        dictionaryCoverageSkipped = false;
+        voicevoxTextPath = `voicevox_text/${episodeId}_voicevox_text.json`;
+        if (Array.isArray(voicevoxText.dictionary_candidates)) {
+          dictionarySurfaces = voicevoxText.dictionary_candidates
+            .map((c) => c.surface)
+            .filter((s): s is string => typeof s === "string");
+          highPriorityDictionarySurfaces = voicevoxText.dictionary_candidates
+            .filter((c) => c.priority === "HIGH")
+            .map((c) => c.surface)
+            .filter((s): s is string => typeof s === "string");
+          candidatesWithoutReading = voicevoxText.dictionary_candidates
+            .filter(
+              (c) =>
+                (c.priority === "HIGH" || c.priority === "MEDIUM") &&
+                typeof c.surface === "string" &&
+                String(c.reading_or_empty ?? "").trim().length === 0,
+            )
+            .map((c) => c.surface)
+            .filter((s): s is string => typeof s === "string");
+        }
+      } catch {
+        params.warnings.push(
+          `${episodeId}: voicevox_text load failed; dictionary coverage skipped`,
+        );
+      }
+    }
 
     const report = buildTechnicalTermsAuditReport({
       episodeId,
@@ -1003,7 +1028,7 @@ export async function writeTechnicalTermsAuditReports(params: {
       dictionarySurfaces,
       highPriorityDictionarySurfaces,
       candidatesWithoutReading,
-      dictionaryCoverageSkipped: !hasValidVoicevoxText,
+      dictionaryCoverageSkipped,
       userDictSurfaces,
       userDictCoverageSkipped,
       morphTokenizer,

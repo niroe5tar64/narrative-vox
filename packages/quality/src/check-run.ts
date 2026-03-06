@@ -77,11 +77,6 @@ export async function checkRun({
   );
   throwIfErrors(crossRefIssues);
 
-  // Phase 7: Optional synthesis (before Phase 6 to provide dictionary data)
-  const { result: synthesisResult, issues: synthesisIssues } =
-    await validateOptionalSynthesis(artifacts, plannedEpisodeIds);
-  throwIfErrors(synthesisIssues);
-
   // Phase 6: Technical terms
   const technicalTermsByEpisodeId = new Map<string, string[]>();
   const episodePackPathByEpisodeId = new Map<string, string>();
@@ -114,6 +109,12 @@ export async function checkRun({
     }
   }
 
+  // Build voicevox_text path map for Phase 6
+  const voicevoxTextPathByEpisodeId = new Map<string, string>();
+  for (const [episodeId, filePath] of artifacts.voicevoxTextPaths) {
+    voicevoxTextPathByEpisodeId.set(episodeId, filePath);
+  }
+
   const reportDir = path.join(resolvedRunDir, "reports", "technical_terms");
   await mkdir(reportDir, { recursive: true });
 
@@ -126,17 +127,17 @@ export async function checkRun({
     episodePackPathByEpisodeId,
     scriptPathByEpisodeId,
     scriptTextByEpisodeId,
-    dictionarySurfacesByEpisodeId:
-      synthesisResult.dictionarySurfacesByEpisodeId,
-    highPriorityDictionarySurfacesByEpisodeId:
-      synthesisResult.highPriorityDictionarySurfacesByEpisodeId,
-    candidatesWithoutReadingByEpisodeId:
-      synthesisResult.candidatesWithoutReadingByEpisodeId,
-    validVoicevoxTextByEpisodeId:
-      synthesisResult.validVoicevoxTextByEpisodeId,
+    voicevoxTextPathByEpisodeId,
     warnings,
     morphTokenizerOverride,
   });
+
+  // Phase 7: Optional synthesis
+  const { issues: synthesisIssues } = await validateOptionalSynthesis(
+    artifacts,
+    plannedEpisodeIds,
+  );
+  throwIfErrors(synthesisIssues);
 
   return {
     runDir: resolvedRunDir,
