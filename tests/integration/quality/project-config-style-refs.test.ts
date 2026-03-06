@@ -2,6 +2,7 @@ import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 
 interface ProjectConfig {
   STYLE_ID?: unknown;
@@ -11,12 +12,12 @@ test("all project configs reference existing style definitions", async () => {
   const projectsDir = path.resolve("configs/pipeline/projects");
   const stylesDir = path.resolve("configs/content/styles");
   const entries = (await readdir(projectsDir))
-    .filter((name) => name.endsWith(".json"))
+    .filter((name) => name.endsWith(".yaml"))
     .sort();
 
   for (const fileName of entries) {
     const configPath = path.join(projectsDir, fileName);
-    const config = JSON.parse(
+    const config = parseYaml(
       await readFile(configPath, "utf-8"),
     ) as ProjectConfig;
 
@@ -26,7 +27,7 @@ test("all project configs reference existing style definitions", async () => {
       `${fileName}: STYLE_ID must be a string`,
     );
     const styleId = String(config.STYLE_ID);
-    const stylePath = path.join(stylesDir, `${styleId}.json`);
+    const stylePath = path.join(stylesDir, `${styleId}.yaml`);
 
     await assert.doesNotReject(
       async () => stat(stylePath),

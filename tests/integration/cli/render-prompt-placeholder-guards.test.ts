@@ -14,7 +14,7 @@ test("renderPrompt rejects config values containing placeholder syntax", async (
       GENRE_ID: "tech-explainer",
       PROJECT_ID: "tmp-project",
       PROJECT_TITLE: "{{MALICIOUS}}",
-      SOURCE_MARKDOWN_PATHS: "data/inputs/books/example/*.md",
+      SOURCE_MARKDOWN_PATHS: "data/inputs/tech-explainer/example/*.md",
       STYLE_ID: "radio-talk",
       CAST: {},
       AUDIENCE_BACKGROUND: "readers",

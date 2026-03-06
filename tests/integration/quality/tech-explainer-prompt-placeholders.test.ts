@@ -2,6 +2,7 @@ import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 
 const blueprintPromptPath = path.resolve("prompts/tech-explainer/blueprint.md");
 const materialPromptPath = path.resolve(
@@ -14,7 +15,7 @@ const techExplainerReadmePath = path.resolve(
   "prompts/tech-explainer/README.md",
 );
 const sampleProjectConfigPath = path.resolve(
-  "configs/pipeline/projects/tech-explainer.example.json",
+  "configs/pipeline/projects/tech-explainer.example.yaml",
 );
 
 const retiredStage2Aliases = [
@@ -98,7 +99,7 @@ test("tech_explainer README key definitions are consistent with material prompt 
 
 test("project config has GENRE_ID field", async () => {
   const configRaw = await readFile(sampleProjectConfigPath, "utf-8");
-  const config = JSON.parse(configRaw) as Record<string, unknown>;
+  const config = parseYaml(configRaw) as Record<string, unknown>;
   assert.equal(
     typeof config.GENRE_ID,
     "string",
@@ -118,7 +119,7 @@ test("blueprint/material/script prompt placeholders can be resolved with sample 
     readFile(sampleProjectConfigPath, "utf-8"),
   ]);
 
-  const config = JSON.parse(configRaw) as Record<string, unknown>;
+  const config = parseYaml(configRaw) as Record<string, unknown>;
   const placeholders = new Set<string>([
     ...extractPlaceholders(stage1Raw),
     ...extractPlaceholders(materialRaw),

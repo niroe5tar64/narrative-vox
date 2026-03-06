@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { stringify as stringifyYaml } from "yaml";
 
 import {
   buildRunCharacters,
@@ -166,14 +167,14 @@ test("normalizeCharacterMap rejects emotionStyles for undefined character", () =
   );
 });
 
-test("loadCharacterDefinitions reads all *.json from directory", async () => {
+test("loadCharacterDefinitions reads all *.yaml from directory", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "narrative-vox-chars-"));
   const charsDir = path.join(tempDir, "characters");
   await mkdir(charsDir, { recursive: true });
 
   await writeFile(
-    path.join(charsDir, "narrator.json"),
-    JSON.stringify({
+    path.join(charsDir, "narrator.yaml"),
+    stringifyYaml({
       key: "narrator",
       name: "ナレーター",
       description: "Default narrator voice",
@@ -192,8 +193,8 @@ test("loadCharacterDefinitions reads all *.json from directory", async () => {
   );
 
   await writeFile(
-    path.join(charsDir, "teacher.json"),
-    JSON.stringify({
+    path.join(charsDir, "teacher.yaml"),
+    stringifyYaml({
       key: "teacher",
       name: "先生",
       description: "Teacher voice",
@@ -232,8 +233,8 @@ test("loadCharacterDefinitions rejects schema-invalid character file", async () 
   await mkdir(charsDir, { recursive: true });
 
   await writeFile(
-    path.join(charsDir, "bad.json"),
-    JSON.stringify({
+    path.join(charsDir, "bad.yaml"),
+    stringifyYaml({
       key: "bad",
       name: "Bad",
       description: "Missing required profile",
@@ -261,8 +262,8 @@ test("loadCharacterDefinitions rejects invalid emotionStyles values", async () =
   await mkdir(charsDir, { recursive: true });
 
   await writeFile(
-    path.join(charsDir, "bad.json"),
-    JSON.stringify({
+    path.join(charsDir, "bad.yaml"),
+    stringifyYaml({
       key: "bad",
       name: "Bad",
       description: "Bad style id",
@@ -272,7 +273,7 @@ test("loadCharacterDefinitions rejects invalid emotionStyles values", async () =
         styleId: 1,
       },
       emotionStyles: {
-        calm: 0,
+        calm: -1,
       },
       profile: sampleCharacterProfile,
     }),
@@ -281,7 +282,7 @@ test("loadCharacterDefinitions rejects invalid emotionStyles values", async () =
 
   await assert.rejects(
     () => loadCharacterDefinitions(charsDir),
-    /emotionStyles.calm must be a positive integer/,
+    /must be >= 0/,
   );
 });
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { stringify as stringifyYaml } from "yaml";
 import {
   buildBlueprintPrompt,
   buildDigestPrompt,
@@ -32,9 +33,9 @@ async function withTempProjectConfig<T>(
   const projectId = `_test_gen_layer1_${crypto.randomUUID().replaceAll("-", "")}`;
   const configPath = path.resolve(
     "configs/pipeline/projects",
-    `${projectId}.json`,
+    `${projectId}.yaml`,
   );
-  await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+  await writeFile(configPath, stringifyYaml(config));
   try {
     return await run(projectId);
   } finally {

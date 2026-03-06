@@ -8,7 +8,7 @@ import {
 } from "@narrative-vox/cli/render-prompt.ts";
 
 const sampleProjectConfigPath = path.resolve(
-  "configs/pipeline/projects/tech-explainer.example.json",
+  "configs/pipeline/projects/tech-explainer.example.yaml",
 );
 
 describe("resolvePromptTemplatePath", () => {

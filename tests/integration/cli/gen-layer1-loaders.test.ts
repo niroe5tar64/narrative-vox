@@ -16,7 +16,7 @@ const sampleProjectConfig: ProjectConfig = {
   GENRE_ID: "tech_explainer",
   PROJECT_ID: "example-tech-explainer",
   PROJECT_TITLE: "Tech Explainer: Example Tech Explainer",
-  SOURCE_MARKDOWN_PATHS: "data/inputs/books/introducing-rescript/source/*.md",
+  SOURCE_MARKDOWN_PATHS: "data/inputs/tech-explainer/introducing-rescript/source/*.md",
   STYLE_ID: "radio-talk",
   AUDIENCE_BACKGROUND: "TypeScript/JavaScriptでWeb開発をしているエンジニア",
   AUDIENCE_LEVEL: "ReScript初学者〜中級手前",
