@@ -71,10 +71,9 @@ export async function checkRun({
   throwIfErrors(scriptIssues);
 
   // Phase 5: Authoring cross-refs
-  const crossRefIssues = validateAuthoringCrossRefs(
-    schemasResult,
-    plannedEpisodeIds,
-  );
+  const { issues: crossRefIssues, warnings: crossRefWarnings } =
+    validateAuthoringCrossRefs(schemasResult, plannedEpisodeIds);
+  warnings.push(...crossRefWarnings);
   throwIfErrors(crossRefIssues);
 
   // Phase 6: Technical terms

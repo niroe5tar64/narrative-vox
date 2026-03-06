@@ -316,6 +316,28 @@ export async function prepareMinimalRun(
   return runDir;
 }
 
+export async function updateSeriesContextFiles(
+  runDir: string,
+  updater: (
+    data: Record<string, unknown>,
+    context: { fileName: string; episodeId: string },
+  ) => Record<string, unknown>,
+): Promise<void> {
+  const seriesContextDir = path.join(runDir, "series_context");
+  const ctxFiles = (await readdir(seriesContextDir))
+    .filter((name) => name.endsWith("_series_context.json"))
+    .sort();
+
+  for (const fileName of ctxFiles) {
+    const episodeId = fileName.replace("_series_context.json", "");
+    const filePath = path.join(seriesContextDir, fileName);
+    const raw = await readFile(filePath, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const updated = updater(parsed, { fileName, episodeId });
+    await writeFile(filePath, `${JSON.stringify(updated, null, 2)}\n`, "utf-8");
+  }
+}
+
 export async function updateEpisodePackFiles(
   runDir: string,
   updater: (

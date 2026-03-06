@@ -48,8 +48,9 @@ export function findEpisodeDependencyCycle(
 export function validateAuthoringCrossRefs(
   authoringResult: AuthoringSchemasResult,
   plannedEpisodeIds: string[],
-): CheckRunIssue[] {
+): { issues: CheckRunIssue[]; warnings: string[] } {
   const issues: CheckRunIssue[] = [];
+  const warnings: string[] = [];
   const stage = "authoring-cross-refs" as const;
 
   const { sourceIndex, blueprint, episodePacks, seriesContexts } =
@@ -230,5 +231,47 @@ export function validateAuthoringCrossRefs(
     }
   }
 
-  return issues;
+  // CR-06: series_context.covered_theme_ids[] ⊆ blueprint.theme_catalog
+  if (blueprint?.theme_catalog) {
+    for (const [episodeId, ctx] of seriesContexts) {
+      if (!Array.isArray(ctx.covered_theme_ids)) continue;
+      for (const themeId of ctx.covered_theme_ids) {
+        if (!themeCatalogIds.has(themeId)) {
+          warnings.push(
+            `[${episodeId}] series_context.covered_theme_ids references unknown theme_id "${themeId}"`,
+          );
+        }
+      }
+    }
+  }
+
+  // CR-07: series_context.resolved_loop_ids[] ⊆ prior episodes' open_loops[].loop_id
+  const sortedEpisodeIds = [...seriesContexts.keys()].sort((a, b) => {
+    const numA = Number.parseInt(a.replace(/\D/g, ""), 10);
+    const numB = Number.parseInt(b.replace(/\D/g, ""), 10);
+    return numA - numB;
+  });
+  const allPriorOpenLoopIds = new Set<string>();
+  for (const episodeId of sortedEpisodeIds) {
+    const ctx = seriesContexts.get(episodeId);
+    if (!ctx) continue;
+
+    if (Array.isArray(ctx.resolved_loop_ids)) {
+      for (const loopId of ctx.resolved_loop_ids) {
+        if (!allPriorOpenLoopIds.has(loopId)) {
+          warnings.push(
+            `[${episodeId}] series_context.resolved_loop_ids references unknown loop_id "${loopId}"`,
+          );
+        }
+      }
+    }
+
+    if (Array.isArray(ctx.open_loops)) {
+      for (const loop of ctx.open_loops) {
+        allPriorOpenLoopIds.add(loop.loop_id);
+      }
+    }
+  }
+
+  return { issues, warnings };
 }

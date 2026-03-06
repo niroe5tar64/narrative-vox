@@ -8,6 +8,7 @@ import {
   prepareMinimalRun,
   sampleRunDir,
   updateEpisodePackFiles,
+  updateSeriesContextFiles,
 } from "../../helpers/check-run-test-helpers.ts";
 
 function buildValidScript(): string {
@@ -356,6 +357,43 @@ test("checkRun validates multiple episodes", async () => {
 });
 
 // --- Warnings ---
+
+test("checkRun warns when series_context.covered_theme_ids references unknown theme_id (CR-06)", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  await updateSeriesContextFiles(runDir, (data) => ({
+    ...data,
+    covered_theme_ids: ["T01", "T_UNKNOWN"],
+  }));
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((w) => w.includes("unknown theme_id") && w.includes("T_UNKNOWN")),
+    `Expected warning about unknown theme_id, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test("checkRun warns when series_context.resolved_loop_ids references unknown loop_id (CR-07)", async () => {
+  const runDir = await prepareMinimalRun(["E01", "E02"], {
+    E01: buildValidScript(),
+    E02: buildValidScript(),
+  });
+  // E01 has no open_loops, E02 resolves a loop that was never opened
+  await updateSeriesContextFiles(runDir, (data, { episodeId }) => {
+    if (episodeId === "E02") {
+      return {
+        ...data,
+        resolved_loop_ids: ["LOOP_NONEXISTENT"],
+      };
+    }
+    return data;
+  });
+  const result = await checkRun({ runDir });
+  assert.ok(
+    result.warnings.some((w) => w.includes("unknown loop_id") && w.includes("LOOP_NONEXISTENT")),
+    `Expected warning about unknown loop_id, got: ${JSON.stringify(result.warnings)}`,
+  );
+});
 
 test("checkRun writes report with technical terms from episode_pack", async () => {
   const runDir = await prepareMinimalRun(["E01"], {

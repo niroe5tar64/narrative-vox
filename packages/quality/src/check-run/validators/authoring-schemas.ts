@@ -36,6 +36,9 @@ interface EpisodePackForCheckRun {
 
 interface SeriesContextForCheckRun {
   meta: { through_episode_id: string };
+  covered_theme_ids?: string[];
+  open_loops?: Array<{ loop_id: string; opened_in_episode_id?: string }>;
+  resolved_loop_ids?: string[];
 }
 
 export interface AuthoringSchemasResult {
