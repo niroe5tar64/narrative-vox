@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { readConfig } from "@narrative-vox/infrastructure/json.ts";
 
 export interface RenderPromptOptions {
   genre: string;
@@ -88,12 +89,10 @@ export async function renderPrompt(
   options: RenderPromptOptions,
 ): Promise<RenderPromptResult> {
   const templatePath = resolvePromptTemplatePath(options.genre, options.step);
-  const [template, configRaw] = await Promise.all([
+  const [template, rawConfig] = await Promise.all([
     readFile(templatePath, "utf-8"),
-    readFile(options.projectConfigPath, "utf-8"),
+    readConfig(options.projectConfigPath) as Promise<Record<string, unknown>>,
   ]);
-
-  const rawConfig: Record<string, unknown> = JSON.parse(configRaw);
   const config: Record<string, string> = {};
   for (const [key, value] of Object.entries(rawConfig)) {
     if (typeof value === "string") {

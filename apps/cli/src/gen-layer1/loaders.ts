@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { loadConfig } from "@narrative-vox/infrastructure/json.ts";
 import {
   loadPriorDigests,
   logStep,
@@ -32,7 +33,7 @@ async function loadJsonArtifact<T>(options: {
 }): Promise<T> {
   const { stepLabel, label, filePath } = options;
   logStep(stepLabel, `Loading ${label}: ${filePath}`);
-  return readJsonFile<T>(filePath);
+  return loadConfig<T>(filePath);
 }
 
 async function loadTextArtifact(options: {
@@ -46,7 +47,7 @@ async function loadTextArtifact(options: {
 }
 
 function resolveStylePath(styleId: string): string {
-  return path.resolve("configs", "content", "styles", `${styleId}.json`);
+  return path.resolve("configs", "content", "styles", `${styleId}.yaml`);
 }
 
 function resolveCharacterPath(characterKey: string): string {
@@ -54,7 +55,7 @@ function resolveCharacterPath(characterKey: string): string {
     "configs",
     "content",
     "characters",
-    `${characterKey}.json`,
+    `${characterKey}.yaml`,
   );
 }
 
@@ -84,7 +85,7 @@ export async function loadCharactersForStep(options: {
     }
     characters[role] = {
       key: characterKey,
-      ...(await readJsonFile<Record<string, unknown>>(charPath)),
+      ...(await loadConfig<Record<string, unknown>>(charPath)),
     };
   }
   return characters;

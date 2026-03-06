@@ -64,7 +64,7 @@ const usageByCommand: Record<CommandName, string> = {
   "check-run":
     "Usage:\n  bun apps/cli/src/main.ts check-run --run-dir <data/projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voice/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voice/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voice/voicevox/speed-profiles.json>]",
   "render-prompt":
-    "Usage:\n  bun apps/cli/src/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/pipeline/projects/ID.json> [--episode-id E##]",
+    "Usage:\n  bun apps/cli/src/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/pipeline/projects/ID.yaml> [--episode-id E##]",
   "dict-sync":
     "Usage:\n  bun apps/cli/src/main.ts dict-sync [--voicevox-url <http://127.0.0.1:50021>] [--dict <configs/voice/voicevox/user_dict.json>] [--dry-run] [--legacy-sync]",
 };

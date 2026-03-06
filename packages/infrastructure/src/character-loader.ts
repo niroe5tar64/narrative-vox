@@ -8,7 +8,7 @@ import {
   requireString,
   requireStyleId,
 } from "@narrative-vox/domain/characters.ts";
-import { loadJson } from "./json.ts";
+import { loadConfig } from "./json.ts";
 import { SchemaPaths } from "./schema-paths.ts";
 
 export async function loadCharacterDefinitions(
@@ -16,12 +16,12 @@ export async function loadCharacterDefinitions(
 ): Promise<CharacterDefinition[]> {
   const resolvedDir = path.resolve(dirPath);
   const entries = await readdir(resolvedDir);
-  const jsonFiles = entries.filter((name) => name.endsWith(".json")).sort();
+  const jsonFiles = entries.filter((name) => name.endsWith(".yaml")).sort();
   const definitions: CharacterDefinition[] = [];
 
   for (const fileName of jsonFiles) {
     const filePath = path.join(resolvedDir, fileName);
-    const raw = (await loadJson<Record<string, unknown>>(
+    const raw = (await loadConfig<Record<string, unknown>>(
       filePath,
       SchemaPaths.character,
     )) as Record<string, unknown>;

@@ -86,10 +86,11 @@ export async function loadProjectConfig(
     "configs",
     "pipeline",
     "projects",
-    `${projectId}.json`,
+    `${projectId}.yaml`,
   );
   const raw = await readFile(configPath, "utf-8");
-  return JSON.parse(raw) as ProjectConfig;
+  const { parse: parseYaml } = await import("yaml");
+  return parseYaml(raw) as ProjectConfig;
 }
 
 export async function loadPromptSection(options: {
