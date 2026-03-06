@@ -17,38 +17,40 @@ import {
 } from "./cli-args.ts";
 import {
   genBlueprint,
-  genDigest,
-  genMaterial,
+  genEpisodePack,
   genScript,
-} from "./gen-layer1.ts";
-import { runPrepareRun } from "./prepare-run.ts";
+  genSourceIndex,
+  updateSeriesContext,
+} from "@narrative-vox/authoring";
 import { renderPrompt } from "./render-prompt.ts";
 
 type CommandName =
+  | "gen-source-index"
   | "gen-blueprint"
-  | "gen-material"
+  | "gen-episode-pack"
   | "gen-script"
-  | "gen-digest"
+  | "update-series-context"
   | "build-text"
   | "patch-voicevox-text"
   | "build-project"
   | "build-audio"
   | "build-all"
   | "check-run"
-  | "prepare-run"
   | "render-prompt"
   | "dict-sync";
 type CommandHandler = (options: CliOptions) => Promise<void>;
 
 const usageByCommand: Record<CommandName, string> = {
+  "gen-source-index":
+    "Usage:\n  bun apps/cli/src/main.ts gen-source-index --project-id <id> [--run-dir <data/projects/.../run-...>]",
   "gen-blueprint":
     "Usage:\n  bun apps/cli/src/main.ts gen-blueprint --project-id <id>",
-  "gen-material":
-    "Usage:\n  bun apps/cli/src/main.ts gen-material --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
+  "gen-episode-pack":
+    "Usage:\n  bun apps/cli/src/main.ts gen-episode-pack --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
   "gen-script":
     "Usage:\n  bun apps/cli/src/main.ts gen-script --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
-  "gen-digest":
-    "Usage:\n  bun apps/cli/src/main.ts gen-digest --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
+  "update-series-context":
+    "Usage:\n  bun apps/cli/src/main.ts update-series-context --project-id <id> --episode-id <E01> --run-dir <data/projects/.../run-...>",
   "build-text":
     "Usage:\n  bun apps/cli/src/main.ts build-text --script <script/E##_script.md> [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--episode-id E##] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>]",
   "patch-voicevox-text":
@@ -61,8 +63,6 @@ const usageByCommand: Record<CommandName, string> = {
     "Usage:\n  bun apps/cli/src/main.ts build-all --script <script/E##_script.md> [--patch] [--patch-config <configs/voice/voicevox/patch-config.json>] [--build-text-config <configs/voice/voicevox/build-text-config.json>] [--run-dir <data/projects/.../run-...>] [--run-id <run-YYYYMMDD-HHMM>] [--dict <configs/voice/voicevox/user-dict.json>] [build-text/build-project options]",
   "check-run":
     "Usage:\n  bun apps/cli/src/main.ts check-run --run-dir <data/projects/.../run-YYYYMMDD-HHMM> [--synthesis-defaults configs/voice/voicevox/synthesis-defaults.json|synthesis-defaults.example.json] [--character-map configs/voice/voicevox/default_character_map.json] [--character-key <key>] [--engine-id <id>] [--speaker-id <id>] [--style-id <num>] [--emotion <key>] [--voicevox-url <http://127.0.0.1:50021>] [--speed-preset slow|normal|fast] [--speed-profiles <configs/voice/voicevox/speed-profiles.json>]",
-  "prepare-run":
-    "Usage:\n  bun apps/cli/src/main.ts prepare-run [--run-dir <data/projects/.../run-YYYYMMDD-HHMM>] [--source-run-dir <data/projects/.../run-YYYYMMDD-HHMM>] [--project-id <id>] [--run-id <run-YYYYMMDD-HHMM>] [--projects-dir <data/projects>] [--default-project-id <id>] [--default-source-run-dir <data/projects/.../run-YYYYMMDD-HHMM>] [--default-run-id <run-YYYYMMDD-HHMM>] [--no-prompt]",
   "render-prompt":
     "Usage:\n  bun apps/cli/src/main.ts render-prompt --genre <genre> --step <blueprint|material> --project-config <configs/pipeline/projects/ID.json> [--episode-id E##]",
   "dict-sync":
@@ -76,13 +76,17 @@ function printUsage(command?: string) {
   }
 
   console.log(`Usage:
+  ${usageByCommand["gen-source-index"].replace("Usage:\n  ", "")}
+  ${usageByCommand["gen-blueprint"].replace("Usage:\n  ", "")}
+  ${usageByCommand["gen-episode-pack"].replace("Usage:\n  ", "")}
+  ${usageByCommand["gen-script"].replace("Usage:\n  ", "")}
+  ${usageByCommand["update-series-context"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-text"].replace("Usage:\n  ", "")}
   ${usageByCommand["patch-voicevox-text"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-project"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-audio"].replace("Usage:\n  ", "")}
   ${usageByCommand["build-all"].replace("Usage:\n  ", "")}
   ${usageByCommand["check-run"].replace("Usage:\n  ", "")}
-  ${usageByCommand["prepare-run"].replace("Usage:\n  ", "")}
   ${usageByCommand["render-prompt"].replace("Usage:\n  ", "")}
   ${usageByCommand["dict-sync"].replace("Usage:\n  ", "")}
 `);
@@ -134,6 +138,12 @@ function buildPrerequisiteOptionFields(options: CliOptions) {
 }
 
 const commandHandlers: Record<CommandName, CommandHandler> = {
+  "gen-source-index": async (options) => {
+    await genSourceIndex({
+      projectId: ensureOption(options, "project-id", "gen-source-index"),
+      runDir: optionAsString(options, "run-dir"),
+    });
+  },
   "gen-blueprint": async (options) => {
     if (optionAsString(options, "episode-id")) {
       throw new Error(
@@ -144,11 +154,11 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       projectId: ensureOption(options, "project-id", "gen-blueprint"),
     });
   },
-  "gen-material": async (options) => {
-    await genMaterial({
-      projectId: ensureOption(options, "project-id", "gen-material"),
-      episodeId: ensureOption(options, "episode-id", "gen-material"),
-      runDir: ensureOption(options, "run-dir", "gen-material"),
+  "gen-episode-pack": async (options) => {
+    await genEpisodePack({
+      projectId: ensureOption(options, "project-id", "gen-episode-pack"),
+      episodeId: ensureOption(options, "episode-id", "gen-episode-pack"),
+      runDir: ensureOption(options, "run-dir", "gen-episode-pack"),
     });
   },
   "gen-script": async (options) => {
@@ -158,11 +168,11 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
       runDir: ensureOption(options, "run-dir", "gen-script"),
     });
   },
-  "gen-digest": async (options) => {
-    await genDigest({
-      projectId: ensureOption(options, "project-id", "gen-digest"),
-      episodeId: ensureOption(options, "episode-id", "gen-digest"),
-      runDir: ensureOption(options, "run-dir", "gen-digest"),
+  "update-series-context": async (options) => {
+    await updateSeriesContext({
+      projectId: ensureOption(options, "project-id", "update-series-context"),
+      episodeId: ensureOption(options, "episode-id", "update-series-context"),
+      runDir: ensureOption(options, "run-dir", "update-series-context"),
     });
   },
   "build-text": async (options) => {
@@ -357,9 +367,6 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
         console.log(`  [warning] ${warning}`);
       }
     }
-  },
-  "prepare-run": async (options) => {
-    await runPrepareRun(options);
   },
   "render-prompt": async (options) => {
     const result = await renderPrompt({
