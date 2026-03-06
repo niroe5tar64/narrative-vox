@@ -39,10 +39,10 @@ export function requireStyleId(value: unknown, fieldName: string): number {
   return Math.trunc(parsed);
 }
 
-function requirePositiveStyleId(value: unknown, fieldName: string): number {
+function requireNonNegativeStyleId(value: unknown, fieldName: string): number {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`Character map ${fieldName} must be a positive integer`);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Character map ${fieldName} must be a non-negative integer`);
   }
   return parsed;
 }
@@ -69,7 +69,7 @@ export function normalizeEmotionStylesForCharacter(
       rawEmotionKey,
       `${fieldName}.${rawEmotionKey}`,
     );
-    emotionStyles[emotionKey] = requirePositiveStyleId(
+    emotionStyles[emotionKey] = requireNonNegativeStyleId(
       rawStyleId,
       `${fieldName}.${rawEmotionKey}`,
     );

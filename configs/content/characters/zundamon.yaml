@@ -13,14 +13,14 @@ emotionStyles:
   hisohiso: 22
 profile:
   gender: neutral
-  age_range: child
+  age_range: youth
   knowledge_level: beginner
   personality_traits:
     - 元気
     - 好奇心旺盛
     - 素直
     - ずんだ餅好き
-  speech_register: casual
+  speech_register: casual_da
   sentence_patterns:
     typical_endings:
       - なのだ
