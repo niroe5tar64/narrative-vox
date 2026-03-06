@@ -14,13 +14,14 @@ import {
 } from "../shared.ts";
 
 interface SourceIndexForCheckRun {
-  sections: Array<{ section_id: string }>;
+  sections: Array<{ section_id: string; token_estimate?: number }>;
 }
 
 interface BlueprintForCheckRun {
   episode_plan: Array<{
     episode_id: string;
     target_theme_ids?: string[];
+    source_section_ids?: string[];
   }>;
   theme_catalog?: Array<{ theme_id: string }>;
 }

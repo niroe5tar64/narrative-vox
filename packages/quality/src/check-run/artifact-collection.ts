@@ -6,7 +6,9 @@ import {
   EPISODE_PACK_FILE_RE,
   SCRIPT_FILE_RE,
   SERIES_CONTEXT_FILE_RE,
+  VOICEVOX_IMPORT_FILE_RE,
   VOICEVOX_TEXT_FILE_RE,
+  VVPROJ_FILE_RE,
   VVPROJ_META_RE,
   collectEpisodeIds,
   pathExists,
@@ -21,8 +23,11 @@ export interface CollectedArtifacts {
   scriptPaths: Map<string, string>;
   seriesContextPaths: Map<string, string>;
   voicevoxTextPaths: Map<string, string>;
+  voicevoxProjectPaths: Map<string, string>;
   voicevoxProjectMetaPaths: Map<string, string>;
+  voicevoxImportPaths: Map<string, string>;
   audioWavPaths: Map<string, string>;
+  audioManifestPath: string | null;
 }
 
 async function scanDir(
@@ -75,19 +80,32 @@ export async function collectArtifacts(
     ? blueprintCandidate
     : null;
 
+  const audioManifestCandidate = path.join(
+    resolvedRunDir,
+    "audio",
+    "audio_manifest.json",
+  );
+  const audioManifestPath = (await pathExists(audioManifestCandidate))
+    ? audioManifestCandidate
+    : null;
+
   const [
     episodePackPaths,
     scriptPaths,
     seriesContextPaths,
     voicevoxTextPaths,
+    voicevoxProjectPaths,
     voicevoxProjectMetaPaths,
+    voicevoxImportPaths,
     audioWavPaths,
   ] = await Promise.all([
     scanDir(path.join(resolvedRunDir, "episode_pack"), EPISODE_PACK_FILE_RE),
     scanDir(path.join(resolvedRunDir, "script"), SCRIPT_FILE_RE),
     scanDir(path.join(resolvedRunDir, "series_context"), SERIES_CONTEXT_FILE_RE),
     scanDir(path.join(resolvedRunDir, "voicevox_text"), VOICEVOX_TEXT_FILE_RE),
+    scanDir(path.join(resolvedRunDir, "voicevox_project"), VVPROJ_FILE_RE),
     scanDir(path.join(resolvedRunDir, "voicevox_project"), VVPROJ_META_RE),
+    scanDir(path.join(resolvedRunDir, "voicevox_project"), VOICEVOX_IMPORT_FILE_RE),
     scanDir(path.join(resolvedRunDir, "audio"), AUDIO_WAV_FILE_RE),
   ]);
 
@@ -100,8 +118,11 @@ export async function collectArtifacts(
       scriptPaths,
       seriesContextPaths,
       voicevoxTextPaths,
+      voicevoxProjectPaths,
       voicevoxProjectMetaPaths,
+      voicevoxImportPaths,
       audioWavPaths,
+      audioManifestPath,
     },
     issues,
   };

@@ -5,7 +5,9 @@ export const EPISODE_PACK_FILE_RE = /^(E[0-9]{2})_episode_pack\.json$/;
 export const SCRIPT_FILE_RE = /^(E[0-9]{2})_script\.md$/;
 export const SERIES_CONTEXT_FILE_RE = /^(E[0-9]{2})_series_context\.json$/;
 export const VOICEVOX_TEXT_FILE_RE = /^(E[0-9]{2})_voicevox_text\.json$/;
-export const VVPROJ_META_RE = /^(E[0-9]{2})_voicevox_project_meta\.json$/;
+export const VVPROJ_FILE_RE = /^(E[0-9]{2})\.vvproj$/;
+export const VVPROJ_META_RE = /^(E[0-9]{2})_project_meta\.json$/;
+export const VOICEVOX_IMPORT_FILE_RE = /^(E[0-9]{2})_voicevox_import\.json$/;
 export const AUDIO_WAV_FILE_RE = /^(E[0-9]{2})_.*\.wav$/;
 
 export type SpeakerMode = "monologue" | "dialogue" | "panel";
