@@ -1,11 +1,7 @@
 import { readFile } from "node:fs/promises";
-import {
-  findRunIdInPath,
-  inferProjectIdFromRunDir,
-} from "@narrative-vox/domain/run-id.ts";
 import type { CollectedArtifacts } from "../artifact-collection.ts";
 import type { CheckRunIssue } from "../issues.ts";
-import { collectEpisodeIds, diffEpisodes, toRelativePath } from "../shared.ts";
+import { diffEpisodes } from "../shared.ts";
 
 interface BlueprintEpisodePlanItem {
   episode_id: string;
@@ -49,7 +45,12 @@ export async function validateRequiredAuthoring(
   let projectId = "";
   let runId = "";
 
-  if (artifacts.runContractPath) {
+  if (!artifacts.runContractPath) {
+    issues.push({
+      stage,
+      message: "run-contract.json not found",
+    });
+  } else {
     try {
       const raw = JSON.parse(
         await readFile(artifacts.runContractPath, "utf-8"),
@@ -59,13 +60,6 @@ export async function validateRequiredAuthoring(
     } catch {
       issues.push({ stage, message: "run-contract.json parse failed" });
     }
-  }
-
-  if (!projectId) {
-    projectId = inferProjectIdFromRunDir(resolvedRunDir);
-  }
-  if (!runId) {
-    runId = findRunIdInPath(resolvedRunDir) ?? "";
   }
 
   let plannedEpisodeIds: string[] = [];
@@ -79,7 +73,23 @@ export async function validateRequiredAuthoring(
         const rawIds = plan
           .map((ep) => ep.episode_id)
           .filter((id): id is string => typeof id === "string");
-        plannedEpisodeIds = [...new Set(rawIds)].sort((a, b) => {
+
+        const seen = new Set<string>();
+        const duplicates = new Set<string>();
+        for (const id of rawIds) {
+          if (seen.has(id)) {
+            duplicates.add(id);
+          }
+          seen.add(id);
+        }
+        if (duplicates.size > 0) {
+          issues.push({
+            stage,
+            message: `blueprint episode_plan has duplicate episode_ids: ${[...duplicates].sort().join(", ")}`,
+          });
+        }
+
+        plannedEpisodeIds = [...seen].sort((a, b) => {
           const numA = Number.parseInt(a.replace(/\D/g, ""), 10);
           const numB = Number.parseInt(b.replace(/\D/g, ""), 10);
           return numA - numB;
