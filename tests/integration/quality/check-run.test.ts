@@ -86,6 +86,28 @@ test("checkRun returns projectId and runId from run-contract", async () => {
   assert.equal(result.runId, "run-20260211-9999");
 });
 
+test("checkRun fails when run-contract is missing", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  await rm(path.join(runDir, "run-contract.json"));
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /run-contract\.json not found/,
+  );
+});
+
+test("checkRun fails when blueprint has duplicate episode_ids", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  await updateBlueprintEpisodePlan(runDir, (plan) => [...plan, ...plan]);
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /duplicate episode_ids.*E01/,
+  );
+});
+
 // --- Phase 2: Required authoring errors ---
 
 test("checkRun fails when blueprint is missing", async () => {
@@ -228,6 +250,50 @@ test("checkRun detects missing source_section_id reference", async () => {
   await assert.rejects(
     () => checkRun({ runDir }),
     /missing source_section_id.*SRC9999/,
+  );
+});
+
+test("checkRun detects episode_pack target_theme_ids mismatch with blueprint", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  // Remove target_theme_ids from episode_pack (empty) vs blueprint (["T01"])
+  await updateEpisodePackFiles(runDir, (data) => ({
+    ...data,
+    target_theme_ids: [],
+  }));
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /target_theme_ids.*does not match blueprint/,
+  );
+});
+
+test("checkRun detects series_context through_episode_id mismatch", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  const ctxPath = path.join(runDir, "series_context", "E01_series_context.json");
+  const raw = JSON.parse(await readFile(ctxPath, "utf-8"));
+  raw.meta.through_episode_id = "E99";
+  await writeFile(ctxPath, `${JSON.stringify(raw, null, 2)}\n`, "utf-8");
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /through_episode_id.*E99.*does not match.*E01/,
+  );
+});
+
+// --- Phase 7: Stage order ---
+
+test("checkRun detects audio without voicevox_project (stage order)", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: buildValidScript(),
+  });
+  const audioDir = path.join(runDir, "audio");
+  await mkdir(audioDir, { recursive: true });
+  await writeFile(path.join(audioDir, "E01_output.wav"), "fake", "utf-8");
+  await assert.rejects(
+    () => checkRun({ runDir }),
+    /audio exists without voicevox_project.*stage order/,
   );
 });
 

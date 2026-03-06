@@ -229,3 +229,24 @@ test("checkRun coverage eval fixtures lock expected outcomes and precision/recal
     notation_exact_match_ratio: 1,
   });
 });
+
+test("checkRun generates report for episode with 0 technical terms", async () => {
+  const runDir = await prepareMinimalRun(["E01"], {
+    E01: "## 1. オープニング\n[speaker:teacher] 導入です。\n## 2. 続き\n[speaker:student] 質問です。\n## 3. まとめ\n[speaker:teacher] 終了です。",
+  });
+  // episode_pack has empty technical_terms by default
+  const result = await checkRun({ runDir, morphTokenizerOverride: null });
+  const reportPath = path.join(
+    runDir,
+    "reports",
+    "technical_terms",
+    "E01_technical_terms_audit.json",
+  );
+  const reportRaw = await readFile(reportPath, "utf-8");
+  const report = JSON.parse(reportRaw);
+  assert.equal(report.schema_version, "1.0");
+  assert.equal(report.meta.episode_id, "E01");
+  assert.equal(report.summary.total_terms, 0);
+  assert.equal(report.summary.coverage_ratio, 1);
+  assert.ok(result.technicalTermsReportPaths.length > 0);
+});
