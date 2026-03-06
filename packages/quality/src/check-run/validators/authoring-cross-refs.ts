@@ -58,9 +58,52 @@ export function validateAuthoringCrossRefs(
   const sourceIndexSectionIds = new Set(
     sourceIndex?.sections?.map((s) => s.section_id) ?? [],
   );
+  const sourceIndexTokenEstimates = new Map(
+    sourceIndex?.sections
+      ?.filter((s) => s.token_estimate !== undefined)
+      .map((s) => [s.section_id, s.token_estimate as number]) ?? [],
+  );
   const themeCatalogIds = new Set(
     blueprint?.theme_catalog?.map((t) => t.theme_id) ?? [],
   );
+
+  // CR-EP-ORDER: Episode plan ordering — numeric ascending and unique
+  if (blueprint?.episode_plan) {
+    const planIds = blueprint.episode_plan.map((ep) => ep.episode_id);
+    const planNums = planIds.map((id) =>
+      Number.parseInt(id.replace(/\D/g, ""), 10),
+    );
+    for (let i = 1; i < planNums.length; i++) {
+      if (planNums[i] !== undefined && planNums[i - 1] !== undefined && planNums[i] <= planNums[i - 1]) {
+        issues.push({
+          stage,
+          message: `blueprint episode_plan is not in ascending order: ${planIds[i - 1]} comes before ${planIds[i]}`,
+        });
+        break;
+      }
+    }
+  }
+
+  // CR-TOKEN-BUDGET: Source token budget per episode
+  if (blueprint?.episode_plan && sourceIndex) {
+    for (const ep of blueprint.episode_plan) {
+      if (!Array.isArray(ep.source_section_ids)) continue;
+      let totalTokens = 0;
+      for (const sectionId of ep.source_section_ids) {
+        const estimate = sourceIndexTokenEstimates.get(sectionId);
+        if (estimate !== undefined) {
+          totalTokens += estimate;
+        }
+      }
+      if (totalTokens > 24000) {
+        issues.push({
+          stage,
+          episodeId: ep.episode_id,
+          message: `blueprint episode source token budget exceeded: ${totalTokens} > 24000`,
+        });
+      }
+    }
+  }
 
   for (const [episodeId, pack] of episodePacks) {
     // CR-01: source_section_ids → source_index.sections
@@ -84,6 +127,43 @@ export function validateAuthoringCrossRefs(
             stage,
             episodeId,
             message: `episode_pack references missing theme_id "${themeId}" in blueprint.theme_catalog`,
+          });
+        }
+      }
+    }
+
+    // CR-SECTION-SUBSET: episode_pack.source_section_ids ⊆ blueprint.episode_plan[ep].source_section_ids
+    if (blueprint?.episode_plan && Array.isArray(pack.source_section_ids)) {
+      const bpEpisode = blueprint.episode_plan.find(
+        (ep) => ep.episode_id === episodeId,
+      );
+      if (bpEpisode?.source_section_ids) {
+        const bpSectionIds = new Set(bpEpisode.source_section_ids);
+        for (const sectionId of pack.source_section_ids) {
+          if (!bpSectionIds.has(sectionId)) {
+            issues.push({
+              stage,
+              episodeId,
+              message: `episode_pack source_section_id "${sectionId}" not in blueprint episode_plan`,
+            });
+          }
+        }
+      }
+    }
+
+    // CR-THEME-MATCH: episode_pack.target_theme_ids === blueprint.episode_plan[ep].target_theme_ids
+    if (blueprint?.episode_plan && Array.isArray(pack.target_theme_ids)) {
+      const bpEpisode = blueprint.episode_plan.find(
+        (ep) => ep.episode_id === episodeId,
+      );
+      if (bpEpisode?.target_theme_ids) {
+        const packThemes = [...pack.target_theme_ids].sort();
+        const bpThemes = [...bpEpisode.target_theme_ids].sort();
+        if (JSON.stringify(packThemes) !== JSON.stringify(bpThemes)) {
+          issues.push({
+            stage,
+            episodeId,
+            message: `episode_pack target_theme_ids [${packThemes.join(", ")}] does not match blueprint [${bpThemes.join(", ")}]`,
           });
         }
       }
@@ -122,6 +202,17 @@ export function validateAuthoringCrossRefs(
           message: `fact dependency cycle: ${cycle.join(" -> ")}`,
         });
       }
+    }
+  }
+
+  // CR-SERIES-THROUGH: series_context.meta.through_episode_id === filename episode ID
+  for (const [episodeId, ctx] of seriesContexts) {
+    if (ctx.meta.through_episode_id !== episodeId) {
+      issues.push({
+        stage,
+        episodeId,
+        message: `series_context.meta.through_episode_id "${ctx.meta.through_episode_id}" does not match filename episode_id "${episodeId}"`,
+      });
     }
   }
 
