@@ -346,11 +346,10 @@ const commandHandlers: Record<CommandName, CommandHandler> = {
   "check-run": async (options) => {
     const result = await checkRun({
       runDir: ensureOption(options, "run-dir", "check-run"),
-      ...buildPrerequisiteOptionFields(options),
     });
 
     console.log(
-      `Check run done: episodes=${result.validatedEpisodeIds.length}, material=${result.materialEpisodeCount}, script=${result.scriptEpisodeCount}`,
+      `Check run done: projectId=${result.projectId}, planned=${result.plannedEpisodeIds.join(",")}, validated=${result.validatedEpisodeIds.join(",")}`,
     );
     console.log(`- run: ${path.relative(process.cwd(), result.runDir)}`);
     if (result.warnings.length > 0) {
