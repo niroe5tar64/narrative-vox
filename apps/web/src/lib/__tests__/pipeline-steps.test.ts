@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   derivePaths,
-  getLayer1StepArgs,
+  getAuthoringStepArgs,
   getLayer2StepArgs,
 } from "@/lib/pipeline-steps";
 
@@ -30,22 +30,42 @@ describe("derivePaths", () => {
 });
 
 describe("step args", () => {
-  test("layer1 gen-blueprint", () => {
-    expect(getLayer1StepArgs("gen-blueprint", "p1", "E01", "run-dir")).toEqual([
+  test("authoring gen-source-index", () => {
+    expect(getAuthoringStepArgs("gen-source-index", "p1", "E01")).toEqual([
       "--project-id",
       "p1",
     ]);
   });
 
-  test("layer1 gen-material", () => {
-    expect(getLayer1StepArgs("gen-material", "p1", "E01", "run-dir")).toEqual([
+  test("authoring gen-blueprint", () => {
+    expect(getAuthoringStepArgs("gen-blueprint", "p1", "E01")).toEqual([
+      "--project-id",
+      "p1",
+    ]);
+  });
+
+  test("authoring gen-episode-pack", () => {
+    expect(getAuthoringStepArgs("gen-episode-pack", "p1", "E01")).toEqual([
       "--project-id",
       "p1",
       "--episode-id",
       "E01",
-      "--run-dir",
-      "run-dir",
     ]);
+  });
+
+  test("authoring gen-script", () => {
+    expect(getAuthoringStepArgs("gen-script", "p1", "E01")).toEqual([
+      "--project-id",
+      "p1",
+      "--episode-id",
+      "E01",
+    ]);
+  });
+
+  test("authoring update-series-context", () => {
+    expect(
+      getAuthoringStepArgs("update-series-context", "p1", "E01"),
+    ).toEqual(["--project-id", "p1", "--episode-id", "E01"]);
   });
 
   test("layer2 build-text", () => {

@@ -11,7 +11,7 @@ function createRunStatus(): RunStatus {
     runId: "run-20260227-1200",
     plannedEpisodeIds: ["E01"],
     stages: {
-      source_index: { status: "idle" },
+      source_index: { status: "completed" },
       blueprint: { status: "completed" },
       episode_pack: { status: "partial", episodeIds: ["E01"] },
       script: { status: "partial", episodeIds: ["E01"] },
@@ -51,24 +51,57 @@ function createAvailability(
 }
 
 describe("usePipelineAvailability", () => {
-  test("layer1 prerequisite と next step 判定を維持する", () => {
+  test("authoring prerequisite と next step 判定を維持する", () => {
     const availability = createAvailability();
 
-    expect(availability.getLayer1StepDisplayStatus("gen-blueprint")).toBe(
+    expect(
+      availability.getAuthoringStepDisplayStatus("gen-source-index"),
+    ).toBe("done");
+    expect(availability.getAuthoringStepDisplayStatus("gen-blueprint")).toBe(
       "done",
     );
-    expect(availability.getLayer1StepDisplayStatus("gen-material")).toBe(
+    expect(
+      availability.getAuthoringStepDisplayStatus("gen-episode-pack"),
+    ).toBe("done");
+    expect(availability.getAuthoringStepDisplayStatus("gen-script")).toBe(
       "done",
     );
-    expect(availability.getLayer1StepDisplayStatus("gen-script")).toBe("done");
-    expect(availability.getLayer1StepDisplayStatus("gen-digest")).toBe("idle");
-    expect(availability.canRunLayer1Step("gen-digest")).toBe(true);
-    expect(availability.isNextLayer1Step(3, "gen-digest")).toBe(true);
+    expect(
+      availability.getAuthoringStepDisplayStatus("update-series-context"),
+    ).toBe("idle");
+    expect(availability.canRunAuthoringStep("update-series-context")).toBe(true);
+    expect(
+      availability.isNextAuthoringStep(4, "update-series-context"),
+    ).toBe(true);
+  });
+
+  test("gen-source-index は常に実行可能", () => {
+    const availability = createAvailability({
+      runStatus: undefined,
+    });
+    expect(availability.canRunAuthoringStep("gen-source-index")).toBe(true);
+  });
+
+  test("gen-blueprint は source_index completed が必要", () => {
+    const runStatus = createRunStatus();
+    runStatus.stages.source_index = { status: "idle" };
+    const availability = createAvailability({ runStatus });
+    expect(availability.canRunAuthoringStep("gen-blueprint")).toBe(false);
+  });
+
+  test("gen-episode-pack は blueprint completed + episodeId が必要", () => {
+    const runStatus = createRunStatus();
+    runStatus.stages.blueprint = { status: "idle" };
+    const availability = createAvailability({ runStatus });
+    expect(availability.canRunAuthoringStep("gen-episode-pack")).toBe(false);
   });
 
   test("VOICEVOX offline 時は audio 系 step と build-all を止める", () => {
     const runStatus = createRunStatus();
-    runStatus.stages.voicevox_text = { status: "partial", episodeIds: ["E01"] };
+    runStatus.stages.voicevox_text = {
+      status: "partial",
+      episodeIds: ["E01"],
+    };
     runStatus.stages.voicevox_project = {
       status: "partial",
       episodeIds: ["E01"],

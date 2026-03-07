@@ -1,11 +1,8 @@
 import type { PerEpisodeStageInfo, RunStatus } from "@narrative-vox/api-types";
 
-const FALLBACK_EPISODE_ID = "E01";
-
 type EpisodeSelectionInput = {
   runKey: string;
   currentEpisodeId: string;
-  projectEpisodeId?: string;
   runStatus?: RunStatus;
 };
 
@@ -43,36 +40,26 @@ export function collectRunEpisodeIds(runStatus?: RunStatus): string[] {
 export function resolveEpisodeSelection({
   runKey,
   currentEpisodeId,
-  projectEpisodeId,
   runStatus,
 }: EpisodeSelectionInput): string {
-  const runEpisodeIds = collectRunEpisodeIds(runStatus);
+  const plannedEpisodeIds = runStatus?.plannedEpisodeIds ?? [];
 
-  if (runKey && runEpisodeIds.length > 0) {
-    if (runEpisodeIds.includes(currentEpisodeId)) {
+  if (runKey && plannedEpisodeIds.length > 0) {
+    if (plannedEpisodeIds.includes(currentEpisodeId)) {
       return currentEpisodeId;
     }
-    if (projectEpisodeId && runEpisodeIds.includes(projectEpisodeId)) {
-      return projectEpisodeId;
-    }
-    return runEpisodeIds[0];
+    return plannedEpisodeIds[0];
   }
 
-  return currentEpisodeId || projectEpisodeId || FALLBACK_EPISODE_ID;
+  return currentEpisodeId || "";
 }
 
 export function buildEpisodeOptions(input: EpisodeSelectionInput): string[] {
-  const runEpisodeIds = collectRunEpisodeIds(input.runStatus);
+  const plannedEpisodeIds = input.runStatus?.plannedEpisodeIds ?? [];
 
-  if (input.runKey && runEpisodeIds.length > 0) {
-    if (
-      input.currentEpisodeId &&
-      !runEpisodeIds.includes(input.currentEpisodeId)
-    ) {
-      return [input.currentEpisodeId, ...runEpisodeIds];
-    }
-    return runEpisodeIds;
+  if (input.runKey && plannedEpisodeIds.length > 0) {
+    return plannedEpisodeIds;
   }
 
-  return [resolveEpisodeSelection(input)];
+  return [];
 }

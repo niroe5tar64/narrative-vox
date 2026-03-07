@@ -5,7 +5,7 @@ import { ApiErrorBanner } from "@/components/feedback/ApiErrorBanner";
 import { LogTerminal } from "@/components/pipeline/LogTerminal";
 import { PipelineContextSelector } from "@/components/pipeline/PipelineContextSelector";
 import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
-import { PipelineLayer1Panel } from "@/components/pipeline/PipelineLayer1Panel";
+import { PipelineAuthoringPanel } from "@/components/pipeline/PipelineAuthoringPanel";
 import { PipelineLayer2Panel } from "@/components/pipeline/PipelineLayer2Panel";
 import { PipelineUtilityPanel } from "@/components/pipeline/PipelineUtilityPanel";
 import { TabBar } from "@/components/ui/tab-bar";
@@ -14,8 +14,8 @@ import { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import { usePipelineContext } from "@/hooks/usePipelineContext";
 import { usePipelineJob } from "@/hooks/usePipelineJob";
 import {
-  getLayer1StepArgs,
-  type Layer1StepKey,
+  getAuthoringStepArgs,
+  type AuthoringStepKey,
   type Layer2StepKey,
   PIPELINE_TABS,
   type PipelineTab,
@@ -25,7 +25,7 @@ import { queryKeys } from "@/lib/query-keys";
 export function PipelinePage() {
   const queryClient = useQueryClient();
   const [isJobActiveForQuery, setIsJobActiveForQuery] = useState(false);
-  const [pipelineTab, setPipelineTab] = useState<PipelineTab>("layer1");
+  const [pipelineTab, setPipelineTab] = useState<PipelineTab>("authoring");
   const [copiedStep, setCopiedStep] = useState<string | null>(null);
   const [hoveredCommand, setHoveredCommand] = useState<string | null>(null);
   const copiedFlash = useFlashMessage(2000);
@@ -48,7 +48,7 @@ export function PipelinePage() {
   } = context;
 
   const job = usePipelineJob({
-    onGenBlueprintDone: async () => {
+    onGenSourceIndexDone: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
       requestAutoSelectRun();
     },
@@ -69,10 +69,9 @@ export function PipelinePage() {
     getSessionStatus: job.getStepStatus,
   });
 
-  const handleRunLayer1Step = (stepKey: Layer1StepKey) => {
+  const handleRunAuthoringStep = (stepKey: AuthoringStepKey) => {
     if (!projectId) return;
-    const runDir = paths?.runDir ?? "";
-    const args = getLayer1StepArgs(stepKey, projectId, episodeId, runDir);
+    const args = getAuthoringStepArgs(stepKey, projectId, episodeId);
     job.startStepJob(stepKey, stepKey, args);
   };
 
@@ -117,6 +116,12 @@ export function PipelinePage() {
     copiedFlash.flash();
   };
 
+  const isEpisodeDisabled =
+    !runKey ||
+    !runStatusQuery.data ||
+    runStatusQuery.data.stages.blueprint.status !== "completed" ||
+    runStatusQuery.data.plannedEpisodeIds.length === 0;
+
   return (
     <div className="flex h-full min-w-0 flex-col gap-4">
       <PipelineHeader
@@ -153,6 +158,7 @@ export function PipelinePage() {
         episodeId={episodeId}
         episodeOptions={episodeOptions}
         isDisabled={job.isJobActive}
+        isEpisodeDisabled={isEpisodeDisabled}
         projects={projectsQuery.data?.items}
         runs={runsQuery.data?.items}
         onProjectIdChange={handleProjectIdChange}
@@ -160,15 +166,14 @@ export function PipelinePage() {
         onEpisodeIdChange={handleEpisodeIdChange}
       />
 
-      {pipelineTab === "layer1" && (
-        <PipelineLayer1Panel
+      {pipelineTab === "authoring" && (
+        <PipelineAuthoringPanel
           projectId={projectId}
           episodeId={episodeId}
-          runDir={paths?.runDir ?? ""}
           availability={availability}
           copiedStep={copiedStep}
           copiedVisible={copiedFlash.visible}
-          onRunStep={handleRunLayer1Step}
+          onRunStep={handleRunAuthoringStep}
           onCancel={job.cancel}
           onCopyStep={copyCommand}
           onPreviewCommand={setHoveredCommand}

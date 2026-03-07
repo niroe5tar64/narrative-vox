@@ -34,18 +34,6 @@ export function PipelineUtilityPanel({
           size="sm"
           variant="secondary"
           className="cursor-pointer"
-          onClick={() =>
-            paths &&
-            onRunUtil("prepare-run", ["--source-run-dir", paths.runDir])
-          }
-          disabled={!paths || isAnyStepRunning}
-        >
-          run を引き継ぎ
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="cursor-pointer"
           onClick={() => onRunUtil("dict-sync", [])}
           disabled={isAnyStepRunning}
         >

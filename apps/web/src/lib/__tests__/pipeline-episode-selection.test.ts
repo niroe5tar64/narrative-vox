@@ -26,24 +26,22 @@ function makeRunStatus(overrides?: Partial<RunStatus>): RunStatus {
 }
 
 describe("pipeline episode selection", () => {
-  test("project default only -> uses project episode", () => {
+  test("no run key and no status -> returns empty string", () => {
     expect(
       resolveEpisodeSelection({
         runKey: "",
         currentEpisodeId: "",
-        projectEpisodeId: "E05",
       }),
-    ).toBe("E05");
+    ).toBe("");
     expect(
       buildEpisodeOptions({
         runKey: "",
         currentEpisodeId: "",
-        projectEpisodeId: "E05",
       }),
-    ).toEqual(["E05"]);
+    ).toEqual([]);
   });
 
-  test("planned episodes override fallback when project default is absent", () => {
+  test("planned episodes are the source of truth", () => {
     const runStatus = makeRunStatus({ plannedEpisodeIds: ["E03", "E04"] });
     expect(
       resolveEpisodeSelection({
@@ -55,48 +53,37 @@ describe("pipeline episode selection", () => {
     expect(collectRunEpisodeIds(runStatus)).toEqual(["E03", "E04"]);
   });
 
-  test("project default is preserved when it exists in planned episodes", () => {
-    const runStatus = makeRunStatus({ plannedEpisodeIds: ["E03", "E05"] });
-    expect(
-      resolveEpisodeSelection({
-        runKey: "demo/run-20260228-1200",
-        currentEpisodeId: "",
-        projectEpisodeId: "E05",
-        runStatus,
-      }),
-    ).toBe("E05");
-  });
-
-  test("current episode is kept across run switch when still valid", () => {
+  test("current episode is kept when it exists in planned episodes", () => {
     const runStatus = makeRunStatus({ plannedEpisodeIds: ["E04", "E05"] });
     expect(
       resolveEpisodeSelection({
         runKey: "demo/run-20260228-1200",
         currentEpisodeId: "E05",
-        projectEpisodeId: "E03",
         runStatus,
       }),
     ).toBe("E05");
   });
 
-  test("invalid current episode is temporarily kept in options until correction", () => {
+  test("invalid current episode falls back to first planned episode", () => {
+    const runStatus = makeRunStatus({ plannedEpisodeIds: ["E03", "E04"] });
+    expect(
+      resolveEpisodeSelection({
+        runKey: "demo/run-20260228-1200",
+        currentEpisodeId: "E99",
+        runStatus,
+      }),
+    ).toBe("E03");
+  });
+
+  test("buildEpisodeOptions returns planned episodes only", () => {
     const runStatus = makeRunStatus({ plannedEpisodeIds: ["E03", "E04"] });
     expect(
       buildEpisodeOptions({
         runKey: "demo/run-20260228-1200",
         currentEpisodeId: "E05",
-        projectEpisodeId: "E07",
         runStatus,
       }),
-    ).toEqual(["E05", "E03", "E04"]);
-    expect(
-      resolveEpisodeSelection({
-        runKey: "demo/run-20260228-1200",
-        currentEpisodeId: "E05",
-        projectEpisodeId: "E07",
-        runStatus,
-      }),
-    ).toBe("E03");
+    ).toEqual(["E03", "E04"]);
   });
 
   test("falls back to stage episode ids when planned ids are unavailable", () => {
@@ -113,37 +100,14 @@ describe("pipeline episode selection", () => {
       },
     });
     expect(collectRunEpisodeIds(runStatus)).toEqual(["E07", "E08", "E09"]);
-    expect(
-      resolveEpisodeSelection({
-        runKey: "demo/run-20260228-1200",
-        currentEpisodeId: "",
-        runStatus,
-      }),
-    ).toBe("E07");
   });
 
-  test("falls back to E01 when no project or run information exists", () => {
-    expect(
-      resolveEpisodeSelection({
-        runKey: "",
-        currentEpisodeId: "",
-      }),
-    ).toBe("E01");
+  test("empty options when no run selected", () => {
     expect(
       buildEpisodeOptions({
         runKey: "",
-        currentEpisodeId: "",
-      }),
-    ).toEqual(["E01"]);
-  });
-
-  test("keeps current episode as temporary option while run status is loading", () => {
-    expect(
-      buildEpisodeOptions({
-        runKey: "demo/run-20260228-1200",
         currentEpisodeId: "E05",
-        projectEpisodeId: "E03",
       }),
-    ).toEqual(["E05"]);
+    ).toEqual([]);
   });
 });

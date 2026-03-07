@@ -78,7 +78,7 @@ export function ProjectsPage() {
 
   const saveMutation = useMutation({
     mutationFn: (f: ProjForm) => {
-      const data = formToProj(f, extraFields);
+      const data = formToProj(f);
       return isNew
         ? api.projects.create(data)
         : api.projects.update(f.PROJECT_ID, data);

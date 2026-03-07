@@ -42,12 +42,12 @@ export function PipelineShortcutPanel({
               className="cursor-pointer gap-1.5"
             >
               <Play className="size-3.5" />
-              ステップ ⑤⑥⑦ をまとめて実行
+              ステップ ⑥⑦⑧ をまとめて実行
             </Button>
           </span>
         )}
         <span className="text-xs text-slate-400">
-          ※ ステップ⑧（音声合成）は別途実行が必要
+          ※ ステップ⑨（音声合成）は別途実行が必要
         </span>
       </div>
     </div>

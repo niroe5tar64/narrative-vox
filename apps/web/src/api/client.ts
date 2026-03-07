@@ -35,22 +35,34 @@ export type GenreConfig = {
   extra_fields: string[];
 };
 
-export type ProjectConfig = {
-  GENRE_ID: string;
+export type ProjectConfigBase = {
   PROJECT_ID: string;
-  PROJECT_TITLE: string;
-  SOURCE_MARKDOWN_PATHS: string;
-  AUDIENCE_BACKGROUND: string;
-  AUDIENCE_LEVEL: string;
-  AUDIENCE_INTEREST: string;
-  BASELINE_CONTEXT_OR_EMPTY: string;
-  EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: string;
-  PROJECT_BLUEPRINT_JSON_PATH: string;
-  EPISODE_ID: string;
+  GENRE_ID: string;
   STYLE_ID: string;
+  PROJECT_TITLE?: string;
+  AUDIENCE_BACKGROUND?: string;
+  AUDIENCE_LEVEL?: string;
+  AUDIENCE_INTEREST?: string;
+  BASELINE_CONTEXT_OR_EMPTY?: string;
+  EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY?: string;
   CAST: Record<string, string>;
   NOTES?: string;
+  SOURCE_LANGUAGE_HINT?: "en" | "ja" | "mixed";
+  SOURCE_EXCLUDE_PATHS?: string[];
 };
+
+export type TechExplainerProjectConfig = ProjectConfigBase & {
+  GENRE_ID: "tech-explainer";
+  SOURCE_MARKDOWN_PATHS: string;
+};
+
+export type OssDiveProjectConfig = ProjectConfigBase & {
+  GENRE_ID: "oss-dive";
+  REPO_ROOT_PATH: string;
+  DEEP_DIVE_FOCUS: string;
+};
+
+export type ProjectConfig = TechExplainerProjectConfig | OssDiveProjectConfig;
 
 export type StyleConfig = {
   style_id: string;

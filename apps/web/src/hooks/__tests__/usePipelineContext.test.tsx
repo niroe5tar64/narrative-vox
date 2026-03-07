@@ -2,7 +2,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, test, vi } from "vitest";
-import type { ProjectConfig, RunStatus } from "@/api/client";
+import type { RunStatus } from "@narrative-vox/api-types";
 import { usePipelineContext } from "@/hooks/usePipelineContext";
 
 const useQueryMock = vi.fn();
@@ -16,24 +16,6 @@ vi.mock("@tanstack/react-query", async () => {
     useQuery: (options: unknown) => useQueryMock(options),
   };
 });
-
-function makeProject(projectId: string, episodeId: string): ProjectConfig {
-  return {
-    GENRE_ID: "tech-explainer",
-    PROJECT_ID: projectId,
-    PROJECT_TITLE: "Demo",
-    SOURCE_MARKDOWN_PATHS: "data/inputs/*.md",
-    AUDIENCE_BACKGROUND: "bg",
-    AUDIENCE_LEVEL: "beginner",
-    AUDIENCE_INTEREST: "interest",
-    BASELINE_CONTEXT_OR_EMPTY: "",
-    EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: "",
-    PROJECT_BLUEPRINT_JSON_PATH: "data/projects/demo/blueprint.json",
-    EPISODE_ID: episodeId,
-    STYLE_ID: "radio-talk",
-    CAST: { narrator: "alice" },
-  };
-}
 
 function makeRunStatus(plannedEpisodeIds: string[]): RunStatus {
   return {
@@ -54,7 +36,7 @@ function makeRunStatus(plannedEpisodeIds: string[]): RunStatus {
 }
 
 describe("usePipelineContext", () => {
-  test("prefers planned run episodes over incompatible project default", async () => {
+  test("prefers planned run episodes as source of truth", async () => {
     useQueryMock.mockImplementation(
       ({ queryKey }: { queryKey: readonly unknown[] }) => {
         const key = queryKey[0];
@@ -62,7 +44,7 @@ describe("usePipelineContext", () => {
           return { data: undefined, isSuccess: false, isError: false };
         }
         if (key === "projects") {
-          return { data: { items: [makeProject("demo", "E05")] } };
+          return { data: { items: [] } };
         }
         if (key === "runs") {
           return {
@@ -87,10 +69,6 @@ describe("usePipelineContext", () => {
     act(() => {
       result.current.setProjectId("demo");
       result.current.setEpisodeId("");
-    });
-
-    await waitFor(() => {
-      expect(result.current.episodeId).toBe("E05");
     });
 
     act(() => {

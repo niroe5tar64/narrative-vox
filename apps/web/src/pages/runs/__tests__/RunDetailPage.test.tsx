@@ -145,7 +145,11 @@ describe("RunDetailPage", () => {
         name: "run-20260228-1200",
         type: "dir",
         children: [
-          { name: "E01_script.md", type: "file", path: "script/E01_script.md" },
+          {
+            name: "E01_script.md",
+            type: "file",
+            path: "script/E01_script.md",
+          },
         ],
       },
     };
@@ -158,7 +162,7 @@ describe("RunDetailPage", () => {
 
     apiPipelineRunMock.mockImplementation((command: string, args: string[]) =>
       Promise.resolve({
-        jobId: command === "check-run" ? "job-check" : "job-prepare",
+        jobId: "job-check",
         command,
         args,
         startedAt: "2026-02-28T00:00:00.000Z",
@@ -185,22 +189,15 @@ describe("RunDetailPage", () => {
     expect(resetMock).toHaveBeenCalledTimes(1);
   });
 
-  test("prepare-run click で pipeline.run を正しい引数で呼ぶ", async () => {
+  test("prepare-run ボタンが表示されない", () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "このRunから継続" }));
-
-    await waitFor(() => {
-      expect(apiPipelineRunMock).toHaveBeenCalledWith("prepare-run", [
-        "--source-run-dir",
-        "data/projects/demo/run-20260228-1200",
-      ]);
-    });
-
-    expect(resetMock).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "このRunから継続" }),
+    ).toBeNull();
   });
 
-  test("prepare-run 完了時に tree/status/file/byProject query を invalidate する", async () => {
+  test("check-run 完了時に tree/status query を invalidate する", async () => {
     usePipelineLogMock.mockImplementation((jobId: string | null) => ({
       logs: [],
       status: jobId ? "done" : "idle",
@@ -212,11 +209,11 @@ describe("RunDetailPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "select-script" }));
     expect(screen.getByText("FileViewer")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "このRunから継続" }));
+    fireEvent.click(screen.getByRole("button", { name: "check-run" }));
 
     await waitFor(() => {
-      expect(apiPipelineRunMock).toHaveBeenCalledWith("prepare-run", [
-        "--source-run-dir",
+      expect(apiPipelineRunMock).toHaveBeenCalledWith("check-run", [
+        "--run-dir",
         "data/projects/demo/run-20260228-1200",
       ]);
     });
@@ -237,9 +234,6 @@ describe("RunDetailPage", () => {
         "run-20260228-1200",
         "script/E01_script.md",
       ],
-    });
-    expect(invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ["runs", "demo"],
     });
   });
 

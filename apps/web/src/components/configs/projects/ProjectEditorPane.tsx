@@ -135,42 +135,21 @@ export function ProjectEditorPane({
           />
         </FormField>
 
-        <FormField
-          label="EPISODE_ID"
-          required
-          hint={
-            <>
-              現在作業するエピソードの番号（E01, E02 … の形式）
-              <br />
-              スキル実行時の対象エピソードになります。
-            </>
-          }
-        >
-          <Input
-            value={form.EPISODE_ID}
-            onChange={(e) => onPatch({ EPISODE_ID: e.target.value })}
-            placeholder="e.g. E01"
-          />
-        </FormField>
-
-        <FormField
-          label="SOURCE_MARKDOWN_PATHS"
-          required
-          hint={
-            <>
-              glob パターンで対象 Markdown を指定（例:
-              data/inputs/tech-explainer/my-book/*.md）
-              <br />
-              ※oss-dive ジャンルでは空欄で可
-            </>
-          }
-        >
-          <Input
-            value={form.SOURCE_MARKDOWN_PATHS}
-            onChange={(e) => onPatch({ SOURCE_MARKDOWN_PATHS: e.target.value })}
-            placeholder="data/inputs/..."
-          />
-        </FormField>
+        {!showOssDiveFields && (
+          <FormField
+            label="SOURCE_MARKDOWN_PATHS"
+            required
+            hint="glob パターンで対象 Markdown を指定（例: data/inputs/tech-explainer/my-book/*.md）"
+          >
+            <Input
+              value={form.SOURCE_MARKDOWN_PATHS}
+              onChange={(e) =>
+                onPatch({ SOURCE_MARKDOWN_PATHS: e.target.value })
+              }
+              placeholder="data/inputs/..."
+            />
+          </FormField>
+        )}
 
         <FormField label="GENRE" required>
           {genres.length > 0 ? (
@@ -353,15 +332,34 @@ export function ProjectEditorPane({
         </FormField>
 
         <FormField
-          label="PROJECT_BLUEPRINT_JSON_PATH"
-          hint="/gen-blueprint 実行後に生成された JSON のパスを指定。初回は空欄で可。"
+          label="SOURCE_LANGUAGE_HINT"
+          hint="ソースの主要言語を指定。自動検出の補助になります。"
         >
-          <Input
-            value={form.PROJECT_BLUEPRINT_JSON_PATH}
+          <select
+            className={selectClass}
+            value={form.SOURCE_LANGUAGE_HINT}
             onChange={(e) =>
-              onPatch({ PROJECT_BLUEPRINT_JSON_PATH: e.target.value })
+              onPatch({ SOURCE_LANGUAGE_HINT: e.target.value })
             }
-            placeholder="data/projects/.../blueprint/..."
+          >
+            <option value="">-- 自動 --</option>
+            <option value="en">en</option>
+            <option value="ja">ja</option>
+            <option value="mixed">mixed</option>
+          </select>
+        </FormField>
+
+        <FormField
+          label="SOURCE_EXCLUDE_PATHS"
+          hint="除外するパス（改行またはカンマ区切り）"
+        >
+          <Textarea
+            value={form.SOURCE_EXCLUDE_PATHS}
+            onChange={(e) =>
+              onPatch({ SOURCE_EXCLUDE_PATHS: e.target.value })
+            }
+            rows={2}
+            placeholder="node_modules&#10;dist"
           />
         </FormField>
 

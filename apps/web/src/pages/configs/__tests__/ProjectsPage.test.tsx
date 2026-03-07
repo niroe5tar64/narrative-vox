@@ -38,8 +38,6 @@ function makeProject(projectId: string, title: string): ProjectConfig {
     AUDIENCE_INTEREST: "interest",
     BASELINE_CONTEXT_OR_EMPTY: "",
     EXISTING_AUDIO_SCRIPT_DIR_OR_EMPTY: "",
-    PROJECT_BLUEPRINT_JSON_PATH: "data/projects/demo/blueprint.json",
-    EPISODE_ID: "E01",
     STYLE_ID: "radio-talk",
     CAST: { narrator: "narrator" },
   };

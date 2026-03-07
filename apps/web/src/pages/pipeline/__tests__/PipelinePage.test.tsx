@@ -46,7 +46,21 @@ vi.mock("@/hooks/usePipelineContext", () => ({
       isError: false,
       data: { version: "0.25.1" },
     },
-    runStatusQuery: { data: { plannedEpisodeIds: ["E01"], stages: {} } },
+    runStatusQuery: {
+      data: {
+        plannedEpisodeIds: ["E01"],
+        stages: {
+          source_index: { status: "completed" },
+          blueprint: { status: "completed" },
+          episode_pack: { status: "idle", episodeIds: [] },
+          script: { status: "idle", episodeIds: [] },
+          series_context: { status: "idle", episodeIds: [] },
+          voicevox_text: { status: "idle", episodeIds: [] },
+          voicevox_project: { status: "idle", episodeIds: [] },
+          audio: { status: "idle", episodeIds: [] },
+        },
+      },
+    },
     projectsQuery: { data: { items: [] } },
     runsQuery: { data: { items: [] } },
     requestAutoSelectRun,
@@ -59,13 +73,13 @@ vi.mock("@/hooks/usePipelineJob", () => ({
 
 vi.mock("@/hooks/usePipelineAvailability", () => ({
   usePipelineAvailability: () => ({
-    getLayer1StepDisplayStatus: vi.fn(() => "idle"),
+    getAuthoringStepDisplayStatus: vi.fn(() => "idle"),
     getLayer2StepDisplayStatus: vi.fn(() => "idle"),
-    canRunLayer1Step: vi.fn(() => true),
+    canRunAuthoringStep: vi.fn(() => true),
     canRunLayer2Step: vi.fn(() => true),
-    getLayer1DisabledReason: vi.fn(() => null),
+    getAuthoringDisabledReason: vi.fn(() => null),
     getLayer2DisabledReason: vi.fn(() => null),
-    isNextLayer1Step: vi.fn(() => false),
+    isNextAuthoringStep: vi.fn(() => false),
     isNextLayer2Step: vi.fn(() => false),
     canRunBuildAll: true,
     buildAllDisabledReason: null,
@@ -130,8 +144,8 @@ vi.mock("@/components/pipeline/PipelineContextSelector", () => ({
   ),
 }));
 
-vi.mock("@/components/pipeline/PipelineLayer1Panel", () => ({
-  PipelineLayer1Panel: () => <div>PipelineLayer1Panel</div>,
+vi.mock("@/components/pipeline/PipelineAuthoringPanel", () => ({
+  PipelineAuthoringPanel: () => <div>PipelineAuthoringPanel</div>,
 }));
 
 vi.mock("@/components/pipeline/PipelineLayer2Panel", () => ({
@@ -172,12 +186,14 @@ describe("PipelinePage", () => {
 
     expect(screen.getByText("PipelineHeader")).toBeTruthy();
     expect(screen.getByText("PipelineContextSelector")).toBeTruthy();
-    expect(screen.getByText("PipelineLayer1Panel")).toBeTruthy();
+    expect(screen.getByText("PipelineAuthoringPanel")).toBeTruthy();
     expect(screen.getByText("ApiErrorBanner")).toBeTruthy();
     expect(screen.getByText("LogTerminal")).toBeTruthy();
     expect(screen.getByText("VOICEVOX v0.25.1")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Layer 2 — 音声合成" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Layer 2 — 音声合成" }),
+    );
     expect(screen.getByText("PipelineLayer2Panel")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "ユーティリティ" }));
@@ -202,16 +218,16 @@ describe("PipelinePage", () => {
     expect(resetStatuses).toHaveBeenCalledTimes(3);
   });
 
-  test("gen-blueprint 完了時に run query を refresh して auto-select を要求する", async () => {
+  test("gen-source-index 完了時に run query を refresh して auto-select を要求する", async () => {
     render(<PipelinePage />);
 
     const options = usePipelineJobMock.mock.calls[0]?.[0] as {
-      onGenBlueprintDone: () => Promise<void>;
+      onGenSourceIndexDone: () => Promise<void>;
       onRunStatusRefresh: () => Promise<void>;
     };
 
     await act(async () => {
-      await options.onGenBlueprintDone();
+      await options.onGenSourceIndexDone();
     });
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["runs"] });

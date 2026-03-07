@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, ChevronLeft, GitBranch } from "lucide-react";
+import { CheckCircle, ChevronLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -73,20 +73,7 @@ export function RunDetailPage() {
         queryKey: queryKeys.runs.file(projectId, runId, selectedFile),
       });
     }
-    if (jobCommand === "prepare-run") {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.runs.byProject(projectId),
-      });
-    }
-  }, [
-    jobCommand,
-    jobId,
-    pipelineStatus,
-    projectId,
-    queryClient,
-    runId,
-    selectedFile,
-  ]);
+  }, [jobId, pipelineStatus, projectId, queryClient, runId, selectedFile]);
 
   if (!projectId || !runId) {
     return (
@@ -115,9 +102,6 @@ export function RunDetailPage() {
 
   const handleCheckRun = () =>
     startPipeline("check-run", ["--run-dir", runDir]);
-
-  const handlePrepareRun = () =>
-    startPipeline("prepare-run", ["--source-run-dir", runDir]);
 
   const showPipelineLog =
     logs.length > 0 ||
@@ -152,16 +136,6 @@ export function RunDetailPage() {
           >
             <CheckCircle className="size-3.5" />
             check-run
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handlePrepareRun}
-            disabled={isPipelineActive}
-            className="gap-1.5"
-          >
-            <GitBranch className="size-3.5" />
-            このRunから継続
           </Button>
         </div>
       </div>

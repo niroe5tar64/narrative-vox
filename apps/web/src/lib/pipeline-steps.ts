@@ -1,13 +1,18 @@
-export const LAYER1_STEPS = [
+export const AUTHORING_STEPS = [
+  {
+    key: "gen-source-index",
+    label: "ソースインデックス生成",
+    note: "ソースファイルの解析・チャンク分割",
+  },
   {
     key: "gen-blueprint",
     label: "ブループリント生成",
     note: "全体設計 JSON の生成",
   },
   {
-    key: "gen-material",
-    label: "素材生成",
-    note: "エピソード素材 JSON の生成",
+    key: "gen-episode-pack",
+    label: "エピソードパック生成",
+    note: "エピソード素材パックの生成",
   },
   {
     key: "gen-script",
@@ -15,8 +20,8 @@ export const LAYER1_STEPS = [
     note: "素材 → ナレーション台本 (.md)",
   },
   {
-    key: "gen-digest",
-    label: "ダイジェスト生成",
+    key: "update-series-context",
+    label: "シリーズコンテキスト更新",
     note: "エピソード間一貫性用 JSON",
   },
 ] as const;
@@ -44,9 +49,9 @@ export const LAYER2_STEPS = [
   },
 ] as const;
 
-export type Layer1StepKey = (typeof LAYER1_STEPS)[number]["key"];
+export type AuthoringStepKey = (typeof AUTHORING_STEPS)[number]["key"];
 export type Layer2StepKey = (typeof LAYER2_STEPS)[number]["key"];
-export type StepKey = Layer1StepKey | Layer2StepKey;
+export type StepKey = AuthoringStepKey | Layer2StepKey;
 
 export type Paths = {
   script: string;
@@ -72,24 +77,17 @@ export function derivePaths(runKey: string, episodeId: string): Paths | null {
   };
 }
 
-export function getLayer1StepArgs(
-  stepKey: Layer1StepKey,
+export function getAuthoringStepArgs(
+  stepKey: AuthoringStepKey,
   projectId: string,
   episodeId: string,
-  runDir: string,
 ): string[] {
   switch (stepKey) {
+    case "gen-source-index":
     case "gen-blueprint":
       return ["--project-id", projectId];
     default:
-      return [
-        "--project-id",
-        projectId,
-        "--episode-id",
-        episodeId,
-        "--run-dir",
-        runDir,
-      ];
+      return ["--project-id", projectId, "--episode-id", episodeId];
   }
 }
 
@@ -110,10 +108,10 @@ export function getLayer2StepArgs(
 }
 
 export type StepStatus = "idle" | "running" | "done" | "error";
-export type PipelineTab = "layer1" | "layer2" | "utility";
+export type PipelineTab = "authoring" | "layer2" | "utility";
 
 export const PIPELINE_TABS: { id: PipelineTab; label: string }[] = [
-  { id: "layer1", label: "Layer 1 — LLM 生成" },
+  { id: "authoring", label: "Authoring Pipeline" },
   { id: "layer2", label: "Layer 2 — 音声合成" },
   { id: "utility", label: "ユーティリティ" },
 ];

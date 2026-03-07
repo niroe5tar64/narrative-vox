@@ -1,6 +1,6 @@
 import type { RunStatus } from "@narrative-vox/api-types";
 import type {
-  Layer1StepKey,
+  AuthoringStepKey,
   Layer2StepKey,
   Paths,
   StepKey,
@@ -32,26 +32,34 @@ export function usePipelineAvailability({
   voicevoxOffline,
   getSessionStatus,
 }: Params) {
-  const getLayer1StepDisplayStatus = (stepKey: Layer1StepKey): StepStatus => {
+  const getAuthoringStepDisplayStatus = (
+    stepKey: AuthoringStepKey,
+  ): StepStatus => {
     const session = getSessionStatus(stepKey);
     if (session === "running" || session === "error") return session;
     if (session === "done") return "done";
-    if (!runStatus || !episodeId) return "idle";
+    if (!runStatus) return "idle";
     switch (stepKey) {
+      case "gen-source-index":
+        return runStatus.stages.source_index.status === "completed"
+          ? "done"
+          : "idle";
       case "gen-blueprint":
         return runStatus.stages.blueprint.status === "completed"
           ? "done"
           : "idle";
-      case "gen-material":
-        return episodeInStage(runStatus.stages.episode_pack, episodeId)
+      case "gen-episode-pack":
+        return episodeId &&
+          episodeInStage(runStatus.stages.episode_pack, episodeId)
           ? "done"
           : "idle";
       case "gen-script":
-        return episodeInStage(runStatus.stages.script, episodeId)
+        return episodeId && episodeInStage(runStatus.stages.script, episodeId)
           ? "done"
           : "idle";
-      case "gen-digest":
-        return episodeInStage(runStatus.stages.series_context, episodeId)
+      case "update-series-context":
+        return episodeId &&
+          episodeInStage(runStatus.stages.series_context, episodeId)
           ? "done"
           : "idle";
     }
@@ -80,20 +88,29 @@ export function usePipelineAvailability({
     }
   };
 
-  const canRunLayer1Step = (stepKey: Layer1StepKey): boolean => {
+  const canRunAuthoringStep = (stepKey: AuthoringStepKey): boolean => {
     if (isAnyStepRunning) return false;
     switch (stepKey) {
-      case "gen-blueprint":
+      case "gen-source-index":
         return true;
-      case "gen-material":
-        return !!runStatus && runStatus.stages.blueprint.status === "completed";
+      case "gen-blueprint":
+        return (
+          !!runStatus &&
+          runStatus.stages.source_index.status === "completed"
+        );
+      case "gen-episode-pack":
+        return (
+          !!runStatus &&
+          runStatus.stages.blueprint.status === "completed" &&
+          !!episodeId
+        );
       case "gen-script":
         return (
           !!runStatus &&
           !!episodeId &&
           episodeInStage(runStatus.stages.episode_pack, episodeId)
         );
-      case "gen-digest":
+      case "update-series-context":
         return (
           !!runStatus &&
           !!episodeId &&
@@ -120,7 +137,7 @@ export function usePipelineAvailability({
     }
   };
 
-  const getLayer1DisabledReason = (): string | null => {
+  const getAuthoringDisabledReason = (): string | null => {
     if (isAnyStepRunning) return "別のジョブが実行中です";
     return null;
   };
@@ -152,16 +169,26 @@ export function usePipelineAvailability({
     }
   };
 
-  const isNextLayer1Step = (index: number, stepKey: Layer1StepKey): boolean => {
-    const isThisCompleted = getLayer1StepDisplayStatus(stepKey) === "done";
+  const isNextAuthoringStep = (
+    index: number,
+    stepKey: AuthoringStepKey,
+  ): boolean => {
+    const isThisCompleted =
+      getAuthoringStepDisplayStatus(stepKey) === "done";
     const isPrevCompleted =
       index === 0 ||
-      getLayer1StepDisplayStatus(
+      getAuthoringStepDisplayStatus(
         (
-          ["gen-blueprint", "gen-material", "gen-script", "gen-digest"] as const
+          [
+            "gen-source-index",
+            "gen-blueprint",
+            "gen-episode-pack",
+            "gen-script",
+            "update-series-context",
+          ] as const
         )[index - 1],
       ) === "done";
-    return !isThisCompleted && isPrevCompleted && canRunLayer1Step(stepKey);
+    return !isThisCompleted && isPrevCompleted && canRunAuthoringStep(stepKey);
   };
 
   const isNextLayer2Step = (index: number, stepKey: Layer2StepKey): boolean => {
@@ -189,13 +216,13 @@ export function usePipelineAvailability({
     : getLayer2DisabledReason("build-text");
 
   return {
-    getLayer1StepDisplayStatus,
+    getAuthoringStepDisplayStatus,
     getLayer2StepDisplayStatus,
-    canRunLayer1Step,
+    canRunAuthoringStep,
     canRunLayer2Step,
-    getLayer1DisabledReason,
+    getAuthoringDisabledReason,
     getLayer2DisabledReason,
-    isNextLayer1Step,
+    isNextAuthoringStep,
     isNextLayer2Step,
     canRunBuildAll,
     buildAllDisabledReason,

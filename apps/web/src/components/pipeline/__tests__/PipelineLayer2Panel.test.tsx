@@ -17,19 +17,19 @@ const paths: Paths = {
 };
 
 const availability: ReturnType<typeof usePipelineAvailability> = {
-  getLayer1StepDisplayStatus: vi.fn(),
+  getAuthoringStepDisplayStatus: vi.fn(),
   getLayer2StepDisplayStatus: vi.fn(() => "idle"),
-  canRunLayer1Step: vi.fn(),
+  canRunAuthoringStep: vi.fn(),
   canRunLayer2Step: vi.fn(
     (stepKey: string) => !["build-project", "build-all"].includes(stepKey),
   ),
-  getLayer1DisabledReason: vi.fn(),
+  getAuthoringDisabledReason: vi.fn(),
   getLayer2DisabledReason: vi.fn((stepKey: string) =>
     stepKey === "build-project"
       ? "VOICEVOX が offline のため実行できません"
       : null,
   ),
-  isNextLayer1Step: vi.fn(),
+  isNextAuthoringStep: vi.fn(),
   isNextLayer2Step: vi.fn((index: number) => index === 0),
   canRunBuildAll: false,
   buildAllDisabledReason: "VOICEVOX が offline のため実行できません",
@@ -59,7 +59,7 @@ describe("PipelineLayer2Panel", () => {
     expect(
       (
         screen.getByRole("button", {
-          name: "ステップ ⑤⑥⑦ をまとめて実行",
+          name: "ステップ ⑥⑦⑧ をまとめて実行",
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
@@ -90,7 +90,7 @@ describe("PipelineLayer2Panel", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: "ステップ ⑤⑥⑦ をまとめて実行" }),
+      screen.getByRole("button", { name: "ステップ ⑥⑦⑧ をまとめて実行" }),
     );
     expect(onRunBuildAll).toHaveBeenCalledTimes(1);
   });

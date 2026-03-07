@@ -7,10 +7,10 @@ import { formatApiError } from "@/lib/format-api-error";
 import type { StepKey, StepStatus } from "@/lib/pipeline-steps";
 
 export function usePipelineJob(options: {
-  onGenBlueprintDone: () => Promise<void>;
+  onGenSourceIndexDone: () => Promise<void>;
   onRunStatusRefresh: () => Promise<void>;
 }) {
-  const { onGenBlueprintDone, onRunStatusRefresh } = options;
+  const { onGenSourceIndexDone, onRunStatusRefresh } = options;
 
   const [stepStatuses, setStepStatuses] = useState<
     Partial<Record<StepKey, StepStatus>>
@@ -64,8 +64,8 @@ export function usePipelineJob(options: {
         setStepStatuses((prev) => ({ ...prev, [step]: "done" }));
         setActiveStep(null);
 
-        if (step === "gen-blueprint") {
-          onGenBlueprintDone().catch(() => {});
+        if (step === "gen-source-index") {
+          onGenSourceIndexDone().catch(() => {});
         }
         onRunStatusRefresh().catch(() => {});
       } else if (cmd === "build-all") {
@@ -82,7 +82,7 @@ export function usePipelineJob(options: {
         setActiveStep(null);
       }
     }
-  }, [onGenBlueprintDone, onRunStatusRefresh, status]);
+  }, [onGenSourceIndexDone, onRunStatusRefresh, status]);
 
   const resetStatuses = () => {
     setStepStatuses({});

@@ -1,7 +1,7 @@
 import type { usePipelineAvailability } from "@/hooks/usePipelineAvailability";
 import {
+  AUTHORING_STEPS,
   getLayer2StepArgs,
-  LAYER1_STEPS,
   LAYER2_STEPS,
   type Layer2StepKey,
   type Paths,
@@ -43,7 +43,7 @@ export function PipelineLayer2Panel({
       <PipelineStepList
         title="Layer 2 — 音声合成パイプライン"
         steps={LAYER2_STEPS}
-        numberingOffset={LAYER1_STEPS.length}
+        numberingOffset={AUTHORING_STEPS.length}
         getStepStatus={(stepKey) =>
           availability.getLayer2StepDisplayStatus(stepKey as Layer2StepKey)
         }

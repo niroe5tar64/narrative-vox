@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { api, type ProjectConfig } from "@/api/client";
+import { api } from "@/api/client";
 import {
   buildEpisodeOptions,
   resolveEpisodeSelection,
@@ -63,21 +63,14 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
     setPendingAutoSelectRun(false);
   }, [pendingAutoSelectRun, runsQuery.data, projectId, runKey]);
 
-  const selectedProject = (
-    projectsQuery.data?.items as ProjectConfig[] | undefined
-  )?.find((project) => project.PROJECT_ID === projectId);
-
-  const projectEpisodeId = selectedProject?.EPISODE_ID;
-
   const episodeOptions = useMemo(
     () =>
       buildEpisodeOptions({
         runKey,
         currentEpisodeId: episodeId,
-        projectEpisodeId,
         runStatus: runStatusQuery.data,
       }),
-    [episodeId, projectEpisodeId, runKey, runStatusQuery.data],
+    [episodeId, runKey, runStatusQuery.data],
   );
 
   const resolvedEpisodeId = useMemo(
@@ -85,10 +78,9 @@ export function usePipelineContext(isJobActiveForQuery: boolean) {
       resolveEpisodeSelection({
         runKey,
         currentEpisodeId: episodeId,
-        projectEpisodeId,
         runStatus: runStatusQuery.data,
       }),
-    [episodeId, projectEpisodeId, runKey, runStatusQuery.data],
+    [episodeId, runKey, runStatusQuery.data],
   );
 
   useEffect(() => {

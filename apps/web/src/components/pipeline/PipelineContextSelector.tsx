@@ -9,6 +9,7 @@ type Props = {
   episodeId: string;
   episodeOptions: string[];
   isDisabled: boolean;
+  isEpisodeDisabled: boolean;
   projects?: ProjectItem[];
   runs?: RunItem[];
   onProjectIdChange: (id: string) => void;
@@ -22,6 +23,7 @@ export function PipelineContextSelector({
   episodeId,
   episodeOptions,
   isDisabled,
+  isEpisodeDisabled,
   projects,
   runs,
   onProjectIdChange,
@@ -74,14 +76,18 @@ export function PipelineContextSelector({
           <select
             value={episodeId}
             onChange={(e) => onEpisodeIdChange(e.target.value)}
-            disabled={isDisabled}
+            disabled={isDisabled || isEpisodeDisabled}
             className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {episodeOptions.map((id) => (
-              <option key={id} value={id}>
-                {id}
-              </option>
-            ))}
+            {isEpisodeDisabled || episodeOptions.length === 0 ? (
+              <option value="">— エピソードを選択 —</option>
+            ) : (
+              episodeOptions.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>
