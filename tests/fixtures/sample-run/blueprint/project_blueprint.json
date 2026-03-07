@@ -1,274 +1,47 @@
 {
   "meta": {
-    "project_title": "Introducing ReScript: Functional Programming for Web Applications",
-    "audience_background": "TypeScript/JavaScriptでWeb開発をしているエンジニア",
-    "audience_level": "ReScript初学者〜中級手前",
-    "audience_interest": "型安全、設計の見通し、保守性、実務での採用判断",
-    "baseline_context_or_empty": "TypeScriptでの実装・設計パターン",
-    "existing_audio_script_dir_or_empty": "",
-    "episode_duration_target": "10-12min"
+    "project_id": "introducing-rescript",
+    "title": "Introducing ReScript: Functional Programming for Web Applications",
+    "episode_count": 1,
+    "total_duration_min": 12
   },
-  "project_intent": {
-    "primary_message": "ReScriptは、静的型検査と関数型の表現力を保ちながらJavaScriptと高い相互運用性を持ち、既存Web開発に段階導入できる実務的な選択肢である。",
-    "learning_outcomes": [
-      "ReScriptの型システム・式中心モデル・推論を理解し、JavaScript/TypeScriptとの差分を説明できる",
-      "関数・パターンマッチ・代数的データ型を使って、分岐とデータ変換を安全に設計できる",
-      "Record/Object、List/Array、Set/Mapなどのデータ構造を用途別に使い分けられる",
-      "モジュール・シグネチャ・functorで大規模化を見据えた設計境界を作れる",
-      "JavaScript相互運用（bindings、共有型、JSON、例外）を使って段階移行戦略を設計できる"
-    ]
-  },
+  "project_intent": "ReScriptは、静的型検査と関数型の表現力を保ちながらJavaScriptと高い相互運用性を持ち、既存Web開発に段階導入できる実務的な選択肢である。",
   "theme_catalog": [
     {
       "theme_id": "T01",
       "theme_title": "ReScript基礎意味論と型安全",
       "theme_summary": "式評価、compile time/runtime、strictな型検査と推論、primitive型、bindingとcontrol flowを土台として理解する。",
-      "chapter_refs": [
-        "01_Chapter-1/ReScript Basics",
-        "01_Chapter-1/Expressions, Values, and Side Effects",
-        "01_Chapter-1/Compile Time and Runtime",
-        "01_Chapter-1/Types, Typechecking, and Type Inference",
-        "01_Chapter-1/Primitive Types and Operators",
-        "01_Chapter-1/Bindings",
-        "01_Chapter-1/Conditionals",
-        "01_Chapter-1/Switches"
-      ],
       "prerequisite_theme_ids": [],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T02",
-      "theme_title": "関数中心設計と合成",
-      "theme_summary": "関数を値として扱い、higher-order function、pipe、currying、partial application、純粋関数・再帰で処理を合成する。",
-      "chapter_refs": [
-        "02_Chapter-2/Functions",
-        "02_Chapter-2/Defining and Using Functions",
-        "02_Chapter-2/Higher-Order Functions",
-        "02_Chapter-2/Piping",
-        "02_Chapter-2/Currying and Partial Application",
-        "02_Chapter-2/Pure Functions",
-        "02_Chapter-2/Recursion"
-      ],
-      "prerequisite_theme_ids": [
-        "T01"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T03",
-      "theme_title": "代数的データ型と安全なエラーハンドリング",
-      "theme_summary": "tuple/variant、exhaustive pattern matching、option/result、exceptionの使い分けで分岐と失敗を明示化する。",
-      "chapter_refs": [
-        "03_Chapter-3/Composite Data Types",
-        "03_Chapter-3/Tuples",
-        "03_Chapter-3/Variants",
-        "03_Chapter-3/Pattern Matching with Variants",
-        "03_Chapter-3/Exhaustiveness",
-        "03_Chapter-3/Options",
-        "03_Chapter-3/Another Way to Handle Errors: Result",
-        "03_Chapter-3/Composing Results",
-        "03_Chapter-3/Exceptions and Error Handling"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T02"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T04",
-      "theme_title": "Record/Objectモデリングと型観",
-      "theme_summary": "recordのnominal typingとobjectのstructural typingを比較し、JSON入出力時のモデル選択と可変性を設計する。",
-      "chapter_refs": [
-        "04_Chapter-4/Records and Objects",
-        "04_Chapter-4/Records",
-        "04_Chapter-4/Nominal Typing",
-        "04_Chapter-4/Objects",
-        "04_Chapter-4/Structural Typing",
-        "04_Chapter-4/Records and JSON",
-        "04_Chapter-4/Objects and JSON",
-        "04_Chapter-4/Objects vs. Records"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T03"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T05",
-      "theme_title": "配列・リストとデータ変換パイプライン",
-      "theme_summary": "array/listの特性とmap/filter/reduceを理解し、可読性と保守性を高める変換パイプラインを作る。",
-      "chapter_refs": [
-        "05_Chapter-5/Lists and Arrays",
-        "05_Chapter-5/Arrays",
-        "05_Chapter-5/Array Standard Library",
-        "05_Chapter-5/Higher-Order Functions for Arrays",
-        "05_Chapter-5/Map",
-        "05_Chapter-5/Filter",
-        "05_Chapter-5/Reduce",
-        "05_Chapter-5/Lists",
-        "05_Chapter-5/Immutability and Lists",
-        "05_Chapter-5/Lists vs. Arrays"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T02"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T06",
-      "theme_title": "コレクション選定と性能トレードオフ",
-      "theme_summary": "immutable/mutable set・map・hash系・dictの性能とランタイム表現を比較し、要件に応じて選定する。",
-      "chapter_refs": [
-        "06_Chapter-6/Collections",
-        "06_Chapter-6/Immutable Collections",
-        "06_Chapter-6/Immutable Sets",
-        "06_Chapter-6/Immutable Maps",
-        "06_Chapter-6/Mutable Collections",
-        "06_Chapter-6/Hash Set and Hash Map",
-        "06_Chapter-6/Dict",
-        "06_Chapter-6/Which Collection Should I Use?"
-      ],
-      "prerequisite_theme_ids": [
-        "T05"
-      ],
-      "importance": "MEDIUM"
-    },
-    {
-      "theme_id": "T07",
-      "theme_title": "モジュール設計と抽象化境界",
-      "theme_summary": "file/module、openの影響、module signature、functorを使って名前衝突回避とAPI境界を設計する。",
-      "chapter_refs": [
-        "07_Chapter-7/Modules",
-        "07_Chapter-7/Files as Modules",
-        "07_Chapter-7/Opening Modules",
-        "07_Chapter-7/Module Signatures",
-        "07_Chapter-7/Interface Files",
-        "07_Chapter-7/Functors"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T02"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T08",
-      "theme_title": "JavaScript相互運用と境界の型付け",
-      "theme_summary": "external bindings、型共有、null/exception/JSON境界の扱いを通じて、型安全を保った相互運用を実践する。",
-      "chapter_refs": [
-        "08_Chapter-8/JavaScript Interoperability",
-        "08_Chapter-8/Calling JavaScript from ReScript",
-        "08_Chapter-8/Calling ReScript from JavaScript",
-        "08_Chapter-8/Shared Data Types",
-        "08_Chapter-8/Working with Null",
-        "08_Chapter-8/Working with Exceptions",
-        "08_Chapter-8/Working with JSON",
-        "08_Chapter-8/Option 2: Binding With Types",
-        "08_Chapter-8/Option 3: With Validation"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T02",
-        "T03",
-        "T04",
-        "T07"
-      ],
-      "importance": "HIGH"
-    },
-    {
-      "theme_id": "T09",
-      "theme_title": "TypeScript比較での採用判断",
-      "theme_summary": "TypeScript実装と比較し、設計見通し・保守性・段階移行コストを軸に採用判断できる状態を目指す。",
-      "chapter_refs": [
-        "01_Chapter-1/Types, Typechecking, and Type Inference",
-        "03_Chapter-3/Pattern Matching with Variants",
-        "04_Chapter-4/Objects vs. Records",
-        "05_Chapter-5/Lists vs. Arrays",
-        "06_Chapter-6/Which Collection Should I Use?",
-        "08_Chapter-8/JavaScript Interoperability",
-        "08_Chapter-8/Putting It All Together: Simple ReScript Web App"
-      ],
-      "prerequisite_theme_ids": [
-        "T01",
-        "T02",
-        "T03",
-        "T04",
-        "T08"
-      ],
       "importance": "HIGH"
     }
   ],
   "episode_plan": [
     {
       "episode_id": "E01",
-      "episode_title": "TS開発者向けReScript入門: 式・型・評価モデル",
-      "target_theme_ids": [
-        "T01"
-      ],
-      "learning_goal": "ReScriptの式中心モデルと静的型検査の価値を、TypeScriptとの違いで説明できる。",
-      "source_refs": [
-        "00_Introduction/Table of Contents",
-        "01_Chapter-1/Expressions, Values, and Side Effects",
-        "01_Chapter-1/Compile Time and Runtime",
-        "01_Chapter-1/Types, Typechecking, and Type Inference",
-        "01_Chapter-1/Primitive Types and Operators"
-      ],
-      "scope_guardrails": [
-        "実装演習や環境構築手順の詳細には入らない",
-        "Chapter 2以降の高度な関数合成は扱わない"
-      ],
-      "comparison_mode_default": "with_baseline"
+      "title": "TS開発者向けReScript入門: 式・型・評価モデル",
+      "duration_min": 12,
+      "source_section_ids": ["SRC0001", "SRC0002"],
+      "target_theme_ids": ["T01"]
     }
   ],
   "coverage_matrix": {
-    "chapters": [
-      {
-        "chapter_ref": "00_Introduction",
-        "covered_by_episode_ids": [
-          "E01"
-        ],
-        "covered_theme_ids": [
-          "T01"
-        ]
-      },
-      {
-        "chapter_ref": "01_Chapter-1",
-        "covered_by_episode_ids": [
-          "E01"
-        ],
-        "covered_theme_ids": [
-          "T01"
-        ]
-      }
-    ],
     "themes": [
       {
         "theme_id": "T01",
-        "covered_by_episode_ids": [
-          "E01"
-        ]
+        "covered_by_episode_ids": ["E01"]
       }
     ]
   },
   "continuity_plan": {
     "existing_episode_ids_if_any": [],
     "overlap_risk_summary": "N/A",
-    "reuse_or_rewrite_recommendations": [
-      "existing_audio_script_dir_or_empty が空文字のため、既存台本との重複判定は不要。",
-      "初回runとしてE01-E12を連番で新規作成し、将来の再実行時はepisode_id固定で差分更新する。"
-    ]
+    "reuse_or_rewrite_recommendations": []
   },
   "quality_checks": {
     "chapter_coverage_complete": "OK",
     "theme_coverage_complete": "OK",
     "dependency_order_valid": "OK",
     "episode_granularity_valid": "OK",
-    "known_gaps": [
-      "各エピソード内の分単位配分（例: 3-4-3分）までは未定義。",
-      "実務採用判断で必要な組織的制約（チームスキル、CI整備状況）の評価軸は本Blueprint外。"
-    ]
+    "known_gaps": []
   }
 }

@@ -43,29 +43,22 @@ export function createMockMorphTokenizer(
 
 const sampleBlueprint = {
   meta: {
-    project_title: "Test Project",
-    audience_background: "テスト",
-    audience_level: "テスト",
-    audience_interest: "テスト",
-    baseline_context_or_empty: "テスト",
-    existing_audio_script_dir_or_empty: "",
-    episode_duration_target: "10-12min",
+    project_id: "introducing-rescript",
+    title: "Test Project",
+    episode_count: 1,
+    total_duration_min: 12,
   },
-  project_intent: {
-    primary_message: "テスト",
-    learning_outcomes: ["テスト"],
-  },
+  project_intent: "テスト",
   theme_catalog: [
     {
       theme_id: "T01",
       theme_title: "テストテーマ",
       theme_summary: "テスト",
-      chapter_refs: ["01_Chapter-1/Test"],
       prerequisite_theme_ids: [],
       importance: "HIGH",
     },
   ],
-  coverage_matrix: { chapters: [], themes: [] },
+  coverage_matrix: { themes: [] },
   continuity_plan: {
     existing_episode_ids_if_any: [],
     overlap_risk_summary: "N/A",
@@ -265,12 +258,10 @@ export async function prepareMinimalRun(
     ...sampleBlueprint,
     episode_plan: episodeIds.map((id) => ({
       episode_id: id,
-      episode_title: "テスト",
+      title: "テスト",
+      duration_min: 12,
+      source_section_ids: ["SRC0001"],
       target_theme_ids: ["T01"],
-      learning_goal: "テスト",
-      source_refs: ["01_Chapter-1/Test"],
-      scope_guardrails: [],
-      comparison_mode_default: "with_baseline",
     })),
   };
   await writeFile(
